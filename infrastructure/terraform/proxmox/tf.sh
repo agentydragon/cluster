@@ -41,7 +41,7 @@ fi
 
 export TF_VAR_pm_api_token_id="$TOKEN_ID"
 export TF_VAR_pm_api_token_secret="$TOKEN_SECRET"
-export TF_VAR_headscale_auth_key="$HEADSCALE_KEY"
+export TF_VAR_headscale_api_key="$HEADSCALE_KEY"
 
 cd "$SCRIPT_DIR"
 

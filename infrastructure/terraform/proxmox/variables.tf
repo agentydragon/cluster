@@ -105,15 +105,21 @@ variable "kubernetes_version" {
 }
 
 # Tailscale integration
-variable "headscale_auth_key" {
-  description = "Headscale authentication key for Tailscale extension."
+variable "headscale_api_key" {
+  description = "Headscale API key for generating pre-auth keys."
   type        = string
   sensitive   = true
   
   validation {
-    condition     = var.headscale_auth_key != ""
-    error_message = "Headscale auth key is required for Tailscale functionality."
+    condition     = var.headscale_api_key != ""
+    error_message = "Headscale API key is required for Tailscale functionality."
   }
+}
+
+variable "headscale_user" {
+  description = "Headscale user for pre-auth key generation."
+  type        = string
+  default     = "agentydragon"
 }
 
 variable "headscale_login_server" {

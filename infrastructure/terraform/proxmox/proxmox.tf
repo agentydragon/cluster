@@ -35,10 +35,6 @@ resource "proxmox_virtual_environment_vm" "controller" {
   network_device {
     bridge = "vmbr0"
   }
-  tpm_state {
-    datastore_id = "local-zfs" 
-    version = "v2.0"
-  }
   efi_disk {
     datastore_id = "local-zfs"
     file_format  = "raw"
@@ -94,10 +90,6 @@ resource "proxmox_virtual_environment_vm" "worker" {
   }
   network_device {
     bridge = "vmbr0"
-  }
-  tpm_state {
-    datastore_id = "local-zfs" 
-    version = "v2.0"
   }
   efi_disk {
     datastore_id = "local-zfs"

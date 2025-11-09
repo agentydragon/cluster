@@ -1,3 +1,20 @@
+// Generate unique pre-auth keys for all nodes (controllers + workers)
+data "http" "node_preauth_key" {
+  count = var.controller_count + var.worker_count
+  url = "${var.headscale_login_server}/api/v1/preauthkey"
+  method = "POST"
+  request_headers = {
+    Authorization = "Bearer ${var.headscale_api_key}"
+    Content-Type = "application/json"
+  }
+  request_body = jsonencode({
+    user = "agentydragon"  # username, not user ID
+    reusable = false
+    ephemeral = false
+    expiration = timeadd(timestamp(), "1h")  # 1 hour from now
+  })
+}
+
 locals {
   controller_nodes = [
     for i in range(var.controller_count) : {
@@ -11,6 +28,51 @@ locals {
       address = cidrhost(var.cluster_node_network, var.cluster_node_network_first_worker_hostnum + i)
     }
   ]
+  
+  # Helper function to generate Tailscale ExtensionServiceConfig
+  tailscale_config_base = {
+    apiVersion = "v1alpha1"
+    kind       = "ExtensionServiceConfig"
+    name       = "tailscale"
+  }
+  
+  # Common Tailscale extension configuration for all machine types
+  tailscale_extension_config = {
+    machine = {
+      install = {
+        extensions = [
+          {
+            image = "ghcr.io/siderolabs/tailscale:latest"
+          }
+        ]
+      }
+    }
+    cluster = {}
+  }
+  
+  # Common talos_machine_configuration fields
+  common_talos_config = {
+    cluster_name       = var.cluster_name
+    cluster_endpoint   = var.cluster_endpoint
+    machine_secrets    = talos_machine_secrets.talos.machine_secrets
+    talos_version      = "v${var.talos_version}"
+    kubernetes_version = var.kubernetes_version
+    examples           = false
+    docs               = false
+  }
+  
+  # Helper function to generate hostname config patch
+  hostname_config = {
+    for name in concat([for n in local.controller_nodes : n.name], [for n in local.worker_nodes : n.name]) : 
+    name => yamlencode({
+      machine = {
+        network = {
+          hostname = name
+        }
+      }
+    })
+  }
+  
   common_machine_config = {
     machine = {
       features = {
@@ -58,16 +120,17 @@ resource "talos_machine_secrets" "talos" {
 
 // see https://registry.terraform.io/providers/siderolabs/talos/0.9.0/docs/data-sources/machine_configuration
 data "talos_machine_configuration" "controller" {
-  cluster_name       = var.cluster_name
-  cluster_endpoint   = var.cluster_endpoint
-  machine_secrets    = talos_machine_secrets.talos.machine_secrets
+  cluster_name       = local.common_talos_config.cluster_name
+  cluster_endpoint   = local.common_talos_config.cluster_endpoint
+  machine_secrets    = local.common_talos_config.machine_secrets
   machine_type       = "controlplane"
-  talos_version      = "v${var.talos_version}"
-  kubernetes_version = var.kubernetes_version
-  examples           = false
-  docs               = false
+  talos_version      = local.common_talos_config.talos_version
+  kubernetes_version = local.common_talos_config.kubernetes_version
+  examples           = local.common_talos_config.examples
+  docs               = local.common_talos_config.docs
   config_patches = [
     yamlencode(local.common_machine_config),
+    yamlencode(local.tailscale_extension_config),
     yamlencode({
       machine = {
         network = {
@@ -81,47 +144,6 @@ data "talos_machine_configuration" "controller" {
             }
           ]
         }
-        # Add Tailscale extension configuration
-        install = {
-          extensions = [
-            {
-              image = "ghcr.io/siderolabs/tailscale:latest"
-            }
-          ]
-        }
-      }
-      cluster = {
-        # Add Tailscale extension service config
-        inlineManifests = [
-          {
-            name = "tailscale-extension"
-            contents = yamlencode({
-              apiVersion = "v1alpha1"
-              kind       = "ExtensionServiceConfig"
-              metadata = {
-                name      = "tailscale"
-                namespace = "kube-system"
-              }
-              spec = {
-                services = [
-                  {
-                    name = "tailscale"
-                    environment = [
-                      {
-                        name  = "TS_AUTHKEY"
-                        value = var.headscale_auth_key
-                      },
-                      {
-                        name  = "TS_EXTRA_ARGS"
-                        value = "--login-server=${var.headscale_login_server} --accept-routes --advertise-routes=10.5.0.0/16"
-                      }
-                    ]
-                  }
-                ]
-              }
-            })
-          }
-        ]
       }
     }),
   ]
@@ -129,61 +151,17 @@ data "talos_machine_configuration" "controller" {
 
 // see https://registry.terraform.io/providers/siderolabs/talos/0.9.0/docs/data-sources/machine_configuration
 data "talos_machine_configuration" "worker" {
-  cluster_name       = var.cluster_name
-  cluster_endpoint   = var.cluster_endpoint
-  machine_secrets    = talos_machine_secrets.talos.machine_secrets
+  cluster_name       = local.common_talos_config.cluster_name
+  cluster_endpoint   = local.common_talos_config.cluster_endpoint
+  machine_secrets    = local.common_talos_config.machine_secrets
   machine_type       = "worker"
-  talos_version      = "v${var.talos_version}"
-  kubernetes_version = var.kubernetes_version
-  examples           = false
-  docs               = false
+  talos_version      = local.common_talos_config.talos_version
+  kubernetes_version = local.common_talos_config.kubernetes_version
+  examples           = local.common_talos_config.examples
+  docs               = local.common_talos_config.docs
   config_patches = [
     yamlencode(local.common_machine_config),
-    yamlencode({
-      machine = {
-        # Add Tailscale extension configuration
-        install = {
-          extensions = [
-            {
-              image = "ghcr.io/siderolabs/tailscale:latest"
-            }
-          ]
-        }
-      }
-      cluster = {
-        # Add Tailscale extension service config
-        inlineManifests = [
-          {
-            name = "tailscale-extension"
-            contents = yamlencode({
-              apiVersion = "v1alpha1"
-              kind       = "ExtensionServiceConfig"
-              metadata = {
-                name      = "tailscale"
-                namespace = "kube-system"
-              }
-              spec = {
-                services = [
-                  {
-                    name = "tailscale"
-                    environment = [
-                      {
-                        name  = "TS_AUTHKEY"
-                        value = var.headscale_auth_key
-                      },
-                      {
-                        name  = "TS_EXTRA_ARGS"
-                        value = "--login-server=${var.headscale_login_server} --accept-routes"
-                      }
-                    ]
-                  }
-                ]
-              }
-            })
-          }
-        ]
-      }
-    }),
+    yamlencode(local.tailscale_extension_config),
   ]
 }
 
@@ -212,13 +190,14 @@ resource "talos_machine_configuration_apply" "controller" {
   endpoint                    = local.controller_nodes[count.index].address
   node                        = local.controller_nodes[count.index].address
   config_patches = [
-    yamlencode({
-      machine = {
-        network = {
-          hostname = local.controller_nodes[count.index].name
-        }
-      }
-    }),
+    local.hostname_config[local.controller_nodes[count.index].name],
+    # Per-machine Tailscale ExtensionServiceConfig with auth key
+    yamlencode(merge(local.tailscale_config_base, {
+      environment = [
+        "TS_AUTHKEY=${jsondecode(data.http.node_preauth_key[count.index].response_body).preAuthKey.key}",
+        "TS_EXTRA_ARGS=--login-server=${var.headscale_login_server} --accept-routes --advertise-routes=10.0.0.0/16"
+      ]
+    })),
   ]
   depends_on = [
     proxmox_virtual_environment_vm.controller,
@@ -233,13 +212,14 @@ resource "talos_machine_configuration_apply" "worker" {
   endpoint                    = local.worker_nodes[count.index].address
   node                        = local.worker_nodes[count.index].address
   config_patches = [
-    yamlencode({
-      machine = {
-        network = {
-          hostname = local.worker_nodes[count.index].name
-        }
-      }
-    }),
+    local.hostname_config[local.worker_nodes[count.index].name],
+    # Per-machine Tailscale ExtensionServiceConfig with auth key  
+    yamlencode(merge(local.tailscale_config_base, {
+      environment = [
+        "TS_AUTHKEY=${jsondecode(data.http.node_preauth_key[var.controller_count + count.index].response_body).preAuthKey.key}",
+        "TS_EXTRA_ARGS=--login-server=${var.headscale_login_server} --accept-routes"
+      ]
+    })),
   ]
   depends_on = [
     proxmox_virtual_environment_vm.worker,

@@ -2,17 +2,48 @@
 
 This document tracks how to reproduce the Talos bootstrap on the single-node Proxmox host (`atlas`) and the follow-on platform work (tailscale, kube-vip, GitOps apps).
 
-## 🎉 COMPLETION STATUS: SUCCESS!
+## 🔄 CURRENT STATUS: Configuration Working But Deployment Blocked
 
-**We have achieved the primary goal**: A fully functional **5-node Talos Kubernetes cluster** running on Proxmox with Tailscale extensions!
+**What We Have**: A fully functional Terraform configuration for a **5-node Talos Kubernetes cluster**, but blocked by image corruption issue.
 
 ### What We Built:
-- **✅ 5 Talos VMs** (3 controllers + 2 workers) with static IP networking
-- **✅ Kubernetes v1.32.1** cluster fully bootstrapped and responsive  
-- **✅ Talos v1.11.2** with custom-built images including extensions
-- **✅ Tailscale v1.88.1** extension loaded on all nodes
-- **✅ QEMU Guest Agent** for Proxmox integration
-- **✅ Proper cloud-init networking** with 10.0.0.x static IPs
+- **✅ 5 Talos VMs configuration** (3 controllers + 2 workers) with static IP networking
+- **✅ Terraform DRY refactoring** using `for_each` patterns and unified resources
+- **✅ Talos v1.11.2** configuration with custom-built images including extensions  
+- **✅ Tailscale integration** via unified headscale registration process
+- **✅ RGL-based approach** adapted with proper network configuration
+- **❌ BLOCKER: 9-byte corrupted Talos qcow2 image** causing terraform apply timeouts
+
+### Current Research: Alternative Configuration Approaches
+Investigating modern Talos v1.12 configuration delivery options to avoid custom image building complexity:
+
+#### Option 1: Kernel cmdline with `talos.config.inline` ❌ BLOCKED BY PROVIDER LIMITATION
+- [x] **PROVIDER GAP**: BPG Terraform provider lacks dedicated `kernel_cmdline` or `boot_args` field
+- [x] **WORKAROUND BLOCKED**: Only available method is `kvm_arguments` field, which requires root API token
+- [x] **SECURITY RESTRICTION**: `kvm_arguments` passes arbitrary QEMU args (security risk) - restricted to root
+- [x] **VERDICT**: Kernel parameters artificially blocked by missing provider feature, not Proxmox itself
+
+#### Option 2: Multiple CDROM approach with official images ❌ **BLOCKED BY PROVIDER**
+- [x] **CONFIRMED**: BPG provider supports multiple CDROM drives via multiple `cdrom` blocks
+- [x] **INTERFACES**: `ideN`, `sataN`, `scsiN` (Q35 machines limited to `ide0`, `ide2`)
+- [x] **CAPABILITY**: Can attach multiple ISOs with different interface indexes
+- [x] **CRITICAL LIMITATION DISCOVERED**: Provider only allows **one `cdrom` block per VM**
+- [x] **ERROR**: `"Too many cdrom blocks" - "No more than 1 "cdrom" blocks are allowed"`
+- [x] **SOURCE CODE**: [proxmoxtf/resource/vm/vm.go:538](https://github.com/bpg/terraform-provider-proxmox/blob/main/proxmoxtf/resource/vm/vm.go#L538) - `MaxItems: 1` constraint
+- [x] **IMPACT**: Cannot simultaneously attach boot ISO + config ISO via Terraform
+- [x] **WORKAROUND**: Requires manual CDROM switching or post-Terraform CLI manipulation
+
+#### Option 3: HTTP server patterns
+- [ ] Research Proxmox built-in HTTP server capabilities for config delivery
+- [ ] Investigate standard sidecar patterns for Proxmox configuration
+- [ ] Test if HTTP server needs to persist post-boot or just for initial provisioning
+- [ ] Evaluate "turn on once, forget about it" solutions
+
+#### Option 4: Fix corrupted image download (fallback) ⭐ **RECOMMENDED**
+- [ ] **PRIORITY**: Diagnose why `null_resource.talos_image_download` produces 9-byte file
+- [ ] Fix download process to get proper Talos qcow2 file  
+- [ ] Test terraform apply with working image file
+- [ ] **RATIONALE**: Returns to known-working RGL approach fastest
 
 ### Final Architecture:
 - **Controllers**: `10.0.0.11`, `10.0.0.12`, `10.0.0.13` 
@@ -30,8 +61,7 @@ kubectl get nodes -o wide
 
 **Talos management:**
 ```bash  
-export TALOSCONFIG=/home/agentydragon/code/cluster/infrastructure/terraform/proxmox/talosconfig.yml
-/home/agentydragon/code/cluster/talos/talosctl-linux-amd64 -e 10.0.0.11 -n 10.0.0.11 version
+talosctl -e 10.0.0.11 -n 10.0.0.11 version
 ```
 
 ### Implementation Notes:

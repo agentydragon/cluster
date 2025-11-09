@@ -10,6 +10,10 @@ terraform {
       source  = "siderolabs/talos"
       version = "~> 0.9.0"
     }
+    http = {
+      source  = "hashicorp/http"
+      version = "~> 3.4.0"
+    }
   }
 
   backend "local" {
