@@ -60,3 +60,11 @@ spec:
         enabled: true
       ui:
         enabled: true
+    
+    # LoadBalancer configuration
+    loadBalancer:
+      algorithm: round_robin
+    
+    # Enable L2 announcements for LoadBalancer services
+    l2announcements:
+      enabled: true
