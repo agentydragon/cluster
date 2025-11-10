@@ -43,12 +43,12 @@ spec:
                   app.kubernetes.io/component: controller
               topologyKey: kubernetes.io/hostname
       
-      # Service configuration - NodePort with fixed ports
+      # Service configuration - NodePort with different ports  
       service:
         type: NodePort
         nodePorts:
-          http: 30080
-          https: 30443
+          http: 30081
+          https: 30444
       
       # Ingress class configuration
       ingressClassResource:
