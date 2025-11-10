@@ -63,7 +63,7 @@ spec:
     
     # LoadBalancer configuration
     loadBalancer:
-      algorithm: round_robin
+      algorithm: random
     
     # Enable L2 announcements for LoadBalancer services
     l2announcements:
