@@ -21,9 +21,12 @@ spec:
       hostPort:
         enabled: false
       
-      # Run on worker nodes
+      # Use Deployment instead of DaemonSet
+      kind: Deployment
+      
+      # Run on worker nodes only
       nodeSelector:
-        kubernetes.io/os: linux
+        node-role.kubernetes.io/worker: ""
       
       # Service configuration - NodePort with fixed ports
       service:
