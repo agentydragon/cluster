@@ -35,6 +35,9 @@ spec:
         memory: 32Mi
     
     webhook:
+      # Configure additional DNS names for webhook certificate
+      extraArgs:
+      - --dynamic-serving-dns-names=cert-manager-webhook,cert-manager-webhook.cert-manager,cert-manager-webhook.cert-manager.svc,cert-manager-webhook.cert-manager.svc.cluster.local
       resources:
         limits:
           cpu: 100m
