@@ -281,6 +281,86 @@ cluster_endpoint = "https://10.0.0.11:6443"
 - **Extension integration**: Tailscale + QEMU agent via Image Factory schematics
 - **Bootstrap sequence**: Direct controller IP → VIP establishment → HA cluster
 
+## External Connectivity & Ingress Architecture
+
+### Complete HTTPS Connectivity Stack
+
+**Operational**: External services accessible via `*.test-cluster.agentydragon.com` with automatic HTTPS and SSL termination.
+
+#### Architecture Flow
+```
+Internet → VPS (nginx proxy + Let's Encrypt SSL) 
+        → Tailscale VPN 
+        → Talos worker nodes (NodePort 30443)
+        → NGINX Ingress Controller 
+        → Application pods
+```
+
+#### Key Components
+
+**1. VPS Proxy Configuration**
+- **DNS**: `*.test-cluster.agentydragon.com` → VPS IP
+- **SSL**: Let's Encrypt wildcard certificate via PowerDNS DNS-01 validation  
+- **Proxy**: nginx forwards to `w0:30443` via Tailscale hostname resolution
+
+**2. Cluster NodePort Configuration**
+- **NGINX Ingress**: 2 replicas on worker nodes w0/w1 with pod anti-affinity
+- **NodePort Service**: `30080/TCP,443:30443/TCP` accessible on all worker nodes
+- **Cilium Configuration**: `kubeProxyReplacement: true` with `bindProtection: false`
+
+**3. Application Deployment**
+- **GitOps**: Applications deployed via Flux from `/apps` directory
+- **Ingress**: Standard Kubernetes ingress resources with nginx class
+- **DNS**: Automatic routing based on Host headers
+
+#### Configuration Files
+- **VPS**: `/home/agentydragon/code/ducktape/ansible/nginx-sites/test-cluster.agentydragon.com.j2`
+- **NGINX Ingress**: `/home/agentydragon/code/cluster/apps/ingress-system/helmrelease.yaml`
+- **Cilium**: `/home/agentydragon/code/cluster/apps/cilium/helmrelease.yaml`
+- **Test App**: `/home/agentydragon/code/cluster/apps/test-app/`
+
+#### Debugging Journey: DaemonSet → Deployment Conversion
+
+**Initial Problem**: NGINX ingress was configured as DaemonSet on control-plane nodes with hostNetwork, causing:
+- Port conflicts when multiple controllers try to bind to same ports
+- Certificate issues between duplicate HelmReleases
+- Node readiness issues (kubelet services failing)
+
+**Solution Applied**:
+1. **Architecture Change**: DaemonSet → Deployment for better resource management
+2. **Node Targeting**: Control-plane → Worker nodes (both have Tailscale connectivity) 
+3. **Networking**: hostNetwork → NodePort for proper service exposure
+4. **High Availability**: 2 replicas with pod anti-affinity across worker nodes
+5. **Configuration Cleanup**: Removed duplicate ingress-nginx namespace/configuration
+
+**Final Working Configuration**:
+```yaml
+controller:
+  kind: Deployment
+  replicaCount: 2
+  service:
+    type: NodePort 
+    nodePorts:
+      http: 30080
+      https: 30443
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+        - matchExpressions:
+          - key: node-role.kubernetes.io/control-plane
+            operator: DoesNotExist
+    podAntiAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 100
+        podAffinityTerm:
+          labelSelector:
+            matchLabels:
+              app.kubernetes.io/name: ingress-nginx
+              app.kubernetes.io/component: controller
+          topologyKey: kubernetes.io/hostname
+```
+
 ## GitOps Workflow
 
 ### Repository Setup
@@ -327,6 +407,9 @@ flux bootstrap github \
 - [x] **Kubernetes cluster ready**: All 5 nodes show Ready status
 - [x] **Tailscale connectivity**: All nodes connected to headscale mesh (100.64.0.14-18)
 - [x] **Repository setup**: Cluster configuration published to GitHub
-- [ ] **GitOps setup**: Bootstrap Flux for declarative cluster management
-- [ ] **Platform services**: Deploy monitoring, ingress, cert-manager via GitOps
+- [x] **GitOps setup**: Flux fully operational for declarative cluster management
+- [x] **External HTTPS connectivity**: Complete VPS proxy → Tailscale → cluster ingress chain
+- [x] **NGINX Ingress HA**: 2 replicas on worker nodes with NodePort 30080/30443
+- [x] **Platform services**: Cilium CNI, cert-manager, ingress-nginx deployed via GitOps
+- [x] **End-to-end testing**: Test application accessible via https://test.test-cluster.agentydragon.com/
 - [ ] **Backup/recovery**: Document cluster restore procedures

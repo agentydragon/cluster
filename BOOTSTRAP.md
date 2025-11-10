@@ -197,6 +197,43 @@ cluster_endpoint = "https://10.0.0.11:6443"  # NOT 10.0.0.20:6443
    - **Solution**: Use worker nodes where ingress pods run
    - **Fix**: Target w0/w1 instead of c0/c1/c2 (controllers)
 
+### Worker Nodes Become NotReady
+**Symptoms**: `kubectl get nodes` shows workers as "NotReady", pods stuck in Pending
+**Root Cause**: Kubelet services stuck waiting for volumes to mount (after restarts/updates)
+**Solution**: Restart kubelet services using talosctl
+```bash
+# Restart kubelet on affected nodes
+direnv exec . talosctl -n 10.0.0.21 service kubelet restart  # w0
+direnv exec . talosctl -n 10.0.0.22 service kubelet restart  # w1
+
+# Verify nodes return to Ready status
+kubectl get nodes
+```
+
+### NGINX Ingress Controller in CrashLoopBackOff
+**Symptoms**: NGINX controller pods failing to start, "no service found" errors
+**Root Causes & Solutions**:
+
+1. **Missing NodePort Service**:
+   - **Symptom**: "no service with name ingress-nginx-controller found"
+   - **Solution**: Ensure HelmRelease creates proper NodePort service
+   - **Fix**: Wait for Flux reconciliation or force with `flux reconcile`
+
+2. **DaemonSet Port Conflicts** (Architecture Issue):
+   - **Symptom**: Multiple pods trying to bind same hostNetwork ports
+   - **Solution**: Use Deployment instead of DaemonSet
+   - **Fix**: Configure `kind: Deployment` with pod anti-affinity
+
+3. **Duplicate HelmReleases**:
+   - **Symptom**: Conflicting configurations causing resource conflicts
+   - **Solution**: Remove duplicate configurations
+   - **Fix**: Keep only one ingress configuration, clean up old namespaces
+
+### Flux Controllers Not Starting
+**Symptoms**: Flux pods stuck in ContainerCreating, GitOps not working
+**Root Cause**: Worker nodes NotReady prevents pod scheduling
+**Solution**: Fix underlying node issues first, then Flux recovers automatically
+
 ## Key File Locations
 
 - **Terraform configs**: `/home/agentydragon/code/cluster/terraform/`
@@ -215,14 +252,32 @@ cluster_endpoint = "https://10.0.0.11:6443"  # NOT 10.0.0.20:6443
 | worker-2 | 110 | 10.0.0.22 | Worker |
 | **VIP** | - | 10.0.0.20 | Load Balancer |
 
-## Next Steps After Bootstrap
+## Current Cluster Status
 
-1. **✅ CNI Installed**: Cilium v1.16.5 providing networking and security
-2. **GitOps Migration**: Consider migrating Cilium from Helm to Flux for declarative management
-3. **Install Platform Services**: Vault, Authentik, Harbor, Gitea via GitOps
-4. **Configure Backup**: Set up etcd backup and restore procedures
-5. **Monitor Setup**: Deploy monitoring and observability stack
-6. **Security Hardening**: Apply network policies via Cilium
+**Production-ready cluster operational**
+
+**Infrastructure**:
+- 5-node Talos cluster (3 controllers + 2 workers)
+- Static IP networking with VIP load balancing (10.0.0.20)
+- Tailscale mesh connectivity across all nodes
+
+**Platform Services**:  
+- Cilium v1.16.5 CNI with kube-proxy replacement
+- NGINX Ingress Controller HA (2 replicas, NodePort 30080/30443)
+- cert-manager for SSL certificate automation
+- Flux GitOps managing all applications declaratively
+
+**External Connectivity**:
+- VPS nginx proxy with Let's Encrypt SSL termination
+- Complete HTTPS chain: Internet → VPS → Tailscale → NodePort → Applications  
+- Live test application: https://test.test-cluster.agentydragon.com/
+
+**Next Steps** (Optional Enhancements):
+1. **Install Platform Services**: Vault, Authentik, Harbor, Gitea via GitOps
+2. **Configure Backup**: Set up etcd backup and restore procedures  
+3. **Monitor Setup**: Deploy monitoring and observability stack
+4. **Security Hardening**: Apply network policies via Cilium
+5. **PowerDNS Zone Automation**: Implement proper zone management in Ansible
 
 ## Step 5: Configure External Connectivity via VPS Proxy
 
@@ -376,9 +431,18 @@ spec:
 dig foo.test-cluster.agentydragon.com
 # Should resolve to: 172.235.48.86 (VPS IP)
 
-# Test HTTPS connectivity (should get 404 from NGINX ingress - expected)
+# ✅ Test HTTPS connectivity - WORKING!
 curl https://test.test-cluster.agentydragon.com/
+# Returns: HTTP/2 200 - Complete test application with infrastructure details
+
+# Test specific components
+curl -I https://w0:30443  # Direct NodePort access via Tailscale
+curl -I https://test.test-cluster.agentydragon.com/  # End-to-end via VPS proxy
 ```
+
+**Current Status**: End-to-end connectivity operational
+- VPS nginx proxy → Tailscale VPN → NodePort 30443 → NGINX Ingress → Applications
+- Live test: https://test.test-cluster.agentydragon.com/ serving test application
 
 ### Deploy Applications with Ingress
 
@@ -412,14 +476,19 @@ spec:
 
 **Result**: Applications become automatically accessible at `https://app-name.test-cluster.agentydragon.com/`
 
-## Step 6: GitOps with Flux (Already Configured)
+## Step 6: GitOps with Flux
 
-✅ **Flux is already set up** and managing this cluster via GitHub repository `agentydragon/cluster`.
+**Operational**: Flux GitOps is managing the cluster via GitHub repository `agentydragon/cluster`.
 
 **Current GitOps Status**:
-- Flux controllers are installed and running
-- Repository: `https://github.com/agentydragon/cluster`
+- Flux controllers are running and healthy
+- Repository: `https://github.com/agentydragon/cluster` 
 - Auto-sync enabled for all applications in `apps/` directory
+- **Deployed Applications**:
+  - **Cilium CNI**: `/apps/cilium/` - Network fabric and security
+  - **NGINX Ingress**: `/apps/ingress-system/` - HA deployment with NodePort
+  - **cert-manager**: `/apps/cert-manager/` - SSL certificate automation
+  - **Test Application**: `/apps/test-app/` - Validates end-to-end connectivity
 
 ### Migrate Cilium to GitOps (Optional)
 ```bash
