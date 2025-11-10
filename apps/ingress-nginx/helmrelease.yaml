@@ -16,10 +16,10 @@ spec:
       interval: 12h
   values:
     controller:
-      # Use host network for direct access
-      hostNetwork: true
+      # Use LoadBalancer service instead of hostNetwork (Talos PodSecurity compatible)
+      hostNetwork: false
       hostPort:
-        enabled: true
+        enabled: false
       
       # Run on specific nodes if desired (optional)
       nodeSelector:
@@ -27,7 +27,7 @@ spec:
       
       # Service configuration
       service:
-        type: ClusterIP  # Since we're using hostNetwork
+        type: LoadBalancer
       
       # Ingress class configuration
       ingressClassResource:
