@@ -5,5 +5,5 @@ metadata:
   namespace: kube-system
 spec:
   blocks:
-  - start: "10.0.0.100"
-    stop: "10.0.0.200"
+  - start: "100.64.1.100"
+    stop: "100.64.1.200"
