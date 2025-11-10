@@ -281,7 +281,41 @@ cluster_endpoint = "https://10.0.0.11:6443"
 - **Extension integration**: Tailscale + QEMU agent via Image Factory schematics
 - **Bootstrap sequence**: Direct controller IP → VIP establishment → HA cluster
 
-## 8. Checklist / status
+## GitOps Workflow
+
+### Repository Setup
+- **Source Code**: https://github.com/agentydragon/cluster
+- **Structure**:
+  ```
+  cluster/
+  ├── terraform/           # Infrastructure as Code
+  ├── flux-system/         # Flux controllers (auto-generated)
+  ├── apps/               # Application manifests
+  │   ├── cilium/         # CNI configuration
+  │   ├── monitoring/     # Prometheus, Grafana
+  │   └── ingress/        # NGINX ingress
+  ├── BOOTSTRAP.md        # Deployment instructions
+  └── PLAN.md            # This document
+  ```
+
+### Bootstrap Flux
+```bash
+cd /home/agentydragon/code/cluster
+flux bootstrap github \
+  --owner=agentydragon \
+  --repository=cluster \
+  --path=flux-system \
+  --personal \
+  --read-write-key
+```
+
+### GitOps Workflow
+1. **Make changes**: Edit YAML files locally or via GitHub
+2. **Commit & Push**: Standard Git workflow  
+3. **Auto-deploy**: Flux detects changes and applies to cluster
+4. **Observe**: Monitor via `flux get all` or Kubernetes dashboard
+
+## Checklist / Status
 - [x] **Image Factory Integration**: VMs created with QCOW2 disk images containing baked-in static IP configuration
 - [x] **Static IP Boot**: All 5 VMs boot with predetermined static IPs without DHCP dependency
 - [x] **Scale to full 5-node cluster**: 3 controllers + 2 workers deployed
@@ -291,7 +325,8 @@ cluster_endpoint = "https://10.0.0.11:6443"
 - [x] **CNI Installation**: Cilium v1.16.5 CNI installed with Talos-specific configuration
 - [x] **VIP establishment**: 10.0.0.20 active and load-balancing across all controllers
 - [x] **Kubernetes cluster ready**: All 5 nodes show Ready status
-- [ ] **Tailscale connectivity**: Verify all nodes join headscale network (extension available)
-- [ ] **GitOps setup**: Consider migrating from Helm to Flux/Argo for declarative cluster management
-- [ ] **Platform services**: Deploy Vault, Authentik, Harbor, Gitea, etc. via GitOps
+- [x] **Tailscale connectivity**: All nodes connected to headscale mesh (100.64.0.14-18)
+- [x] **Repository setup**: Cluster configuration published to GitHub
+- [ ] **GitOps setup**: Bootstrap Flux for declarative cluster management
+- [ ] **Platform services**: Deploy monitoring, ingress, cert-manager via GitOps
 - [ ] **Backup/recovery**: Document cluster restore procedures

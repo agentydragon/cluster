@@ -186,12 +186,42 @@ cluster_endpoint = "https://10.0.0.11:6443"  # NOT 10.0.0.20:6443
 5. **Monitor Setup**: Deploy monitoring and observability stack
 6. **Security Hardening**: Apply network policies via Cilium
 
-### GitOps Migration Path (Optional)
-```bash
-# Export current Cilium configuration for GitOps
-helm get values cilium -n kube-system > cilium-values.yaml
+## Step 5: Set Up GitOps with Flux (Recommended)
 
-# Set up Flux repository structure:
-# clusters/production/cilium/helmrelease.yaml
-# Then Flux will adopt existing Helm release seamlessly
+Establish declarative cluster management using this GitHub repository:
+
+```bash
+cd /home/agentydragon/code/cluster
+
+# Bootstrap Flux using this repository  
+flux bootstrap github \
+  --owner=agentydragon \
+  --repository=cluster \
+  --path=flux-system \
+  --personal \
+  --read-write-key
+
+# This will:
+# - Install Flux controllers in the cluster
+# - Create flux-system/ directory in this repo
+# - Set up GitOps workflow for future deployments
+```
+
+### Migrate Cilium to GitOps (Optional)
+```bash
+# Export current Cilium values for GitOps
+helm get values cilium -n kube-system > apps/cilium/values.yaml
+
+# Create HelmRelease manifest (see PLAN.md for details)
+# Commit and push - Flux will adopt existing Helm installation
+```
+
+### Future Deployments
+After Flux setup, all cluster changes go through Git:
+```bash
+# Add new applications via Git workflow
+git add apps/monitoring/
+git commit -m "Add Prometheus monitoring stack"  
+git push
+# Flux automatically deploys within ~1 minute
 ```
