@@ -24,18 +24,15 @@ spec:
       # Use Deployment instead of DaemonSet for NodePort
       kind: Deployment
       
-      # Run on worker nodes only (nodes without control-plane role)
+      # Run on control-plane nodes (they have Tailscale connectivity)
       nodeSelector:
-        kubernetes.io/os: linux
-      
-      # Avoid control-plane nodes
-      affinity:
-        nodeAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            nodeSelectorTerms:
-            - matchExpressions:
-              - key: node-role.kubernetes.io/control-plane
-                operator: DoesNotExist
+        node-role.kubernetes.io/control-plane: ""
+        
+      # Allow scheduling on control-plane nodes
+      tolerations:
+        - key: node-role.kubernetes.io/control-plane
+          operator: Exists
+          effect: NoSchedule
       
       # Service configuration - NodePort with fixed ports
       service:
@@ -66,10 +63,9 @@ spec:
           cpu: 100m
           memory: 256Mi
       
-      # Replica count for HA
-      replicaCount: 2
+      # Single replica to avoid NodePort conflicts on same node
+      replicaCount: 1
       
-      # Pod disruption budget for HA
+      # Pod disruption budget disabled for single replica
       podDisruptionBudget:
-        enabled: true
-        minAvailable: 1
+        enabled: false
