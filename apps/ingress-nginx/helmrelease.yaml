@@ -16,27 +16,18 @@ spec:
       interval: 12h
   values:
     controller:
-      # Use hostNetwork to expose directly on node's Tailscale interface (like k3s Traefik)
-      hostNetwork: true
+      # Use LoadBalancer service (working approach with Cilium LB-IPAM)
+      hostNetwork: false
       hostPort:
         enabled: false
-        
-      # Use DaemonSet to run on all nodes like k3s Traefik
-      kind: DaemonSet
       
-      # Run on control-plane nodes (they have Tailscale connectivity)
+      # Run on worker nodes
       nodeSelector:
-        node-role.kubernetes.io/control-plane: ""
-        
-      # Allow scheduling on control-plane nodes
-      tolerations:
-        - key: node-role.kubernetes.io/control-plane
-          operator: Exists
-          effect: NoSchedule
+        kubernetes.io/os: linux
       
-      # Service configuration - ClusterIP when using hostNetwork
+      # Service configuration - LoadBalancer with Cilium LB-IPAM
       service:
-        type: ClusterIP
+        type: LoadBalancer
       
       # Ingress class configuration
       ingressClassResource:
