@@ -16,7 +16,7 @@ spec:
       interval: 12h
   values:
     controller:
-      # Use LoadBalancer service instead of hostNetwork (Talos PodSecurity compatible)
+      # Use NodePort to expose on node's Tailscale interface  
       hostNetwork: false
       hostPort:
         enabled: false
@@ -25,9 +25,12 @@ spec:
       nodeSelector:
         kubernetes.io/os: linux
       
-      # Service configuration
+      # Service configuration - NodePort to expose on node interface
       service:
-        type: LoadBalancer
+        type: NodePort
+        nodePorts:
+          http: 30080
+          https: 30443
       
       # Ingress class configuration
       ingressClassResource:
