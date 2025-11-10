@@ -24,15 +24,24 @@ spec:
       # Use Deployment instead of DaemonSet for NodePort
       kind: Deployment
       
-      # Run on control-plane nodes (they have Tailscale connectivity)
-      nodeSelector:
-        node-role.kubernetes.io/control-plane: ""
-        
-      # Allow scheduling on control-plane nodes
-      tolerations:
-        - key: node-role.kubernetes.io/control-plane
-          operator: Exists
-          effect: NoSchedule
+      # Run on worker nodes (they also have Tailscale connectivity)
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: node-role.kubernetes.io/control-plane
+                operator: DoesNotExist
+        # Spread pods across different nodes for HA
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchLabels:
+                  app.kubernetes.io/name: ingress-nginx
+                  app.kubernetes.io/component: controller
+              topologyKey: kubernetes.io/hostname
       
       # Service configuration - NodePort with fixed ports
       service:
@@ -63,9 +72,10 @@ spec:
           cpu: 100m
           memory: 256Mi
       
-      # Single replica to avoid NodePort conflicts on same node
-      replicaCount: 1
+      # HA replicas on worker nodes
+      replicaCount: 2
       
-      # Pod disruption budget disabled for single replica
+      # Pod disruption budget for HA
       podDisruptionBudget:
-        enabled: false
+        enabled: true
+        minAvailable: 1
