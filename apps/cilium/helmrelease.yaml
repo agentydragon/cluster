@@ -75,4 +75,3 @@ spec:
     # Configure NodePort handling
     nodePort:
       enabled: true
-      range: "30000-32767"
