@@ -53,13 +53,13 @@ variable "cluster_vip" {
 variable "cluster_node_network" {
   description = "Network CIDR for cluster nodes"
   type        = string
-  default     = "10.5.0.0/16"
+  default     = "10.0.0.0/16"
 }
 
 variable "cluster_node_network_gateway" {
   description = "Gateway for the cluster node network"
   type        = string
-  default     = "10.5.0.1"
+  default     = "10.0.0.1"
 }
 
 variable "cluster_node_network_first_controller_hostnum" {

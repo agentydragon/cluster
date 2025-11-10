@@ -9,9 +9,9 @@
 - The direnv config automatically sets TALOSCONFIG path and provides talosctl via nix
 
 ## Working Directory
-- Main terraform config: `/home/agentydragon/code/cluster/infrastructure/terraform/proxmox/`
+- Main terraform config: `/home/agentydragon/code/cluster/terraform/`
 - Working 5-node Talos cluster with Tailscale extensions already deployed
-- VMs 105-111 are the working cluster nodes
+- VMs 105-109 are the working cluster nodes (c0-c2 controllers, w0-w1 workers)
 
 ## Reference Code Location
 - `/mnt/tankshare/code/` - Directory for cloned source code and reference implementations
