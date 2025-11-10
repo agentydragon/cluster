@@ -24,9 +24,18 @@ spec:
       # Use Deployment instead of DaemonSet for NodePort
       kind: Deployment
       
-      # Run on worker nodes only
+      # Run on worker nodes only (nodes without control-plane role)
       nodeSelector:
-        node-role.kubernetes.io/worker: ""
+        kubernetes.io/os: linux
+      
+      # Avoid control-plane nodes
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: node-role.kubernetes.io/control-plane
+                operator: DoesNotExist
       
       # Service configuration - NodePort with fixed ports
       service:
