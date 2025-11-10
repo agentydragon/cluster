@@ -16,21 +16,27 @@ spec:
       interval: 12h
   values:
     controller:
-      # Use NodePort to expose on node's Tailscale interface  
-      hostNetwork: false
+      # Use hostNetwork to expose directly on node's Tailscale interface (like k3s Traefik)
+      hostNetwork: true
       hostPort:
         enabled: false
+        
+      # Use DaemonSet to run on all nodes like k3s Traefik
+      kind: DaemonSet
       
-      # Run on specific nodes if desired (optional)
+      # Run on control-plane nodes (they have Tailscale connectivity)
       nodeSelector:
-        kubernetes.io/os: linux
+        node-role.kubernetes.io/control-plane: ""
+        
+      # Allow scheduling on control-plane nodes
+      tolerations:
+        - key: node-role.kubernetes.io/control-plane
+          operator: Exists
+          effect: NoSchedule
       
-      # Service configuration - NodePort to expose on node interface
+      # Service configuration - ClusterIP when using hostNetwork
       service:
-        type: NodePort
-        nodePorts:
-          http: 30080
-          https: 30443
+        type: ClusterIP
       
       # Ingress class configuration
       ingressClassResource:
