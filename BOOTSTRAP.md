@@ -159,6 +159,44 @@ cluster_endpoint = "https://10.0.0.11:6443"  # NOT 10.0.0.20:6443
 **Symptoms**: Cannot reach VMs on expected IPs
 **Solution**: Verify network configuration in terraform.tfvars matches infrastructure
 
+### Let's Encrypt DNS Challenge Fails
+**Symptoms**: `REFUSED` responses during certificate creation
+**Root Causes & Solutions**:
+
+1. **Missing DNS Delegation** (Most Common):
+   - **Symptom**: "No TXT record found at _acme-challenge.domain.com"
+   - **Solution**: Add NS delegation record in parent domain DNS (AWS Route 53)
+   - **Fix**: `domain.com` → NS → `ns1.agentydragon.com`
+
+2. **PowerDNS TSIG Permission Missing**:
+   - **Symptom**: DNS updates rejected with "REFUSED"
+   - **Solution**: Add TSIG metadata to zone
+   - **Fix**: `pdnsutil set-meta domain.com TSIG-ALLOW-DNSUPDATE certbot`
+
+3. **PowerDNS DNS Update Access Denied**:
+   - **Symptom**: "Remote not listed in allow-dnsupdate-from"
+   - **Solution**: Add VPS IP to PowerDNS allow list
+   - **Fix**: Update `powerdns_allow_dnsupdate_from` in Ansible
+
+### NodePort Services Not Accessible Externally  
+**Symptoms**: 502 Bad Gateway or connection refused to NodePorts
+**Root Causes & Solutions**:
+
+1. **Cilium kube-proxy Replacement Disabled**:
+   - **Symptom**: NodePorts not listening on node interfaces
+   - **Solution**: Enable in Cilium configuration
+   - **Fix**: `kubeProxyReplacement: "true"`
+
+2. **NodePort Bind Protection Enabled**:
+   - **Symptom**: NodePorts only accessible from localhost
+   - **Solution**: Disable bind protection in Cilium
+   - **Fix**: `nodePort.bindProtection: false`
+
+3. **Wrong Node for NodePort Access**:
+   - **Symptom**: Connection refused to specific node
+   - **Solution**: Use worker nodes where ingress pods run
+   - **Fix**: Target w0/w1 instead of c0/c1/c2 (controllers)
+
 ## Key File Locations
 
 - **Terraform configs**: `/home/agentydragon/code/cluster/terraform/`
@@ -186,26 +224,202 @@ cluster_endpoint = "https://10.0.0.11:6443"  # NOT 10.0.0.20:6443
 5. **Monitor Setup**: Deploy monitoring and observability stack
 6. **Security Hardening**: Apply network policies via Cilium
 
-## Step 5: Set Up GitOps with Flux (Recommended)
+## Step 5: Configure External Connectivity via VPS Proxy
 
-Establish declarative cluster management using this GitHub repository:
+### Prerequisites
+- VPS with nginx and PowerDNS already configured via Ansible
+- Access to AWS Route 53 for `agentydragon.com` domain delegation
+
+### DNS Delegation Setup (Required)
+
+**Critical**: You must create NS delegation records in your domain registrar/DNS provider:
+
+1. **In AWS Route 53** (for `agentydragon.com`):
+   ```
+   Record Name: test-cluster.agentydragon.com
+   Record Type: NS  
+   Record Value: ns1.agentydragon.com
+   TTL: 3600
+   ```
+
+2. **Why this is needed**:
+   - Let's Encrypt validates DNS TXT records via public DNS queries
+   - Without NS delegation, Let's Encrypt queries AWS Route 53, which doesn't know about the subdomain
+   - With delegation, Let's Encrypt queries your PowerDNS server where the TXT records are created
+
+### PowerDNS Zone Configuration
+
+Add the new domain to your Ansible PowerDNS configuration:
+
+```yaml
+# In host_vars/vps/powerdns.yml
+powerdns_domains:
+  - name: "test-cluster.agentydragon.com"
+    type: "NATIVE"
+    records:
+      - name: "@"
+        type: "SOA"
+        content: "ns1.agentydragon.com. hostmaster.agentydragon.com. 2025111000 3600 1800 604800 300"
+        ttl: 300
+      - name: "@"
+        type: "NS"
+        content: "ns1.agentydragon.com."
+        ttl: 300
+      - name: "*"
+        type: "A"
+        content: "172.235.48.86"  # VPS internal IP for proxy
+        ttl: 300
+```
+
+### Let's Encrypt Certificate Configuration
+
+Add Let's Encrypt task to VPS playbook:
+
+```yaml
+# In vps.yaml
+- name: "Let's Encrypt | *.test-cluster.agentydragon.com (wildcard)"
+  ansible.builtin.import_role:
+    name: letsencrypt-dns
+  vars:
+    letsencrypt_dns_cert_name: "test-cluster-wildcard"
+    letsencrypt_dns_domains:
+      - "*.test-cluster.agentydragon.com"
+    letsencrypt_dns_provider: "powerdns"
+  tags: [letsencrypt, test-cluster-wildcard]
+```
+
+### Nginx Proxy Configuration
+
+Create nginx site template (`nginx-sites/test-cluster.agentydragon.com.j2`):
+
+```nginx
+# Wildcard proxy for Talos cluster services
+server {
+    listen 80;
+    server_name *.test-cluster.agentydragon.com;
+    return 301 https://$host$request_uri;
+}
+
+server {
+    listen 443 ssl http2;
+    server_name *.test-cluster.agentydragon.com;
+
+    ssl_certificate /etc/letsencrypt/live/test-cluster-wildcard/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/test-cluster-wildcard/privkey.pem;
+
+    # Proxy to Talos cluster NGINX Ingress Controller
+    location / {
+        proxy_pass https://w0:30443;  # NodePort via Tailscale
+        
+        # Preserve original hostname for ingress routing
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        
+        # Disable SSL verification for internal connections
+        proxy_ssl_verify off;
+    }
+}
+```
+
+### Deploy External Connectivity
 
 ```bash
-cd /home/agentydragon/code/cluster
+# From your Ansible directory
+cd /home/agentydragon/code/ducktape/ansible
 
-# Bootstrap Flux using this repository  
-flux bootstrap github \
-  --owner=agentydragon \
-  --repository=cluster \
-  --path=flux-system \
-  --personal \
-  --read-write-key
+# Deploy PowerDNS zones and nginx configuration
+ansible-playbook vps.yaml -t powerdns,nginx-sites
 
-# This will:
-# - Install Flux controllers in the cluster
-# - Create flux-system/ directory in this repo
-# - Set up GitOps workflow for future deployments
+# Create Let's Encrypt certificates
+ansible-playbook vps.yaml -t test-cluster-wildcard
 ```
+
+### Configure Cluster Ingress Controller
+
+The cluster needs an ingress controller configured with NodePort access:
+
+```yaml
+# apps/ingress-nginx/helmrelease.yaml
+apiVersion: helm.toolkit.fluxcd.io/v2beta1
+kind: HelmRelease
+metadata:
+  name: ingress-nginx
+  namespace: ingress-nginx
+spec:
+  values:
+    controller:
+      # Use NodePort for external access
+      service:
+        type: NodePort
+        nodePorts:
+          http: 30080
+          https: 30443
+      
+      # Configure as default ingress class
+      ingressClassResource:
+        name: nginx
+        enabled: true
+        default: true
+```
+
+**Key Configuration Notes**:
+- **Cilium kube-proxy replacement**: Must be enabled (`kubeProxyReplacement: "true"`)
+- **NodePort bindProtection**: Must be disabled (`nodePort.bindProtection: false`)
+- **External access**: VPS connects via Tailscale to worker nodes on NodePort 30443
+
+### Test External Connectivity
+
+```bash
+# Test DNS resolution
+dig foo.test-cluster.agentydragon.com
+# Should resolve to: 172.235.48.86 (VPS IP)
+
+# Test HTTPS connectivity (should get 404 from NGINX ingress - expected)
+curl https://test.test-cluster.agentydragon.com/
+```
+
+### Deploy Applications with Ingress
+
+Example ingress for a test application:
+
+```yaml
+# Example: test-app-ingress.yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: test-app
+  namespace: default
+spec:
+  ingressClassName: nginx
+  tls:
+  - hosts:
+    - test.test-cluster.agentydragon.com
+    secretName: test-app-tls  # Auto-generated by cert-manager
+  rules:
+  - host: test.test-cluster.agentydragon.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: test-app-service
+            port:
+              number: 80
+```
+
+**Result**: Applications become automatically accessible at `https://app-name.test-cluster.agentydragon.com/`
+
+## Step 6: GitOps with Flux (Already Configured)
+
+✅ **Flux is already set up** and managing this cluster via GitHub repository `agentydragon/cluster`.
+
+**Current GitOps Status**:
+- Flux controllers are installed and running
+- Repository: `https://github.com/agentydragon/cluster`
+- Auto-sync enabled for all applications in `apps/` directory
 
 ### Migrate Cilium to GitOps (Optional)
 ```bash

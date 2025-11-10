@@ -4,3 +4,4 @@ resources:
   - cilium/
   - ingress-nginx/
   - cert-manager/
+  - test-app/
