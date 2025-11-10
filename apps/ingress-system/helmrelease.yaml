@@ -16,27 +16,24 @@ spec:
       interval: 12h
   values:
     controller:
-      # Use hostNetwork to expose directly on Tailscale interface (like k3s)
-      hostNetwork: true
+      # Use NodePort to expose on node interfaces (now that Cilium kube-proxy replacement is enabled)
+      hostNetwork: false
       hostPort:
         enabled: false
         
-      # Use DaemonSet to run on control-plane nodes
-      kind: DaemonSet
+      # Use Deployment instead of DaemonSet for NodePort
+      kind: Deployment
       
-      # Run on control-plane nodes (they have Tailscale connectivity)
+      # Run on worker nodes only
       nodeSelector:
-        node-role.kubernetes.io/control-plane: ""
-        
-      # Allow scheduling on control-plane nodes
-      tolerations:
-        - key: node-role.kubernetes.io/control-plane
-          operator: Exists
-          effect: NoSchedule
+        node-role.kubernetes.io/worker: ""
       
-      # Service configuration - ClusterIP when using hostNetwork
+      # Service configuration - NodePort with fixed ports
       service:
-        type: ClusterIP
+        type: NodePort
+        nodePorts:
+          http: 30080
+          https: 30443
       
       # Ingress class configuration
       ingressClassResource:
@@ -60,22 +57,8 @@ spec:
           cpu: 100m
           memory: 256Mi
       
-      # Configure health checks for hostNetwork mode
-      livenessProbe:
-        httpGet:
-          path: /healthz
-          port: 10254
-          host: localhost  # Use localhost instead of pod IP for hostNetwork
-        initialDelaySeconds: 10
-        periodSeconds: 10
-      
-      readinessProbe:
-        httpGet:
-          path: /healthz
-          port: 10254  
-          host: localhost  # Use localhost instead of pod IP for hostNetwork
-        initialDelaySeconds: 10
-        periodSeconds: 1
+      # Replica count for HA
+      replicaCount: 2
       
       # Pod disruption budget for HA
       podDisruptionBudget:
