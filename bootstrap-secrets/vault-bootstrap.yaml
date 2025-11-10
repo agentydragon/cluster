@@ -1,0 +1,15 @@
+# Template for Vault bootstrap secret
+# To create the SealedSecret, run:
+# echo -n "$(openssl rand -hex 32)" | kubectl create secret generic vault-bootstrap \
+#   --from-file=root-token=/dev/stdin --namespace=vault --dry-run=client -o yaml | \
+#   kubeseal -o yaml > k8s/sso/vault/vault-bootstrap-sealed.yaml
+
+apiVersion: v1
+kind: Secret
+metadata:
+  name: vault-bootstrap
+  namespace: vault
+type: Opaque
+data:
+  # This will be replaced with actual sealed secret
+  root-token: "PLACEHOLDER"

@@ -2,20 +2,20 @@
 
 This document tracks how to reproduce the Talos bootstrap on the single-node Proxmox host (`atlas`) and the follow-on platform work (tailscale, kube-vip, GitOps apps).
 
-## 🎉 CURRENT STATUS: FULLY FUNCTIONAL CLUSTER ACHIEVED
+## Cluster operational
 
 **What We Have**: A **fully operational 5-node Talos Kubernetes cluster** deployed via single `terraform apply` command with complete automation.
 
 ### What We Successfully Achieved:
-- **✅ 5-node Talos cluster**: 3 controllers + 2 workers fully operational
-- **✅ Terraform automation**: Single `tf apply` creates complete working cluster
-- **✅ Image Factory integration**: QCOW2 disk images with baked-in static IP configuration
-- **✅ Static IP networking**: No DHCP dependency, boot directly to predetermined IPs
-- **✅ Talos v1.11.2** with Kubernetes v1.32.1
-- **✅ VIP high availability**: 10.0.0.20 load-balances across all controllers  
-- **✅ CNI networking**: Cilium v1.16.5 with Talos-specific security configuration
-- **✅ Tailscale extensions**: Via Image Factory schematic (ready for activation)
-- **✅ QEMU guest agent**: For Proxmox integration
+- **5-node Talos cluster**: 3 controllers + 2 workers fully operational
+- **Terraform automation**: Single `tf apply` creates complete working cluster
+- **Image Factory integration**: QCOW2 disk images with baked-in static IP configuration
+- **Static IP networking**: No DHCP dependency, boot directly to predetermined IPs
+- **Talos v1.11.2** with Kubernetes v1.32.1
+- **VIP high availability**: 10.0.0.20 load-balances across all controllers  
+- **CNI networking**: Cilium v1.16.5 with Talos-specific security configuration
+- **Tailscale extensions**: Via Image Factory schematic (ready for activation)
+- **QEMU guest agent**: For Proxmox integration
 
 ### Quick Access Commands:
 
@@ -109,23 +109,71 @@ helm install cilium cilium/cilium --namespace kube-system --version 1.16.5 \
 kubectl get nodes
 ```
 
-## 5. GitOps / platform services roadmap
-1. **Cluster management**
-   - Install Flux (or Argo) once Phase 1 is stable. Store manifests/HelmReleases in this repo or a dedicated GitOps repo.
-   - Use SOPS (age) or another sealed-secrets mechanism for Kubernetes secrets.
-2. **Core add-ons**
-   - kube-vip (tailscale VIP) + CNI (Talos default: Flannel)
-   - Ingress controller (Traefik or NGINX) + cert-manager (ACME DNS-01 via Cloudflare)
-   - Vault for secret storage; integrate with Authentik for SSO
-   - Harbor (container registry) and Gitea
-   - Synapse (Matrix), Atuin server, Guacamole (Linux desktop via SSO)
-   - Observability stack: kube-prometheus-stack, Loki, Tempo, Velero backups
-3. **Tunnels / DNS**
-   - Public ingress served via `*.agentydragon.com` (reserve `k3s.*` separately).
-   - Nodes register with headscale using the auth key pulled from the vault.
-4. **Future TODOs**
-   - Capture kube-vip deployment manifest/HelmRelease in Git.
-   - Flesh out Flux directory structure + automation for Vault/Authentik wiring.
+## GitOps with Flux
+
+**Operational**: Flux GitOps is managing the cluster via GitHub repository `agentydragon/cluster`.
+
+### Current GitOps Status:
+- Flux controllers are running and healthy
+- Repository: `https://github.com/agentydragon/cluster` 
+- Auto-sync enabled for all applications in `apps/` directory
+- **Deployed Applications**:
+  - **Cilium CNI**: `/apps/cilium/` - Network fabric and security
+  - **NGINX Ingress**: `/apps/ingress-system/` - HA deployment with NodePort
+  - **cert-manager**: `/apps/cert-manager/` - SSL certificate automation
+  - **Test Application**: `/apps/test-app/` - Validates end-to-end connectivity
+
+### Repository Setup
+- **Source Code**: https://github.com/agentydragon/cluster
+- **Structure**:
+  ```
+  cluster/
+  ├── terraform/           # Infrastructure as Code
+  ├── flux-system/         # Flux controllers (auto-generated)
+  ├── apps/               # Application manifests
+  │   ├── cilium/         # CNI configuration
+  │   ├── cert-manager/   # SSL certificate automation
+  │   ├── ingress-system/ # NGINX ingress controller
+  │   └── test-app/       # Test application
+  ├── BOOTSTRAP.md        # Deployment instructions
+  └── PLAN.md            # This document
+  ```
+
+### Bootstrap Flux
+```bash
+cd /home/agentydragon/code/cluster
+flux bootstrap github \
+  --owner=agentydragon \
+  --repository=cluster \
+  --path=flux-system \
+  --personal \
+  --read-write-key
+```
+
+### GitOps Workflow
+1. **Make changes**: Edit YAML files locally or via GitHub
+2. **Commit & Push**: Standard Git workflow  
+3. **Auto-deploy**: Flux detects changes and applies to cluster
+4. **Observe**: Monitor via `flux get all` or Kubernetes dashboard
+
+### Migrate Cilium to GitOps (Optional)
+```bash
+# Export current Cilium values for GitOps
+helm get values cilium -n kube-system > apps/cilium/values.yaml
+
+# Create HelmRelease manifest (see PLAN.md for details)
+# Commit and push - Flux will adopt existing Helm installation
+```
+
+### Future Deployments
+After Flux setup, all cluster changes go through Git:
+```bash
+# Add new applications via Git workflow
+git add apps/monitoring/
+git commit -m "Add Prometheus monitoring stack"  
+git push
+# Flux automatically deploys within ~1 minute
+```
 
 ## 6. META Key Configuration for Static IP Baking (Working Solution)
 
@@ -281,6 +329,7 @@ cluster_endpoint = "https://10.0.0.11:6443"
 - **Extension integration**: Tailscale + QEMU agent via Image Factory schematics
 - **Bootstrap sequence**: Direct controller IP → VIP establishment → HA cluster
 
+
 ## External Connectivity & Ingress Architecture
 
 ### Complete HTTPS Connectivity Stack
@@ -361,39 +410,6 @@ controller:
           topologyKey: kubernetes.io/hostname
 ```
 
-## GitOps Workflow
-
-### Repository Setup
-- **Source Code**: https://github.com/agentydragon/cluster
-- **Structure**:
-  ```
-  cluster/
-  ├── terraform/           # Infrastructure as Code
-  ├── flux-system/         # Flux controllers (auto-generated)
-  ├── apps/               # Application manifests
-  │   ├── cilium/         # CNI configuration
-  │   ├── monitoring/     # Prometheus, Grafana
-  │   └── ingress/        # NGINX ingress
-  ├── BOOTSTRAP.md        # Deployment instructions
-  └── PLAN.md            # This document
-  ```
-
-### Bootstrap Flux
-```bash
-cd /home/agentydragon/code/cluster
-flux bootstrap github \
-  --owner=agentydragon \
-  --repository=cluster \
-  --path=flux-system \
-  --personal \
-  --read-write-key
-```
-
-### GitOps Workflow
-1. **Make changes**: Edit YAML files locally or via GitHub
-2. **Commit & Push**: Standard Git workflow  
-3. **Auto-deploy**: Flux detects changes and applies to cluster
-4. **Observe**: Monitor via `flux get all` or Kubernetes dashboard
 
 ## Checklist / Status
 - [x] **Image Factory Integration**: VMs created with QCOW2 disk images containing baked-in static IP configuration
@@ -407,9 +423,267 @@ flux bootstrap github \
 - [x] **Kubernetes cluster ready**: All 5 nodes show Ready status
 - [x] **Tailscale connectivity**: All nodes connected to headscale mesh (100.64.0.14-18)
 - [x] **Repository setup**: Cluster configuration published to GitHub
-- [x] **GitOps setup**: Flux fully operational for declarative cluster management
+- [x] **GitOps setup**: Flux fully operational for declarative cluster management  
+- [x] **Platform services**: Cilium CNI, cert-manager, ingress-nginx deployed via GitOps
 - [x] **External HTTPS connectivity**: Complete VPS proxy → Tailscale → cluster ingress chain
 - [x] **NGINX Ingress HA**: 2 replicas on worker nodes with NodePort 30080/30443
-- [x] **Platform services**: Cilium CNI, cert-manager, ingress-nginx deployed via GitOps
 - [x] **End-to-end testing**: Test application accessible via https://test.test-cluster.agentydragon.com/
-- [ ] **Backup/recovery**: Document cluster restore procedures
+
+### Remaining Tasks:
+- [ ] **SSO-Centric Platform Architecture** (New secondary testing cluster - not replacing ducktape)
+- [ ] **PowerDNS Zone Automation**: Implement proper zone management in Ansible  
+- [ ] **Backup/recovery**: Document cluster restore procedures and etcd backup automation
+
+## SSO Architecture Design (Secondary Testing Cluster)
+
+### Overview
+
+This secondary Talos cluster will implement a modernized SSO architecture based on proven patterns from the existing ducktape k3s cluster. The goal is to test and refine SSO integration before potentially migrating the primary cluster.
+
+### Reference Implementation Analysis
+
+**Existing ducktape k3s cluster** (`/home/agentydragon/code/ducktape/k8s/helm/`) provides battle-tested patterns:
+
+**Core SSO Components:**
+- **Authentik**: Central identity provider with blueprint-based declarative configuration
+- **Vault**: Secret storage with External Secrets Operator integration (Kubernetes auth)  
+- **External Secrets**: Vault → K8s secrets bridge, eliminating direct service Vault integration
+- **Reflector**: Cross-namespace secret sharing for OAuth client credentials
+
+**User Management Patterns:**
+- **Declarative users**: Git-managed blueprints defining users and group memberships
+- **Group-based access**: `gitea-users`, `gitea-admins`, `rspcache-admins` groups
+- **Auto-provisioning**: OIDC claims automatically create users in downstream services
+
+**Secret Distribution Architecture:**
+```
+Vault KV Store → External Secrets Operator → K8s Secrets → Application Pods
+```
+
+**Service Integration Examples:**
+- **Gitea**: OIDC with auto-registration, group-based permissions, shared OAuth secrets
+- **Matrix/Synapse**: OIDC integration with signing certificates via Vault
+- **Harbor**: OIDC provider integration (referenced in terraform config)
+
+### Migration Strategy for Testing Cluster
+
+**Critical Dependency Management:**
+The architecture has a circular dependency: **Vault needs Authentik** (OIDC auth) ↔ **Authentik needs Vault** (client secret storage). Solution: **Temporal separation** with phased deployment.
+
+**Phase 1: Core Infrastructure (Bootstrap)**
+1. **Vault Deployment**: Port `helm/vault/` configuration to Flux GitOps
+   - TLS-enabled standalone mode with persistent storage
+   - **No OIDC initially** - root token auth only
+   - ClusterSecretStore for External Secrets integration  
+   - Kubernetes authentication for service account access
+
+2. **External Secrets Operator**: Enable Vault → K8s secrets flow
+   - ClusterSecretStore pointing to Vault instance
+   - ServiceAccount-based authentication via Kubernetes auth
+
+**Phase 2: Identity Provider (Minimal)**
+1. **Authentik Setup**: Port blueprint-based configuration **without Vault integration**
+   - PostgreSQL + Redis dependencies
+   - Blueprint system for users/groups/basic providers only
+   - **Exclude** `authentik-blueprints-vault` initially
+   - Ingress at `auth.test-cluster.agentydragon.com`
+
+2. **Basic User Management**: Essential blueprints only
+   ```yaml
+   # Phase 2: Only non-Vault blueprints
+   blueprints:
+     configMaps:
+       - authentik-blueprints-users
+       - authentik-blueprints-gitea  
+       - authentik-blueprints-harbor
+       # - authentik-blueprints-vault  # Added in Phase 4
+   ```
+
+**Phase 3: Cross-Integration**
+1. **Vault OIDC Configuration**: Post-install job enables human access
+   - Vault `auth/oidc/config` pointing to Authentik
+   - Creates `authentik-users` role with appropriate policies
+   - Now humans can login to Vault via Authentik SSO
+
+2. **Authentik-Vault Integration**: Helm upgrade adds Vault blueprint
+   - Add `authentik-blueprints-vault` ConfigMap
+   - Vault client credentials via External Secrets
+   - Authentik can now manage Vault access for users
+
+**Phase 4: Platform Services with SSO**
+1. **Gitea**: Git repository hosting with OIDC integration
+   - Auto-registration from Authentik OIDC claims
+   - Group-based permissions (admins vs users)
+   - Shared OAuth secrets via External Secrets
+
+2. **Harbor**: Container registry with OIDC authentication
+   - Project-level access control via groups
+   - Integration with cluster image pull workflows
+
+3. **Matrix**: Chat/collaboration with OIDC SSO
+   - Auto-user provisioning from identity provider
+   - Certificate management via Vault integration
+
+### Domain Strategy
+- **Identity**: `auth.test-cluster.agentydragon.com` 
+- **Git**: `git.test-cluster.agentydragon.com`
+- **Registry**: `registry.test-cluster.agentydragon.com`
+- **Chat**: `chat.test-cluster.agentydragon.com`
+
+### Key Implementation Advantages
+- **Battle-tested patterns**: Leveraging proven ducktape architecture
+- **Service simplicity**: Applications use standard K8s secrets, not direct Vault integration  
+- **Declarative management**: Git-driven user and permission management
+- **OAuth automation**: Shared secrets and client registration via blueprints
+- **External Secrets pattern**: Clean separation between secret storage and consumption
+
+### Success Metrics
+- Single sign-on across all platform services
+- Auto-provisioning of users in Gitea, Harbor, Matrix from central identity
+- Git-managed user and permission definitions
+- Zero direct Vault integration in application services
+- Seamless secret rotation via External Secrets Operator
+
+This design provides a modernized platform experience while maintaining operational simplicity through proven patterns from the existing ducktape cluster.
+
+## GitOps Representation: Multi-Stage Dependencies
+
+### Flux Kustomization Dependency Management
+
+**Challenge:** Complex dependencies between core infrastructure components require careful orchestration while maintaining GitOps principles.
+
+**Solution:** Flux `dependsOn` with phased Kustomizations for automated, ordered deployment.
+
+### Repository Structure
+```
+apps/
+├── kustomizations/
+│   ├── phase1-infrastructure.yaml    # Vault + External Secrets
+│   ├── phase2-identity.yaml          # Authentik (minimal)  
+│   ├── phase3-integration.yaml       # Cross-integration
+│   └── phase4-services.yaml          # Platform services
+├── phase1/
+│   ├── vault/helmrelease.yaml        # Bootstrap config
+│   └── external-secrets/helmrelease.yaml
+├── phase2/  
+│   └── authentik/helmrelease.yaml    # No Vault blueprint
+├── phase3/
+│   ├── vault/helmrelease.yaml        # Enable OIDC
+│   └── authentik/helmrelease.yaml    # Add Vault blueprint
+└── phase4/
+    ├── gitea/helmrelease.yaml
+    ├── harbor/helmrelease.yaml
+    └── matrix/helmrelease.yaml
+```
+
+### Kustomization Dependencies
+```yaml
+# apps/kustomizations/phase1-infrastructure.yaml
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: phase1-infrastructure
+  namespace: flux-system
+spec:
+  interval: 10m
+  path: ./apps/phase1
+  sourceRef:
+    kind: GitRepository
+    name: cluster
+  # No dependencies - deploys first
+
+---
+# apps/kustomizations/phase2-identity.yaml  
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: phase2-identity
+  namespace: flux-system
+spec:
+  interval: 10m
+  path: ./apps/phase2
+  sourceRef:
+    kind: GitRepository
+    name: cluster
+  dependsOn:
+    - name: phase1-infrastructure
+
+---
+# apps/kustomizations/phase3-integration.yaml
+apiVersion: kustomize.toolkit.fluxcd.io/v1  
+kind: Kustomization
+metadata:
+  name: phase3-integration
+  namespace: flux-system
+spec:
+  interval: 10m
+  path: ./apps/phase3
+  sourceRef:
+    kind: GitRepository
+    name: cluster
+  dependsOn:
+    - name: phase2-identity
+
+---
+# apps/kustomizations/phase4-services.yaml
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization  
+metadata:
+  name: phase4-services
+  namespace: flux-system
+spec:
+  interval: 10m
+  path: ./apps/phase4
+  sourceRef:
+    kind: GitRepository
+    name: cluster
+  dependsOn:
+    - name: phase3-integration
+```
+
+### Deployment Flow
+
+**Fresh Cluster Recreation:**
+```bash
+# Single command deployment
+git clone https://github.com/agentydragon/cluster.git
+cd cluster  
+flux bootstrap github --owner=agentydragon --repository=cluster
+
+# Flux automatically executes:
+# Phase 1: Vault + External Secrets → Ready
+# Phase 2: Authentik minimal → Ready  
+# Phase 3: Cross-integration → Ready
+# Phase 4: Platform services → Complete
+```
+
+**Operational Benefits:**
+
+1. **Dependency-Aware**: Flux respects `dependsOn` ordering automatically
+2. **Failure Isolation**: Failed phases block dependents, not the entire stack
+3. **Declarative Recreation**: `git clone` + `flux bootstrap` = full working stack  
+4. **Selective Updates**: Change individual phases, Flux applies with correct dependencies
+5. **Operational Visibility**: `flux get kustomizations` shows phase status
+
+**Monitoring Deployment:**
+```bash
+# Check overall status
+flux get kustomizations
+
+# Watch specific phase
+flux logs --follow --kind=Kustomization --name=phase2-identity
+
+# Debug dependencies
+kubectl get kustomizations -A -o wide
+```
+
+### Pattern Applications
+
+This **multi-stage dependency pattern** applies to other complex deployments:
+
+- **Observability Stack**: Base metrics → Prometheus → Grafana → Dashboards
+- **CI/CD Pipeline**: Registry → Git → Builder → Deployer  
+- **Data Platform**: Storage → Database → Processing → Analytics
+- **ML Platform**: Jupyter → MLflow → Kubeflow → Serving
+
+**Key Principle:** Break circular/complex dependencies into **temporal phases** with Flux `dependsOn` for automated, reproducible, GitOps-native orchestration.

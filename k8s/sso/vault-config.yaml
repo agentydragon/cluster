@@ -1,0 +1,38 @@
+apiVersion: infra.contrib.fluxcd.io/v1alpha2
+kind: Terraform
+metadata:
+  name: vault-config
+  namespace: flux-system
+spec:
+  interval: 15m
+  path: ./sso-terraform/vault
+  sourceRef:
+    kind: GitRepository
+    name: cluster
+    namespace: flux-system
+  
+  # Depend on secrets being generated first
+  dependsOn:
+    - name: sso-secrets
+      namespace: flux-system
+  
+  # Use in-cluster service account  
+  serviceAccountName: tf-runner
+  
+  # Store Terraform state in Kubernetes secret
+  backendConfig:
+    customConfiguration: |
+      backend "kubernetes" {
+        secret_suffix    = "vault-config"
+        config_path      = "/tmp/kubeconfig"
+        namespace        = "flux-system"
+      }
+  
+  # Variables for Terraform
+  vars:
+    - name: vault_address
+      value: "https://vault.test-cluster.agentydragon.com"
+    - name: kubernetes_api_url
+      value: "https://kubernetes.default.svc.cluster.local"
+    - name: kubeconfig_path
+      value: "/tmp/kubeconfig"
