@@ -60,6 +60,23 @@ spec:
           cpu: 100m
           memory: 256Mi
       
+      # Configure health checks for hostNetwork mode
+      livenessProbe:
+        httpGet:
+          path: /healthz
+          port: 10254
+          host: localhost  # Use localhost instead of pod IP for hostNetwork
+        initialDelaySeconds: 10
+        periodSeconds: 10
+      
+      readinessProbe:
+        httpGet:
+          path: /healthz
+          port: 10254  
+          host: localhost  # Use localhost instead of pod IP for hostNetwork
+        initialDelaySeconds: 10
+        periodSeconds: 1
+      
       # Pod disruption budget for HA
       podDisruptionBudget:
         enabled: true
