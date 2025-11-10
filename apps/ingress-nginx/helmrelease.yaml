@@ -16,7 +16,7 @@ spec:
       interval: 12h
   values:
     controller:
-      # Use LoadBalancer service (working approach with Cilium LB-IPAM)
+      # Use NodePort to expose on node interfaces (now that Cilium kube-proxy replacement is enabled)
       hostNetwork: false
       hostPort:
         enabled: false
@@ -25,9 +25,12 @@ spec:
       nodeSelector:
         kubernetes.io/os: linux
       
-      # Service configuration - LoadBalancer with Cilium LB-IPAM
+      # Service configuration - NodePort with fixed ports
       service:
-        type: LoadBalancer
+        type: NodePort
+        nodePorts:
+          http: 30080
+          https: 30443
       
       # Ingress class configuration
       ingressClassResource:

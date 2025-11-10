@@ -68,3 +68,11 @@ spec:
     # Enable L2 announcements for LoadBalancer services
     l2announcements:
       enabled: true
+    
+    # Enable kube-proxy replacement (required since kube-proxy is disabled in Talos)
+    kubeProxyReplacement: strict
+    
+    # Configure NodePort handling
+    nodePort:
+      enabled: true
+      range: "30000-32767"
