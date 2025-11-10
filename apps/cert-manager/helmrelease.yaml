@@ -35,6 +35,13 @@ spec:
         memory: 32Mi
     
     webhook:
+      # Configure webhook DNS names to include cluster.local FQDN
+      config:
+        dnsNames:
+        - cert-manager-webhook
+        - cert-manager-webhook.cert-manager
+        - cert-manager-webhook.cert-manager.svc
+        - cert-manager-webhook.cert-manager.svc.cluster.local
       resources:
         limits:
           cpu: 100m
