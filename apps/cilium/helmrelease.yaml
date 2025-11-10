@@ -70,7 +70,7 @@ spec:
       enabled: true
     
     # Enable kube-proxy replacement (required since kube-proxy is disabled in Talos)
-    kubeProxyReplacement: strict
+    kubeProxyReplacement: "strict"
     
     # Configure NodePort handling
     nodePort:
