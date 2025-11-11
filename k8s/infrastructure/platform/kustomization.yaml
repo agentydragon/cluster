@@ -3,6 +3,7 @@ kind: Kustomization
 resources:
   - vault
   - authentik
-  - harbor
-  - gitea
-  - matrix
+  - sso-secrets.yaml
+  - vault-config.yaml
+  - authentik-config.yaml
+  - services-config.yaml

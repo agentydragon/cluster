@@ -1,0 +1,25 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: test-web-server
+  namespace: test-app
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+spec:
+  ingressClassName: nginx
+  tls:
+  - hosts:
+    - test.test-cluster.agentydragon.com
+    # Note: TLS termination happens at VPS nginx proxy
+    # This section is for documentation/future cert-manager integration
+  rules:
+  - host: test.test-cluster.agentydragon.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: test-web-server
+            port:
+              number: 80

@@ -1,0 +1,13 @@
+apiVersion: cilium.io/v2alpha1
+kind: CiliumLoadBalancerIPPool
+metadata:
+  name: default-pool
+  namespace: kube-system
+spec:
+  blocks:
+  # Use Tailscale IP range (100.64.x.x) for LoadBalancer services
+  # This makes LoadBalancer IPs naturally routable via existing Tailscale network
+  # without requiring subnet routing or additional network configuration
+  # Range 100.64.1.x avoids conflicts with existing Tailscale devices (100.64.0.x)
+  - start: "100.64.1.100"
+    stop: "100.64.1.200"
