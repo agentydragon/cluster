@@ -1,22 +1,5 @@
 ---
-# Stage 1: Core infrastructure (sealed-secrets, tofu-controller, external-secrets)
-apiVersion: kustomize.toolkit.fluxcd.io/v1
-kind: Kustomization
-metadata:
-  name: k8s-core
-  namespace: flux-system
-spec:
-  interval: 10m
-  sourceRef:
-    kind: GitRepository
-    name: flux-system
-  path: "./k8s/infrastructure/core"
-  prune: true
-  wait: true
-  timeout: 5m
-  retryInterval: 2m
----
-# Stage 2: Networking infrastructure (cilium, cert-manager, ingress)  
+# Stage 1: Networking infrastructure (cilium first - required by other pods)
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
@@ -32,8 +15,25 @@ spec:
   wait: true
   timeout: 10m
   retryInterval: 2m
+---
+# Stage 2: Core infrastructure (sealed-secrets, tofu-controller, external-secrets)
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: k8s-core
+  namespace: flux-system
+spec:
+  interval: 10m
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+  path: "./k8s/infrastructure/core"
+  prune: true
+  wait: true
+  timeout: 5m
+  retryInterval: 2m
   dependsOn:
-    - name: k8s-core
+    - name: k8s-networking
 ---
 # Stage 3: Platform services (vault, authentik)
 apiVersion: kustomize.toolkit.fluxcd.io/v1

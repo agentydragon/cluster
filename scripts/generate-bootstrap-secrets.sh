@@ -7,7 +7,7 @@ set -euo pipefail
 echo "🔐 Generating bootstrap SealedSecrets..."
 
 # Check if sealed-secrets controller is ready
-if ! kubectl get pods -n flux-system -l name=sealed-secrets-controller | grep -q Running; then
+if ! kubectl get pods -n flux-system -l app.kubernetes.io/name=sealed-secrets | grep -q Running; then
     echo "❌ sealed-secrets controller is not running. Deploy it first:"
     echo "   flux reconcile ks flux-system"
     exit 1
@@ -20,9 +20,9 @@ echo -n "$VAULT_TOKEN" | kubectl create secret generic vault-bootstrap \
     --from-file=root-token=/dev/stdin \
     --namespace=vault \
     --dry-run=client -o yaml | \
-    kubeseal -o yaml > k8s/sso/vault/vault-bootstrap-sealed.yaml
+    kubeseal --controller-name=sealed-secrets --controller-namespace=flux-system -o yaml > k8s/infrastructure/platform/vault/vault-bootstrap-sealed.yaml
 
-echo "✅ Created k8s/sso/vault/vault-bootstrap-sealed.yaml"
+echo "✅ Created k8s/infrastructure/platform/vault/vault-bootstrap-sealed.yaml"
 
 # Generate Authentik bootstrap secret  
 echo "🔑 Generating Authentik bootstrap token..."
@@ -31,9 +31,9 @@ echo -n "$AUTHENTIK_TOKEN" | kubectl create secret generic authentik-bootstrap \
     --from-file=bootstrap-token=/dev/stdin \
     --namespace=authentik \
     --dry-run=client -o yaml | \
-    kubeseal -o yaml > k8s/sso/authentik/authentik-bootstrap-sealed.yaml
+    kubeseal --controller-name=sealed-secrets --controller-namespace=flux-system -o yaml > k8s/infrastructure/platform/authentik/authentik-bootstrap-sealed.yaml
 
-echo "✅ Created k8s/sso/authentik/authentik-bootstrap-sealed.yaml"
+echo "✅ Created k8s/infrastructure/platform/authentik/authentik-bootstrap-sealed.yaml"
 
 echo ""
 echo "🎉 Bootstrap secrets generated!"
