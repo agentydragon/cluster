@@ -31,27 +31,14 @@ kubeseal --fetch-cert
 cd /home/agentydragon/code/cluster/terraform
 
 # Update terraform.tfvars:
-# controller_count = 4  # or desired count
+# controller_count = 4
+# worker_count = 3
 
 # Apply changes
 ./tf.sh apply
 
-# New controller will automatically join the cluster
+# New workers/controllers will automatically join the cluster
 # Verify with talosctl get members
-```
-
-**Worker Node**
-```bash
-cd /home/agentydragon/code/cluster/terraform
-
-# Update terraform.tfvars:
-# worker_count = 3  # or desired count
-
-# Apply changes
-./tf.sh apply
-
-# New worker will automatically join
-# Verify with kubectl get nodes
 ```
 
 ### Node Maintenance
