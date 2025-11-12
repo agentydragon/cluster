@@ -190,6 +190,16 @@ flux get all
 flux reconcile source git cluster
 ```
 
+## Key File Locations
+
+- **Terraform configs**: `/home/agentydragon/code/cluster/terraform/`
+- **Talos config**: `terraform/talosconfig.yml` (generated, gitignored)
+- **Kube config**: `terraform/kubeconfig` (generated, gitignored)
+- **Environment**: `/home/agentydragon/code/cluster/.envrc` (direnv)
+- **Kubernetes manifests**: `/home/agentydragon/code/cluster/k8s/`
+- **VPS nginx config**: `/home/agentydragon/code/ducktape/ansible/nginx-sites/`
+- **VPS PowerDNS config**: `/home/agentydragon/code/ducktape/ansible/host_vars/vps/powerdns.yml`
+
 ## External Dependencies
 
 - **Proxmox host**: `atlas` at 10.0.0.5 for VM hosting

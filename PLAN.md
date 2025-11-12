@@ -429,8 +429,18 @@ controller:
 - [x] **NGINX Ingress HA**: 2 replicas on worker nodes with NodePort 30080/30443
 - [x] **End-to-end testing**: Test application accessible via https://test.test-cluster.agentydragon.com/
 
-### Remaining Tasks:
-- [ ] **SSO-Centric Platform Architecture** (New secondary testing cluster - not replacing ducktape)
+## SSO Platform Services - To Do
+
+### 📋 Platform Services (Not yet implemented)
+- [ ] **Vault**: Deploy secret management with Kubernetes auth, standalone mode with TLS
+- [ ] **External Secrets Operator**: Enable Vault → K8s secrets bridge 
+- [ ] **Authentik**: Deploy identity provider with blueprint-based configuration
+- [ ] **Gitea**: Git service with Authentik OIDC integration
+- [ ] **Harbor**: Container registry with Authentik OIDC authentication  
+- [ ] **Matrix/Synapse**: Chat platform with Authentik SSO integration
+- [ ] **Cross-integration**: Vault OIDC auth + Authentik-Vault secrets management
+
+### Other Infrastructure Tasks
 - [ ] **PowerDNS Zone Automation**: Implement proper zone management in Ansible  
 - [ ] **Backup/recovery**: Document cluster restore procedures and etcd backup automation
 

@@ -227,12 +227,6 @@ kubectl get nodes
 **Root Cause**: Worker nodes NotReady prevents pod scheduling
 **Solution**: Fix underlying node issues first, then Flux recovers automatically
 
-## Key File Locations
-
-- **Terraform configs**: `/home/agentydragon/code/cluster/terraform/`
-- **Talos config**: `terraform/talosconfig.yml` (generated, gitignored)
-- **Kube config**: `terraform/kubeconfig` (generated, gitignored)
-- **Environment**: `/home/agentydragon/code/cluster/.envrc` (direnv)
 
 ## Node IP Assignments
 
