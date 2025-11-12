@@ -261,12 +261,10 @@ meta = [
 #### Test Results:
 ```bash
 $ ping -c 3 10.0.0.11
-64 bytes from 10.0.0.11: icmp_seq=1 ttl=64 time=0.151 ms
-64 bytes from 10.0.0.11: icmp_seq=2 ttl=64 time=0.175 ms  
-64 bytes from 10.0.0.11: icmp_seq=3 ttl=64 time=0.097 ms
+# OK
 ```
 
-**Working module location**: `/home/agentydragon/code/cluster/terraform/modules/talos-node/main.tf`
+**Working module location**: `./terraform/modules/talos-node/main.tf`
 
 ## 7. Bootstrap Process Documentation
 
@@ -419,12 +417,14 @@ controller:
 - [x] **Bootstrap endpoint fix**: Changed from VIP to first controller to resolve chicken-and-egg
 - [x] **Automated bootstrap execution**: Complete cluster initialization via terraform
 - [x] **CNI Installation**: Cilium v1.16.5 CNI installed with Talos-specific configuration
+- [x] **API server networking fix**: BPF hostLegacyRouting for static pod connectivity to worker nodes
 - [x] **VIP establishment**: 10.0.0.20 active and load-balancing across all controllers
 - [x] **Kubernetes cluster ready**: All 5 nodes show Ready status
 - [x] **Tailscale connectivity**: All nodes connected to headscale mesh (100.64.0.14-18)
 - [x] **Repository setup**: Cluster configuration published to GitHub
 - [x] **GitOps setup**: Flux fully operational for declarative cluster management  
 - [x] **Platform services**: Cilium CNI, cert-manager, ingress-nginx deployed via GitOps
+- [x] **Secret management**: sealed-secrets controller with kubeseal v0.32.2 working conventionally
 - [x] **External HTTPS connectivity**: Complete VPS proxy → Tailscale → cluster ingress chain
 - [x] **NGINX Ingress HA**: 2 replicas on worker nodes with NodePort 30080/30443
 - [x] **End-to-end testing**: Test application accessible via https://test.test-cluster.agentydragon.com/
