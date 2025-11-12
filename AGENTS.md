@@ -37,10 +37,7 @@ This repository uses specialized documentation files for different purposes:
 
 ## Command Execution Context
 
-**All kubectl, talosctl, kubeseal, and flux commands** in this repository documentation assume execution within the cluster's direnv environment. Commands should be run either:
-
-1. From `/home/agentydragon/code/cluster/` directory (direnv auto-loaded)
-2. Using `direnv exec .` prefix if not in the directory
+**All kubectl, talosctl, kubeseal, and flux commands** assume execution from the cluster directory (direnv auto-loaded) or using `direnv exec .` prefix if run elsewhere.
 
 This provides consistent tool versions (nix-managed) and automatic KUBECONFIG/TALOSCONFIG environment variables.
 

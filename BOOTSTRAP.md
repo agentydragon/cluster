@@ -11,18 +11,15 @@ This document provides step-by-step instructions for cold-starting the Talos clu
 
 ### Step 1: Fully Declarative Deployment
 ```bash
-cd /home/agentydragon/code/cluster/terraform
-
-# ✅ SINGLE COMMAND DEPLOYMENT - Everything automated!
+cd terraform
 ./tf.sh apply
-
-# This command now handles:
-# - QCOW2 disk image download with static IP configuration
-# - VM creation with pre-configured networking
-# - Talos machine configuration application
-# - Cluster bootstrap (automatic)
-# - Kubernetes cluster initialization
 ```
+
+This handles:
+- QCOW2 disk image from Talos Image Factory with baked-in static IP configuration
+- VM creation with pre-configured networking
+- Talos machine configuration application
+- Kubernetes cluster initialization and bootstrap
 
 ### Step 2: Verify Deployment Success
 ```bash
@@ -203,8 +200,8 @@ cluster_endpoint = "https://10.0.0.11:6443"  # NOT 10.0.0.20:6443
 **Solution**: Restart kubelet services using talosctl
 ```bash
 # Restart kubelet on affected nodes
-direnv exec . talosctl -n 10.0.0.21 service kubelet restart  # w0
-direnv exec . talosctl -n 10.0.0.22 service kubelet restart  # w1
+talosctl -n 10.0.0.21 service kubelet restart  # w0
+talosctl -n 10.0.0.22 service kubelet restart  # w1
 
 # Verify nodes return to Ready status
 kubectl get nodes

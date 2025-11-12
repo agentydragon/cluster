@@ -5,7 +5,8 @@
 - No password required (SSH keys configured)
 
 ## Talos CLI Access
-- Use `direnv exec /home/agentydragon/code/cluster talosctl` to run talosctl commands
+- Run `talosctl` commands from cluster directory (direnv auto-loaded)
+- Use `direnv exec /home/agentydragon/code/cluster talosctl` if running from other directories
 - The direnv config automatically sets TALOSCONFIG path and provides talosctl via nix
 
 ## Working Directory

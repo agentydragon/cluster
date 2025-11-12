@@ -34,7 +34,7 @@ kubectl --server=https://10.0.0.20:6443 get nodes
 **Talos management:**
 ```bash
 cd /home/agentydragon/code/cluster
-direnv exec . talosctl --nodes 10.0.0.11,10.0.0.12,10.0.0.13 version
+talosctl --nodes 10.0.0.11,10.0.0.12,10.0.0.13 version
 ```
 
 ### Current Architecture:
