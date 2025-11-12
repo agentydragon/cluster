@@ -1,15 +1,32 @@
 # Talos Kubernetes Cluster
 
-Production-ready 5-node Talos Kubernetes cluster with GitOps management and external HTTPS connectivity.
+5-node Talos Kubernetes cluster (3 controllers, 2 workers) with GitOps management and external HTTPS connectivity.
 
-## Current Cluster State
+VMs deploy via single `terraform apply`.
+
+## Cluster State
+
+- CNI: Cilium with Talos-specific security configuration
+- Static IPs -> baked into Image Factory QCOW2 images together with Tailscale extension + QEMU guest agent
+- **VIP high availability**: 10.0.0.20 load-balances across controllers  
+- **Image Factory Integration**: VMs created with QCOW2 disk images containing baked-in static IP configuration
+- **Talos machine configurations applied**: All nodes configured via Terraform
+- **Bootstrap endpoint fix**: Changed from VIP to first controller to resolve chicken-and-egg
+- **Automated bootstrap execution**: Complete cluster initialization via terraform
+- **CNI Installation**: Cilium v1.16.5 CNI installed with Talos-specific configuration
+- **API server networking fix**: BPF hostLegacyRouting for static pod connectivity to worker nodes
+- **Tailscale connectivity**: All nodes connected to headscale mesh (100.64.0.14-18)
+- **Platform services**: Cilium CNI, cert-manager, ingress-nginx deployed via GitOps
+- **External HTTPS connectivity**: Complete VPS proxy → Tailscale → cluster ingress chain
+- **NGINX Ingress HA**: 2 replicas on worker nodes with NodePort 30080/30443
+- **End-to-end testing**: Test application accessible via https://test.test-cluster.agentydragon.com/
 
 ### Infrastructure
 - **5-node Talos cluster**: 3 controllers (10.0.0.11-13) + 2 workers (10.0.0.21-22)
-- **High availability**: VIP load balancer at 10.0.0.20 across controllers
-- **Static IP networking**: QCOW2 disk images with baked-in network configuration (no DHCP)
-- **Tailscale integration**: All nodes connected via VPN mesh
-- **Single-command deployment**: Complete cluster via `terraform apply`
+- **Controllers**: `10.0.0.11`, `10.0.0.12`, `10.0.0.13` (c0, c1, c2)
+- **Workers**: `10.0.0.21`, `10.0.0.22` (w0, w1)
+- **Cluster VIP**: `10.0.0.20` (load balancer across controllers)
+- **Network**: All nodes on 10.0.0.0/16 with gateway 10.0.0.1
 
 ### Platform Services
 - **Cilium v1.16.5**: CNI with kube-proxy replacement and BPF hostLegacyRouting
@@ -17,6 +34,13 @@ Production-ready 5-node Talos Kubernetes cluster with GitOps management and exte
 - **cert-manager**: Automatic SSL certificate management
 - **sealed-secrets**: Encrypted secrets in Git (kubeseal v0.32.2)
 - **Flux GitOps**: Declarative cluster management from this repository
+
+### Key Implementation Details
+- **Image Factory**: QCOW2 disk images with META key 10 static IP configuration
+- **Terraform Modules**: Clean per-node architecture with unified configuration
+- **Bootstrap Automation**: Single `terraform apply` handles everything
+- **Extension Integration**: Tailscale + QEMU agent via Image Factory schematics
+- **VIP Management**: Automatic kube-vip deployment for high availability
 
 ### External Connectivity
 - **Domain**: `*.test-cluster.agentydragon.com` 
@@ -29,16 +53,25 @@ Production-ready 5-node Talos Kubernetes cluster with GitOps management and exte
 ```
 cluster/
 ├── terraform/              # VM infrastructure (Proxmox + Talos)
-├── k8s/                    # Kubernetes manifests (Flux-managed)
-│   ├── infrastructure/     # Core services (Cilium, cert-manager, sealed-secrets)
-│   ├── apps/              # Applications and test services
-│   └── flux-system/       # Flux controllers (auto-generated)
-├── shell.nix              # Nix development environment
-├── .envrc                 # direnv configuration (KUBECONFIG, TALOSCONFIG)
-├── BOOTSTRAP.md           # Complete deployment procedures
-├── OPERATIONS.md          # Day-to-day cluster management
-├── PLAN.md               # Project roadmap and completed features
-└── AGENTS.md             # Documentation strategy for Claude Code
+│   ├── modules/talos-node/ # Reusable node configuration module
+│   └── tmp/talos/         # Generated disk images
+├── k8s/                   # Kubernetes manifests (Flux-managed)
+│   ├── infrastructure/    # Core platform services
+│   │   ├── core/          # sealed-secrets, tofu-controller
+│   │   ├── networking/    # Cilium, cert-manager, ingress-system
+│   │   └── platform/      # Vault, Authentik (SSO services)
+│   └── applications/      # End-user applications (Gitea, Harbor, Matrix)
+├── flux-system/           # Flux controllers (auto-generated)
+├── sso-terraform/         # Terraform for SSO service configuration
+├── bootstrap-secrets/     # Bootstrap secret templates
+├── scripts/               # Utility scripts
+├── shell.nix             # Nix development environment
+├── .envrc                # direnv configuration (KUBECONFIG, TALOSCONFIG)
+├── docs/
+│   ├── BOOTSTRAP.md      # Complete deployment procedures
+│   ├── OPERATIONS.md     # Day-to-day cluster management
+│   └── PLAN.md          # Project roadmap and strategic decisions
+└── AGENTS.md            # Documentation strategy for Claude Code
 ```
 
 ## Quick Start
@@ -71,7 +104,7 @@ kubectl --server=https://10.0.0.20:6443 get nodes
 
 ## Routine Maintenance
 
-For all operational procedures including scaling, maintenance, diagnostics, and troubleshooting, see **OPERATIONS.md**.
+For all operational procedures including scaling, maintenance, diagnostics, and troubleshooting, see **docs/OPERATIONS.md**.
 
 ## How Things Are Wired Together
 
@@ -167,8 +200,8 @@ flux reconcile source git cluster
 ## Development Environment
 
 Uses Nix + direnv for consistent tool versions:
-- **shell.nix**: kubeseal v0.32.2, talosctl, fluxcd from nixpkgs-unstable
+- **shell.nix**: kubeseal v0.32.2, talosctl, fluxcd, helm from nixpkgs-unstable
 - **.envrc**: Auto-exports KUBECONFIG and TALOSCONFIG when entering directory
 - **Version consistency**: All tools from nix store, no system dependencies
 
-**Command Execution**: All kubectl, talosctl, kubeseal, and flux commands assume execution from cluster directory (direnv auto-loaded) or using `direnv exec .` prefix if run elsewhere.
+**Command Execution**: All kubectl, talosctl, kubeseal, flux, and helm commands assume execution from cluster directory (direnv auto-loaded) or using `direnv exec .` prefix if run elsewhere.
