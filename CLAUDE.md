@@ -1,18 +1,16 @@
 # Claude Code Instructions
 
 ## SSH Access
-- Use `ssh root@atlas` to access the Proxmox host
-- No password required (SSH keys configured)
+Use `ssh root@atlas` to access the Proxmox host. No password required (SSH keys configured).
 
 ## Talos CLI Access
 - Run `talosctl` commands from cluster directory (direnv auto-loaded)
 - Use `direnv exec /home/agentydragon/code/cluster talosctl` if running from other directories
-- The direnv config automatically sets TALOSCONFIG path and provides talosctl via nix
+- The direnv config automatically sets `TALOSCONFIG` path and provides talosctl via nix
 
 ## Working Directory
 - Infrastructure terraform config: `/home/agentydragon/code/cluster/terraform/infrastructure/`
 - GitOps terraform config: `/home/agentydragon/code/cluster/terraform/gitops/`
-- Working 5-node Talos cluster with Tailscale extensions already deployed
 - VMs 105-109 are the working cluster nodes (c0-c2 controllers, w0-w1 workers)
 
 ## Reference Code Location
@@ -28,8 +26,6 @@
 - `vault-secrets.tf` - Ansible vault integration via external data source
 
 ## Project Documentation Strategy
-
-This repository uses specialized documentation files for different purposes:
 
 ### docs/BOOTSTRAP.md
 **Purpose**: Always describes a working bootstrap sequence from unpopulated Proxmox cluster up to where we got in cluster implementation.
@@ -77,9 +73,7 @@ This repository uses specialized documentation files for different purposes:
 
 This provides consistent tool versions (nix-managed) and automatic KUBECONFIG/TALOSCONFIG environment variables.
 
-## Usage for Claude Code
-
-When working on this cluster:
+## Checklist
 
 - **Before making changes**: Read docs/BOOTSTRAP.md to understand current working state
 - **After completing work**: Update docs/BOOTSTRAP.md with new procedures if they change the bootstrap sequence
