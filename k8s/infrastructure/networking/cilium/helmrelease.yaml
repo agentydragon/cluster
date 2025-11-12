@@ -91,6 +91,11 @@ spec:
     # Enable kube-proxy replacement (required since kube-proxy is disabled in Talos)
     kubeProxyReplacement: "true"
     
+    # Enable host services for API server to pod connectivity
+    hostServices:
+      enabled: true
+      protocols: tcp
+    
     # Configure NodePort handling
     nodePort:
       enabled: true
