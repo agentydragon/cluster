@@ -129,36 +129,7 @@ ansible-playbook vps.yaml -t test-cluster-wildcard
 
 ### Configure Cluster Ingress Controller
 
-The cluster needs an ingress controller configured with NodePort access:
-
-```yaml
-# apps/ingress-nginx/helmrelease.yaml
-apiVersion: helm.toolkit.fluxcd.io/v2beta1
-kind: HelmRelease
-metadata:
-  name: ingress-nginx
-  namespace: ingress-nginx
-spec:
-  values:
-    controller:
-      # Use NodePort for external access
-      service:
-        type: NodePort
-        nodePorts:
-          http: 30080
-          https: 30443
-      
-      # Configure as default ingress class
-      ingressClassResource:
-        name: nginx
-        enabled: true
-        default: true
-```
-
-**Key Configuration Notes**:
-- **Cilium kube-proxy replacement**: Must be enabled (`kubeProxyReplacement: "true"`)
-- **NodePort bindProtection**: Must be disabled (`nodePort.bindProtection: false`)
-- **External access**: VPS connects via Tailscale to worker nodes on NodePort 30443
+NGINX Ingress Controller is deployed via GitOps with NodePort configuration (30080/30443) for external VPS proxy access via Tailscale.
 
 ### Test External Connectivity
 
