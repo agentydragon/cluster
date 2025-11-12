@@ -309,27 +309,7 @@ kubectl get nodes
 
 ### PowerDNS Zone Configuration
 
-Add the new domain to your Ansible PowerDNS configuration:
-
-```yaml
-# In host_vars/vps/powerdns.yml
-powerdns_domains:
-  - name: "test-cluster.agentydragon.com"
-    type: "NATIVE"
-    records:
-      - name: "@"
-        type: "SOA"
-        content: "ns1.agentydragon.com. hostmaster.agentydragon.com. 2025111000 3600 1800 604800 300"
-        ttl: 300
-      - name: "@"
-        type: "NS"
-        content: "ns1.agentydragon.com."
-        ttl: 300
-      - name: "*"
-        type: "A"
-        content: "172.235.48.86"  # VPS internal IP for proxy
-        ttl: 300
-```
+Add `test-cluster.agentydragon.com` domain configuration to `/home/agentydragon/code/ducktape/ansible/host_vars/vps/powerdns.yml` with SOA, NS, and wildcard A records pointing to VPS IP.
 
 ### Let's Encrypt Certificate Configuration
 
