@@ -80,12 +80,13 @@ resource "talos_machine_bootstrap" "talos" {
   depends_on           = [module.nodes]
 }
 
-# Generate kubeconfig
+# Generate kubeconfig (uses VIP for HA after bootstrap completes)
+# Note: Bootstrap still uses first controller IP, but final kubeconfig uses VIP
 resource "talos_cluster_kubeconfig" "talos" {
   client_configuration = talos_machine_secrets.talos.client_configuration
-  endpoint             = local.controller_nodes.c0.ip_address
-  node                 = local.controller_nodes.c0.ip_address
-  depends_on           = [talos_machine_bootstrap.talos]
+  endpoint             = var.cluster_vip  # Use VIP for HA kubectl access
+  node                 = var.cluster_vip  # Also use VIP for kubeconfig server field
+  depends_on           = [talos_machine_bootstrap.talos]  # Wait for bootstrap AND VIP to be established
 }
 
 # Generate talos client config

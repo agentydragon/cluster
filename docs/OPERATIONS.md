@@ -60,7 +60,6 @@ cd /home/agentydragon/code/cluster/terraform
 ```bash
 # Gracefully restart a node (example: controller-1)
 talosctl \
-  --talosconfig /home/agentydragon/code/cluster/terraform/talosconfig.yml \
   --endpoints 10.0.0.11 \
   --nodes 10.0.0.11 \
   reboot

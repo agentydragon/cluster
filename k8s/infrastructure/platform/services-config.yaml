@@ -5,7 +5,7 @@ metadata:
   namespace: flux-system
 spec:
   interval: 15m
-  path: ./sso-terraform/services
+  path: ./terraform/gitops/services
   sourceRef:
     kind: GitRepository
     name: cluster

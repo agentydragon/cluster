@@ -36,7 +36,8 @@ if [[ -z "$TOKEN_ID" || -z "$TOKEN_SECRET" ]]; then
 fi
 
 if [[ -z "$HEADSCALE_KEY" ]]; then
-  echo "Warning: Missing $HEADSCALE_KEY_NAME in $VAULT_FILE - Tailscale extension will be disabled" >&2
+  echo "Error: Missing $HEADSCALE_KEY_NAME in $VAULT_FILE - Headscale configuration is required" >&2
+  exit 1
 fi
 
 export TF_VAR_pm_api_token_id="$TOKEN_ID"

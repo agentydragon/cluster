@@ -25,8 +25,18 @@ output "talosconfig" {
   sensitive   = true
 }
 
-output "kubeconfig" {
-  description = "Kubernetes client configuration"
-  value       = talos_cluster_kubeconfig.talos.kubeconfig_raw
-  sensitive   = true
+# Health check: verify VIP is reachable before generating VIP kubeconfig
+resource "terraform_data" "vip_health_check" {
+  provisioner "local-exec" {
+    command = "ping -c 3 ${var.cluster_vip} && curl -k --connect-timeout 5 https://${var.cluster_vip}:6443/version"
+  }
+  depends_on = [talos_cluster_kubeconfig.talos]
 }
+
+output "kubeconfig" {
+  description = "Kubernetes client configuration (corrected to use VIP after health check)"
+  value       = replace(talos_cluster_kubeconfig.talos.kubeconfig_raw, var.cluster_endpoint, "https://${var.cluster_vip}:6443")
+  sensitive   = true
+  depends_on  = [terraform_data.vip_health_check]
+}
+
