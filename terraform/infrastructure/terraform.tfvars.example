@@ -1,5 +1,5 @@
-# NOTE: pm_api_token_id, pm_api_token_secret, and headscale_auth_key
-# are automatically loaded from Ansible Vault via tf.sh
+# NOTE: pm_api_token_id, pm_api_token_secret, and headscale_api_key
+# are automatically loaded from Ansible Vault via external data source
 
 # Proxmox connection details
 pm_api_url           = "https://atlas:8006/api2/json"
@@ -29,5 +29,5 @@ prefix = "talos"
 talos_version      = "1.11.2"
 kubernetes_version = "1.32.1"
 
-# Tailscale configuration (auth key loaded from vault via tf.sh)
+# Tailscale configuration (auth key loaded from vault via external data source)
 headscale_login_server = "https://agentydragon.com:8080"

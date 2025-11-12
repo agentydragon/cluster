@@ -13,8 +13,8 @@ This document provides step-by-step instructions for cold-starting the Talos clu
 
 ### Step 1: Fully Declarative Deployment
 ```bash
-cd terraform
-./tf.sh apply
+cd terraform/infrastructure
+terraform apply
 ```
 
 This handles:

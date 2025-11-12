@@ -25,7 +25,7 @@
 - `talos.tf` - Talos machine configurations with Tailscale
 - `proxmox.tf` - VM definitions
 - `variables.tf` - Configuration variables
-- `tf.sh` - Terraform wrapper script with environment variables
+- `vault-secrets.tf` - Ansible vault integration via external data source
 
 ## Project Documentation Strategy
 

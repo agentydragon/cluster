@@ -28,14 +28,14 @@ kubeseal --fetch-cert
 
 **Controller Node**
 ```bash
-cd /home/agentydragon/code/cluster/terraform
+cd /home/agentydragon/code/cluster/terraform/infrastructure
 
 # Update terraform.tfvars:
 # controller_count = 4
 # worker_count = 3
 
 # Apply changes
-./tf.sh apply
+terraform apply
 
 # New workers/controllers will automatically join the cluster
 # Verify with talosctl get members
@@ -61,7 +61,7 @@ ssh root@atlas 'qm reboot 106'
 kubectl delete node talos-controller-1
 
 # Update terraform.tfvars to reduce count, then:
-./tf.sh apply
+terraform apply
 ```
 
 ## System Diagnostics

@@ -2,7 +2,7 @@
 
 5-node Talos Kubernetes cluster (3 controllers, 2 workers) with GitOps management and external HTTPS connectivity.
 
-VMs deploy via single `./tf.sh apply`.
+VMs deploy via single `terraform apply` from the `terraform/infrastructure/` directory.
 
 For operational procedures (maintenance, diagnostics, troubleshooting), see <docs/OPERATIONS.md>.
 
