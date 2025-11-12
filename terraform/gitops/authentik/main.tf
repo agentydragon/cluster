@@ -15,11 +15,6 @@ terraform {
   }
 }
 
-# Read Authentik bootstrap token from Vault
-data "vault_kv_secret_v2" "authentik_secrets" {
-  mount = "kv"
-  name  = "sso/authentik"
-}
 
 # Create admin groups for each service
 resource "authentik_group" "harbor_admins" {
