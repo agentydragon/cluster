@@ -91,10 +91,22 @@ spec:
     # Enable kube-proxy replacement (required since kube-proxy is disabled in Talos)
     kubeProxyReplacement: "true"
     
+    # BPF configuration for static pod connectivity (API server)
+    bpf:
+      hostLegacyRouting: true  # Route static pod traffic through host stack
+    
+    # Enable endpoint routes for improved host connectivity
+    endpointRoutes:
+      enabled: true
+    
+    # Enable socket-based load balancing for host services
+    socketLB:
+      enabled: true
+    
     # Enable host services for API server to pod connectivity
     hostServices:
       enabled: true
-      protocols: tcp
+      protocols: tcp,udp
     
     # Configure NodePort handling
     nodePort:
