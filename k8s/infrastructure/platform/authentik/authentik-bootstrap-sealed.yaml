@@ -1,0 +1,15 @@
+---
+apiVersion: bitnami.com/v1alpha1
+kind: SealedSecret
+metadata:
+  creationTimestamp: null
+  name: authentik-bootstrap
+  namespace: authentik
+spec:
+  encryptedData:
+    bootstrap-token: AgA6/sauFTD6cpNONEcLDQDUN6RfDQcpdmpL6Fhjy3Ox3jjsieukroPaQOBiILcTHzmXaSmAr9S1BzvU0FSVn4howZ0rTIGm+TpxGKJcdWLZt0pgkJaSj7O3hV91MM2xlKNyp2eEgGzdDcAOzthbnFtyjS+NtI+zQDRJbcKeQQqqmV/lu3/ypb6shAbBAnOtnKOkoe+24+i7RvytNtDTAVzgmvp+Bdi6/J9joyXoIFsp5yyW/KZV7aNC8NuSbK+NM/BJEzx3lZUDqgP6TiQgGL1PmKamsdmnNPI9Y6X/2RXvmzEuSadKsvw7XxAKzI3oKrQ5Y/LbPLTfe3OdGr5+jG05P2PJ+rtRYUnANq9ANyegtM1xh14pDpuBz14OwyoDcN2l0DxQZn9J04dsDjPY3+DeRzJKwD4mIapog0MxI5+LIeYZfCCS60AEHqOt7RG67WaL9hhCdcct9/j9ODDS4D5BHrl6cu1RUwqM1nUW2JPrEgwYz5gZYzGl9gB7JRRXLhNtNUSN6FQs1gsis3qwcjq5AjucjgTxE10Rt+F/6q24yLUH9S/eqR5fnfexgk539hTA33YDIHdU/UVwOPVxlaizWK0ZzpPx56I3hDqk5UuShQ/wdP5Kc2HNXZWtCITy5h1DJ4VFS9xvt1XsrFITwO04NvMLGanQwPOAMObGPmxYvzeT96Cpdsl3aIxpw3YaUvSMX+WnhBLE1PPd14zpteNuZZvU4+YJGNCWa3h7dzZWDxxSk1dNdxcpY+5XwDyDILBoyTrDOujkZKCMHJ1QO0xv
+  template:
+    metadata:
+      creationTimestamp: null
+      name: authentik-bootstrap
+      namespace: authentik
