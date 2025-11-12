@@ -36,6 +36,7 @@ cluster/
 ├── shell.nix              # Nix development environment
 ├── .envrc                 # direnv configuration (KUBECONFIG, TALOSCONFIG)
 ├── BOOTSTRAP.md           # Complete deployment procedures
+├── OPERATIONS.md          # Day-to-day cluster management
 ├── PLAN.md               # Project roadmap and completed features
 └── AGENTS.md             # Documentation strategy for Claude Code
 ```
@@ -70,52 +71,23 @@ kubectl --server=https://10.0.0.20:6443 get nodes
 
 ## Routine Maintenance
 
-### Node Operations
-```bash
-# Restart node (graceful)
-talosctl -n 10.0.0.21 reboot
-
-# View node status
-talosctl -n 10.0.0.11,10.0.0.12,10.0.0.13 version
-
-# Check kubelet issues (common after restarts)
-talosctl -n 10.0.0.21 service kubelet restart
-```
-
-### Application Management
+### Essential Operations
 ```bash
 # Check Flux status
 flux get all
 
-# Force reconciliation
+# Force reconciliation  
 flux reconcile helmrelease sealed-secrets
 
-# Check specific application
-kubectl get all -n kube-system -l app.kubernetes.io/name=sealed-secrets
-```
-
-### Secret Management
-```bash
 # Create sealed secret
 kubectl create secret generic my-secret --from-literal=key=value --dry-run=client -o yaml | \
   kubeseal -o yaml > my-sealed-secret.yaml
 
-# Fetch certificate (verify controller access)
-kubeseal --fetch-cert
+# Check cluster health
+kubectl get nodes -o wide
 ```
 
-### Cluster Scaling
-```bash
-# Add worker node
-cd terraform/
-# Edit terraform.tfvars: worker_count = 3
-./tf.sh apply
-
-# Remove node
-kubectl delete node talos-worker-3
-# Edit terraform.tfvars: worker_count = 2
-./tf.sh apply
-```
+For detailed operations (scaling, maintenance, troubleshooting), see **OPERATIONS.md**.
 
 ## How Things Are Wired Together
 

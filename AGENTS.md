@@ -9,12 +9,21 @@ This repository uses specialized documentation files for different purposes:
 
 **Content**:
 - Step-by-step instructions for cold-starting the Talos cluster from nothing
-- Complete deployment procedures (terraform, CNI, applications)
-- Node management operations (add/remove/restart)
-- Troubleshooting common issues with specific symptoms and solutions
-- Current working cluster status and configuration details
+- Complete deployment procedures (terraform, CNI, applications, external connectivity)
+- Verification steps to confirm successful deployment
 
 **Maintenance**: This document should be continuously updated to reflect the current working state. When new components are added or procedures change, BOOTSTRAP.md must be updated to maintain an accurate "recipe" for reproducing the cluster.
+
+### OPERATIONS.md
+**Purpose**: Day-to-day cluster management procedures including scaling, maintenance, and troubleshooting.
+
+**Content**:
+- Node operations (adding, removing, restarting)
+- System diagnostics and VM console management
+- Comprehensive troubleshooting guide with symptoms and solutions
+- Reference information (IP assignments, file locations)
+
+**Maintenance**: Updated when operational procedures change or new troubleshooting scenarios are discovered.
 
 ### PLAN.md
 **Purpose**: Describes high-level goals we want to implement, lists what we finished, and what remains to be done as items.
