@@ -10,16 +10,6 @@ variable "pm_tls_insecure" {
   default     = true
 }
 
-variable "pm_api_token_id" {
-  description = "Proxmox API token ID (format user@realm!token)."
-  type        = string
-}
-
-variable "pm_api_token_secret" {
-  description = "Proxmox API token secret."
-  type        = string
-  sensitive   = true
-}
 
 variable "proxmox_ssh_username" {
   description = "SSH username used by the provider for operations requiring SSH (defaults to root)."
@@ -105,16 +95,6 @@ variable "kubernetes_version" {
 }
 
 # Tailscale integration
-variable "headscale_api_key" {
-  description = "Headscale API key for generating pre-auth keys."
-  type        = string
-  sensitive   = true
-
-  validation {
-    condition     = var.headscale_api_key != ""
-    error_message = "Headscale API key is required for Tailscale functionality."
-  }
-}
 
 variable "headscale_user" {
   description = "Headscale user for pre-auth key generation."

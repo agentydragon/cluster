@@ -2,7 +2,7 @@
 locals {
   # Global configuration shared by all nodes
   global_config = {
-    headscale_api_key      = var.headscale_api_key
+    headscale_api_key      = local.vault_secrets.vault_headscale_api_key
     headscale_login_server = var.headscale_login_server
   }
 

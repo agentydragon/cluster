@@ -14,6 +14,10 @@ terraform {
       source  = "hashicorp/http"
       version = "~> 3.4.0"
     }
+    external = {
+      source  = "hashicorp/external"
+      version = "~> 2.3.0"
+    }
   }
 
   backend "local" {
@@ -26,7 +30,7 @@ terraform {
 provider "proxmox" {
   endpoint  = var.pm_api_url
   insecure  = var.pm_tls_insecure
-  api_token = "${var.pm_api_token_id}=${var.pm_api_token_secret}"
+  api_token = "${local.vault_secrets.vault_proxmox_terraform_token_id}=${local.vault_secrets.vault_proxmox_terraform_token_secret}"
 
   ssh {
     agent       = false
