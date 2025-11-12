@@ -2,7 +2,7 @@
 
 This document provides step-by-step instructions for cold-starting the Talos cluster from nothing and managing individual nodes.
 
-## Cold-Start Cluster Deployment (From Nothing)
+## Cold-Start Cluster Deployment
 
 ### Prerequisites
 - Proxmox host (`atlas`) accessible via SSH
@@ -24,11 +24,7 @@ This handles:
 ### Step 2: Verify Deployment Success
 ```bash
 # All VMs should be running with correct static IPs
-ping 10.0.0.11  # c0 (controller)
-ping 10.0.0.12  # c1 (controller)
-ping 10.0.0.13  # c2 (controller) 
-ping 10.0.0.21  # w0 (worker)
-ping 10.0.0.22  # w1 (worker)
+for ip in 10.0.0.{11..13} 10.0.0.{21..22}; do ping -c1 $ip; done
 
 # ✅ VIP should be active immediately after terraform completes
 ping 10.0.0.20  # VIP (load balancer)
