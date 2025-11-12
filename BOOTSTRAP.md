@@ -8,6 +8,8 @@ This document provides step-by-step instructions for cold-starting the Talos clu
 - Proxmox host (`atlas`) accessible via SSH
 - Ansible vault configured with API tokens
 - `direnv` configured in cluster directory
+- VPS with nginx and PowerDNS already configured via Ansible
+- Access to AWS Route 53 for `agentydragon.com` domain delegation
 
 ### Step 1: Fully Declarative Deployment
 ```bash
@@ -21,16 +23,16 @@ This handles:
 - Talos machine configuration application
 - Kubernetes cluster initialization and bootstrap
 
-### Step 2: Verify Deployment Success
+#### Test
 ```bash
 # All VMs should be running with correct static IPs
 for ip in 10.0.0.{11..13} 10.0.0.{21..22}; do ping -c1 $ip; done
 
-# ✅ VIP should be active immediately after terraform completes
+# VIP should be active
 ping 10.0.0.20  # VIP (load balancer)
 ```
 
-### Step 3: Install CNI (Required for Node Ready Status)
+### Step 2: Install CNI (Required for Node Ready Status)
 ```bash
 # Navigate to cluster root (KUBECONFIG automatically set via .envrc)
 cd /home/agentydragon/code/cluster
@@ -52,48 +54,35 @@ helm install cilium cilium/cilium --namespace kube-system --version 1.16.5 \
   --set cgroup.autoMount.enabled=false
 ```
 
-### Step 4: Verify Full Cluster Health
+#### Test
 ```bash
-# ✅ All nodes should show Ready status
+# All nodes should show Ready status
 kubectl get nodes -o wide
 
-# ✅ Test VIP functionality
+# Test VIP
 kubectl --server=https://10.0.0.20:6443 get nodes
 
-# ✅ Verify Cilium pods are running
+# Verify Cilium pods are running
 kubectl get pods -n kube-system -l k8s-app=cilium
 ```
 
+### Step 3: External Connectivity via VPS
 
+#### Step 3.1: DNS Delegation
 
-## Step 5: Configure External Connectivity via VPS Proxy
+Create NS delegation records in Route 53 to allow Let's Encrypt DNS-01 validation for `test-cluster.agentydragon.com` via PowerDNS on the VPS:
+```
+Record Name: test-cluster.agentydragon.com
+Record Type: NS  
+Record Value: ns1.agentydragon.com
+TTL: 3600
+```
 
-### Prerequisites
-- VPS with nginx and PowerDNS already configured via Ansible
-- Access to AWS Route 53 for `agentydragon.com` domain delegation
+#### Step 3.2: PowerDNS configuration
 
-### DNS Delegation Setup (Required)
+Add `test-cluster.agentydragon.com` domain configuration to `~/code/ducktape/ansible/host_vars/vps/powerdns.yml` with SOA, NS, and wildcard A records pointing to VPS IP.
 
-**Critical**: You must create NS delegation records in your domain registrar/DNS provider:
-
-1. **In AWS Route 53** (for `agentydragon.com`):
-   ```
-   Record Name: test-cluster.agentydragon.com
-   Record Type: NS  
-   Record Value: ns1.agentydragon.com
-   TTL: 3600
-   ```
-
-2. **Why this is needed**:
-   - Let's Encrypt validates DNS TXT records via public DNS queries
-   - Without NS delegation, Let's Encrypt queries AWS Route 53, which doesn't know about the subdomain
-   - With delegation, Let's Encrypt queries your PowerDNS server where the TXT records are created
-
-### PowerDNS Zone Configuration
-
-Add `test-cluster.agentydragon.com` domain configuration to `/home/agentydragon/code/ducktape/ansible/host_vars/vps/powerdns.yml` with SOA, NS, and wildcard A records pointing to VPS IP.
-
-### Let's Encrypt Certificate Configuration
+#### Step 3.3: Let's Encrypt task
 
 Add Let's Encrypt task to VPS playbook:
 
@@ -110,15 +99,16 @@ Add Let's Encrypt task to VPS playbook:
   tags: [letsencrypt, test-cluster-wildcard]
 ```
 
-### Nginx Proxy Configuration
+#### Step 3.4: NGINX Proxy Site Configuration
 
-Create nginx site template at `/home/agentydragon/code/ducktape/ansible/nginx-sites/test-cluster.agentydragon.com.j2` with wildcard proxy configuration for `*.test-cluster.agentydragon.com` → `w0:30443` via Tailscale.
+Create nginx site template at `~/code/ducktape/ansible/nginx-sites/test-cluster.agentydragon.com.j2` with wildcard proxy configuration for `*.test-cluster.agentydragon.com` → `w0:30443` via Tailscale.
 
-### Deploy External Connectivity
+#### Step 3.5: Deploy VPS configuration
 
+Deploy:
 ```bash
 # From your Ansible directory
-cd /home/agentydragon/code/ducktape/ansible
+cd ~/code/ducktape/ansible
 
 # Deploy PowerDNS zones and nginx configuration
 ansible-playbook vps.yaml -t powerdns,nginx-sites
@@ -131,53 +121,45 @@ ansible-playbook vps.yaml -t test-cluster-wildcard
 
 NGINX Ingress Controller is deployed via GitOps with NodePort configuration (30080/30443) for external VPS proxy access via Tailscale.
 
-### Test External Connectivity
+#### Test
 
 ```bash
-# Test DNS resolution
-dig foo.test-cluster.agentydragon.com
-# Should resolve to: 172.235.48.86 (VPS IP)
-
-# ✅ Test HTTPS connectivity - WORKING!
-curl https://test.test-cluster.agentydragon.com/
-# Returns: HTTP/2 200 - Test application shows infrastructure details
+dig foo.test-cluster.agentydragon.com  # Should resolve to: 172.235.48.86 (VPS IP)
+curl https://test.test-cluster.agentydragon.com/ # Should return HTTP/2 200
 ```
 
-**Current Status**: End-to-end connectivity operational
-- VPS nginx proxy → Tailscale VPN → NodePort 30443 → NGINX Ingress → Applications
-- Live test: https://test.test-cluster.agentydragon.com/ serving test application
+### Step 4: Setup GitOps with Flux
 
-### Deploy Applications with Ingress
+Bootstrap Flux to manage the cluster via this GitHub repository:
 
-Applications are deployed via GitOps in the `k8s/applications/` directory. The existing test application demonstrates the pattern:
-- **Committed**: `k8s/applications/test-app/` (deployment, service, ingress, configmap)
-- **Accessible**: https://test.test-cluster.agentydragon.com/
-
-**Result**: Applications become automatically accessible at `https://app-name.test-cluster.agentydragon.com/`
-
-## Step 6: GitOps with Flux
-
-**Operational**: Flux GitOps is managing the cluster via GitHub repository `agentydragon/cluster`.
-
-**Current GitOps Status**:
-- Flux controllers are running and healthy
-- Repository: `https://github.com/agentydragon/cluster` 
-- Auto-sync enabled for all applications in `apps/` directory
-- **Deployed Applications**:
-  - **Cilium CNI**: `/apps/cilium/` - Network fabric and security
-  - **NGINX Ingress**: `/apps/ingress-system/` - HA deployment with NodePort
-  - **cert-manager**: `/apps/cert-manager/` - SSL certificate automation
-  - **Test Application**: `/apps/test-app/` - Validates end-to-end connectivity
-
-### Migrate Cilium to GitOps (Optional)
 ```bash
-# Export current Cilium values for GitOps
-helm get values cilium -n kube-system > apps/cilium/values.yaml
+cd /home/agentydragon/code/cluster
 
-# Create HelmRelease manifest (see PLAN.md for details)
-# Commit and push - Flux will adopt existing Helm installation
+# Bootstrap Flux (requires GitHub personal access token)
+flux bootstrap github \
+  --owner=agentydragon \
+  --repository=cluster \
+  --path=k8s \
+  --personal \
+  --read-write-key
 ```
 
-### Future Deployments
-After Flux setup, deploy changes by committing and pushing to GitHub.
-Changes are deployed automatically by Flux controller within ~1 minute.
+This command:
+- Installs Flux controllers in `flux-system` namespace
+- Creates deploy key in GitHub repository 
+- Sets up GitOps automation for `k8s/` directory
+- Deploys all infrastructure and applications automatically
+
+#### Test GitOps
+```bash
+# Verify Flux controllers are running
+kubectl get pods -n flux-system
+
+# Check GitOps status
+flux get all
+
+# Verify applications are deployed
+kubectl get pods -A
+```
+
+Once Flux is operational, all infrastructure changes are managed via Git commits to this repository.
