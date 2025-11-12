@@ -20,7 +20,7 @@ echo -n "$VAULT_TOKEN" | kubectl create secret generic vault-bootstrap \
     --from-file=root-token=/dev/stdin \
     --namespace=vault \
     --dry-run=client -o yaml | \
-    kubeseal --controller-name=sealed-secrets --controller-namespace=flux-system -o yaml > k8s/infrastructure/platform/vault/vault-bootstrap-sealed.yaml
+    kubeseal -o yaml > k8s/infrastructure/platform/vault/vault-bootstrap-sealed.yaml
 
 echo "✅ Created k8s/infrastructure/platform/vault/vault-bootstrap-sealed.yaml"
 
@@ -31,7 +31,7 @@ echo -n "$AUTHENTIK_TOKEN" | kubectl create secret generic authentik-bootstrap \
     --from-file=bootstrap-token=/dev/stdin \
     --namespace=authentik \
     --dry-run=client -o yaml | \
-    kubeseal --controller-name=sealed-secrets --controller-namespace=flux-system -o yaml > k8s/infrastructure/platform/authentik/authentik-bootstrap-sealed.yaml
+    kubeseal -o yaml > k8s/infrastructure/platform/authentik/authentik-bootstrap-sealed.yaml
 
 echo "✅ Created k8s/infrastructure/platform/authentik/authentik-bootstrap-sealed.yaml"
 
