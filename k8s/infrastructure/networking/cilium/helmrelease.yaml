@@ -33,6 +33,16 @@ spec:
     # Enable native routing for cross-node pod communication
     routingMode: native
     
+    # Required for native routing with cluster-pool IPAM
+    ipv4NativeRoutingCIDR: "10.244.0.0/16"
+    
+    # Enable IPv4 and masquerading for native routing
+    ipv4:
+      enabled: true
+    ipMasqAgent:
+      enabled: false
+    enableIPv4Masquerade: true
+    
     # Enable auto-direct node routes for pod-to-pod connectivity
     autoDirectNodeRoutes: true
     
