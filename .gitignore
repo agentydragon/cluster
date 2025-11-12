@@ -17,3 +17,5 @@ talosconfig*
 terraform.log
 tfplan
 tmp/
+
+.terraform.lock.hcl

@@ -11,7 +11,7 @@ kubectl get nodes -o wide
 # Check Flux status
 flux get all
 
-# Force reconciliation  
+# Force reconciliation
 flux reconcile helmrelease sealed-secrets
 
 # Create sealed secret
@@ -119,7 +119,7 @@ cluster_endpoint = "https://10.0.0.11:6443"  # NOT 10.0.0.20:6443
    - **Solution**: Add VPS IP to PowerDNS allow list
    - **Fix**: Update `powerdns_allow_dnsupdate_from` in Ansible
 
-### NodePort Services Not Accessible Externally  
+### NodePort Services Not Accessible Externally
 **Symptoms**: 502 Bad Gateway or connection refused to NodePorts
 **Root Causes & Solutions**:
 

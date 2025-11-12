@@ -39,4 +39,3 @@ output "kubeconfig" {
   sensitive   = true
   depends_on  = [terraform_data.vip_health_check]
 }
-

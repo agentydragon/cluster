@@ -45,7 +45,7 @@ flux bootstrap github \
 
 This command:
 - Installs Flux controllers in `flux-system` namespace
-- Creates deploy key in GitHub repository 
+- Creates deploy key in GitHub repository
 - Deploys Cilium CNI via GitOps (nodes become Ready)
 - Deploys all infrastructure and applications automatically
 
@@ -58,7 +58,7 @@ kubectl --server=https://10.0.0.20:6443 get nodes  # Test VIP
 
 ### Step 3: Generate Bootstrap Secrets
 
-Before platform services can deploy, generate bootstrap secrets:
+Before platform services can deploy, generate bootstrap secrets and commit them to git:
 
 ```bash
 # Generate bootstrap tokens
@@ -66,11 +66,21 @@ for service in "vault:vault:root-token" "authentik:authentik:bootstrap-token"; d
   IFS=':' read -r name ns key <<< "$service"
   openssl rand -hex 32 | kubectl create secret generic ${name}-bootstrap --from-file=${key}=/dev/stdin --namespace=${ns} --dry-run=client -o yaml | kubeseal -o yaml > k8s/infrastructure/platform/${name}/${name}-bootstrap-sealed.yaml
 done
+
+# Commit and push to trigger GitOps deployment
+git add k8s/infrastructure/platform/*/*-bootstrap-sealed.yaml
+git commit -m "feat: add bootstrap secrets for platform services"
+git push origin main
+
+# Wait for Flux to reconcile
+flux reconcile source git cluster --wait
+flux reconcile ks infrastructure-platform --wait
 ```
 
 #### Test Platform Services
 ```bash
 flux get ks infrastructure-platform  # Check platform services status
+kubectl get pods -n vault -n authentik  # Verify platform pods starting
 ```
 
 ### Step 4: External Connectivity via VPS
@@ -80,7 +90,7 @@ flux get ks infrastructure-platform  # Check platform services status
 Create NS delegation records in Route 53 to allow Let's Encrypt DNS-01 validation for `test-cluster.agentydragon.com` via PowerDNS on the VPS:
 ```
 Record Name: test-cluster.agentydragon.com
-Record Type: NS  
+Record Type: NS
 Record Value: ns1.agentydragon.com
 TTL: 3600
 ```

@@ -33,54 +33,54 @@ spec:
     global:
       deploymentAnnotations:
         secret.reloader.stakater.com/reload: "authentik-secrets"
-    
+
     # Authentik server configuration
     authentik:
       # Secret key for encryption (will be generated)
       secret_key: "please-change-me-in-production-to-32-byte-key"
-      
+
       # Error reporting
       error_reporting:
         enabled: false
-        
+
       # PostgreSQL configuration (using built-in SQLite for dev)
       postgresql:
         host: ""
         name: ""
         user: ""
         password: ""
-        
+
       # Redis configuration (optional for better performance)
       redis:
         host: ""
-        
+
       # Bootstrap configuration (token from SealedSecret)
       bootstrap:
         password: "admin"
         # Token will be injected via extraEnvFrom
         token: ""
-        
+
       # Extract bootstrap token from sealed secret
       extraEnvFrom:
         - secretRef:
             name: authentik-bootstrap
-        
+
     # Server deployment
     server:
       name: server
       replicas: 1
-      
+
       # Service configuration
       service:
         enabled: true
         type: NodePort
         port: 80
         nodePort: 30300
-        
+
       # Ingress disabled (using NodePort)
       ingress:
         enabled: false
-        
+
       # Resources
       resources:
         server:
@@ -90,12 +90,12 @@ spec:
           limits:
             cpu: 500m
             memory: 1Gi
-    
-    # Worker deployment  
+
+    # Worker deployment
     worker:
       name: worker
       replicas: 1
-      
+
       resources:
         requests:
           cpu: 100m
@@ -103,15 +103,15 @@ spec:
         limits:
           cpu: 500m
           memory: 1Gi
-    
+
     # PostgreSQL (use external or disable for SQLite)
     postgresql:
       enabled: false
-      
+
     # Redis (optional)
     redis:
       enabled: false
-      
+
     # Service account
     serviceAccount:
       create: true

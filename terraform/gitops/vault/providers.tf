@@ -13,5 +13,5 @@ provider "vault" {
 }
 
 provider "kubernetes" {
-  config_path = var.kubeconfig_path
+  # Uses in-cluster authentication when running in tofu-controller
 }

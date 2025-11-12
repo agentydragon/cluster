@@ -77,7 +77,7 @@ variable "machine_secrets" {
 variable "global_config" {
   description = "Global configuration object"
   type = object({
-    headscale_api_key    = string
+    headscale_api_key      = string
     headscale_login_server = string
   })
   sensitive = true

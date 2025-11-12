@@ -7,16 +7,16 @@ This document tracks project roadmap and strategic architecture decisions for th
 
 ### 📋 Platform Services (Not yet implemented)
 - [ ] **Vault**: Deploy secret management with Kubernetes auth, standalone mode with TLS
-- [ ] **External Secrets Operator**: Enable Vault → K8s secrets bridge 
+- [ ] **External Secrets Operator**: Enable Vault → K8s secrets bridge
 - [ ] **Authentik**: Deploy identity provider with blueprint-based configuration
 - [ ] **Authentik & Vault GitOps Implementation**: Set up Authentik and Vault via GitOps and document their bootstrap process (beyond just GitOps/Tofu configuration)
 - [ ] **Gitea**: Git service with Authentik OIDC integration
-- [ ] **Harbor**: Container registry with Authentik OIDC authentication  
+- [ ] **Harbor**: Container registry with Authentik OIDC authentication
 - [ ] **Matrix/Synapse**: Chat platform with Authentik SSO integration
 - [ ] **Cross-integration**: Vault OIDC auth + Authentik-Vault secrets management
 
 ### Other Infrastructure Tasks
-- [ ] **PowerDNS Zone Automation**: Implement proper zone management in Ansible  
+- [ ] **PowerDNS Zone Automation**: Implement proper zone management in Ansible
 - [ ] **Backup/recovery**: Document cluster restore procedures and etcd backup automation
 - [ ] **VPS proxy resilience**: Investigate if VPS proxy to just *one* worker's ingress, or is it resilient to losing a worker? (HA)
 - [ ] **VIP bootstrap handling**: Document how we solved VIP chicken-and-egg problem (couldn't bootstrap with cluster_endpoint=VIP since VIP doesn't exist until after bootstrap completes)
@@ -32,7 +32,7 @@ The goal is to test and refine SSO integration before potentially switching from
 
 **Core SSO Components:**
 - **Authentik**: Central identity provider with blueprint-based declarative configuration
-- **Vault**: Secret storage with External Secrets Operator integration (Kubernetes auth)  
+- **Vault**: Secret storage with External Secrets Operator integration (Kubernetes auth)
 - **External Secrets**: Vault → K8s secrets bridge, eliminating direct service Vault integration
 - **Reflector**: Cross-namespace secret sharing for OAuth client credentials
 
@@ -60,7 +60,7 @@ The architecture has a circular dependency: **Vault needs Authentik** (OIDC auth
 1. **Vault Deployment**: Port `helm/vault/` configuration to Flux GitOps
    - TLS-enabled standalone mode with persistent storage
    - **No OIDC initially** - root token auth only
-   - ClusterSecretStore for External Secrets integration  
+   - ClusterSecretStore for External Secrets integration
    - Kubernetes authentication for service account access
 
 2. **External Secrets Operator**: Enable Vault → K8s secrets flow
@@ -80,7 +80,7 @@ The architecture has a circular dependency: **Vault needs Authentik** (OIDC auth
    blueprints:
      configMaps:
        - authentik-blueprints-users
-       - authentik-blueprints-gitea  
+       - authentik-blueprints-gitea
        - authentik-blueprints-harbor
        # - authentik-blueprints-vault  # Added in Phase 4
    ```
@@ -111,14 +111,14 @@ The architecture has a circular dependency: **Vault needs Authentik** (OIDC auth
    - Certificate management via Vault integration
 
 ### Domain Strategy
-- **Identity**: `auth.test-cluster.agentydragon.com` 
+- **Identity**: `auth.test-cluster.agentydragon.com`
 - **Git**: `git.test-cluster.agentydragon.com`
 - **Registry**: `registry.test-cluster.agentydragon.com`
 - **Chat**: `chat.test-cluster.agentydragon.com`
 
 ### Key Implementation Advantages
 - **Battle-tested patterns**: Leveraging proven ducktape architecture
-- **Service simplicity**: Applications use standard K8s secrets, not direct Vault integration  
+- **Service simplicity**: Applications use standard K8s secrets, not direct Vault integration
 - **Declarative management**: Git-driven user and permission management
 - **OAuth automation**: Shared secrets and client registration via blueprints
 - **External Secrets pattern**: Clean separation between secret storage and consumption
@@ -145,13 +145,13 @@ This design provides a modernized platform experience while maintaining operatio
 apps/
 ├── kustomizations/
 │   ├── phase1-infrastructure.yaml    # Vault + External Secrets
-│   ├── phase2-identity.yaml          # Authentik (minimal)  
+│   ├── phase2-identity.yaml          # Authentik (minimal)
 │   ├── phase3-integration.yaml       # Cross-integration
 │   └── phase4-services.yaml          # Platform services
 ├── phase1/
 │   ├── vault/helmrelease.yaml        # Bootstrap config
 │   └── external-secrets/helmrelease.yaml
-├── phase2/  
+├── phase2/
 │   └── authentik/helmrelease.yaml    # No Vault blueprint
 ├── phase3/
 │   ├── vault/helmrelease.yaml        # Enable OIDC
@@ -179,7 +179,7 @@ spec:
   # No dependencies - deploys first
 
 ---
-# apps/kustomizations/phase2-identity.yaml  
+# apps/kustomizations/phase2-identity.yaml
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
@@ -196,7 +196,7 @@ spec:
 
 ---
 # apps/kustomizations/phase3-integration.yaml
-apiVersion: kustomize.toolkit.fluxcd.io/v1  
+apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
   name: phase3-integration
@@ -213,7 +213,7 @@ spec:
 ---
 # apps/kustomizations/phase4-services.yaml
 apiVersion: kustomize.toolkit.fluxcd.io/v1
-kind: Kustomization  
+kind: Kustomization
 metadata:
   name: phase4-services
   namespace: flux-system
@@ -233,12 +233,12 @@ spec:
 ```bash
 # Single command deployment
 git clone https://github.com/agentydragon/cluster.git
-cd cluster  
+cd cluster
 flux bootstrap github --owner=agentydragon --repository=cluster
 
 # Flux automatically executes:
 # Phase 1: Vault + External Secrets → Ready
-# Phase 2: Authentik minimal → Ready  
+# Phase 2: Authentik minimal → Ready
 # Phase 3: Cross-integration → Ready
 # Phase 4: Platform services → Complete
 ```
@@ -247,7 +247,7 @@ flux bootstrap github --owner=agentydragon --repository=cluster
 
 1. **Dependency-Aware**: Flux respects `dependsOn` ordering automatically
 2. **Failure Isolation**: Failed phases block dependents, not the entire stack
-3. **Declarative Recreation**: `git clone` + `flux bootstrap` = full working stack  
+3. **Declarative Recreation**: `git clone` + `flux bootstrap` = full working stack
 4. **Selective Updates**: Change individual phases, Flux applies with correct dependencies
 5. **Operational Visibility**: `flux get kustomizations` shows phase status
 
@@ -268,7 +268,7 @@ kubectl get kustomizations -A -o wide
 This **multi-stage dependency pattern** applies to other complex deployments:
 
 - **Observability Stack**: Base metrics → Prometheus → Grafana → Dashboards
-- **CI/CD Pipeline**: Registry → Git → Builder → Deployer  
+- **CI/CD Pipeline**: Registry → Git → Builder → Deployer
 - **Data Platform**: Storage → Database → Processing → Analytics
 - **ML Platform**: Jupyter → MLflow → Kubeflow → Serving
 

@@ -32,20 +32,20 @@ spec:
     # Global configuration
     global:
       imageRegistry: ""
-      
+
     # Gitea configuration
     gitea:
       admin:
-        username: "admin" 
+        username: "admin"
         # Password from Vault via ExternalSecret
         existingSecret: "gitea-secrets"
         passwordKey: "admin-password"
         email: "admin@test-cluster.agentydragon.com"
-        
+
       config:
         APP_NAME: "Gitea: Git with a cup of tea"
         RUN_MODE: prod
-        
+
         server:
           DOMAIN: git.test-cluster.agentydragon.com
           SSH_DOMAIN: git.test-cluster.agentydragon.com
@@ -54,31 +54,31 @@ spec:
           SSH_PORT: 2222
           DISABLE_SSH: false
           START_SSH_SERVER: true
-          
+
         database:
           DB_TYPE: sqlite3
-          
+
         session:
           PROVIDER: file
-          
+
         cache:
           ENABLED: true
           ADAPTER: memory
-          
+
         queue:
           TYPE: level
-          
+
         security:
           INSTALL_LOCK: true
           SECRET_KEY: "change-this-secret-key-in-production"
-          
+
         oauth2_client:
           REGISTER_EMAIL_CONFIRM: false
           ENABLE_AUTO_REGISTRATION: true
           USERNAME: nickname
           UPDATE_AVATAR: true
           ACCOUNT_LINKING: login
-          
+
     # Service configuration
     service:
       http:
@@ -86,14 +86,14 @@ spec:
         port: 3000
         nodePort: 30500
       ssh:
-        type: NodePort  
+        type: NodePort
         port: 2222
         nodePort: 30501
-        
+
     # Ingress disabled (using NodePort)
     ingress:
       enabled: false
-      
+
     # Resources
     resources:
       limits:
@@ -102,24 +102,24 @@ spec:
       requests:
         cpu: 100m
         memory: 256Mi
-        
+
     # Persistence
     persistence:
       enabled: true
       size: 10Gi
-      
+
     # PostgreSQL (disabled - using SQLite)
     postgresql:
       enabled: false
-      
+
     # Redis (disabled)
     redis-cluster:
       enabled: false
-      
-    # Memcached (disabled)  
+
+    # Memcached (disabled)
     memcached:
       enabled: false
-      
+
     # Service account
     serviceAccount:
       create: true

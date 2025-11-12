@@ -19,13 +19,13 @@ spec:
       serviceAccount:
         annotations:
           eks.amazonaws.com/role-arn: ""  # Not needed for on-prem
-      
+
     # Security context for Terraform runner pods
     podSecurityContext:
       runAsNonRoot: true
       runAsUser: 65532
       fsGroup: 65532
-    
+
     # Resource limits for runner pods
     resources:
       limits:
@@ -34,7 +34,7 @@ spec:
       requests:
         cpu: 100m
         memory: 128Mi
-        
+
     # Enable logging for debugging
     logLevel: info
 ---

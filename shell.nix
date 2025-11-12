@@ -9,6 +9,7 @@ pkgs.mkShell {
     pkgs.talosctl
     pkgs.fluxcd
     pkgs.kubernetes-helm
+    pkgs.tflint
     # Use kubeseal from unstable to get v0.32.2
     unstable.kubeseal
   ];

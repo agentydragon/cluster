@@ -109,7 +109,7 @@ variable "headscale_api_key" {
   description = "Headscale API key for generating pre-auth keys."
   type        = string
   sensitive   = true
-  
+
   validation {
     condition     = var.headscale_api_key != ""
     error_message = "Headscale API key is required for Tailscale functionality."

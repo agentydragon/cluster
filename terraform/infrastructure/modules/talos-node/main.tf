@@ -5,36 +5,36 @@ locals {
       extraKernelArgs = ["net.ifnames=0"]
       systemExtensions = {
         officialExtensions = [
-          "siderolabs/qemu-guest-agent", 
+          "siderolabs/qemu-guest-agent",
           "siderolabs/tailscale"
         ]
       }
       meta = [
         {
-          key   = 10  # META key 0xa for network configuration  
+          key = 10 # META key 0xa for network configuration
           value = yamlencode({
             addresses = [
               {
-                address   = "${var.ip_address}/16"
-                linkName  = "eth0"
-                family    = "inet4"
-                scope     = "global"
-                flags     = "permanent"
-                layer     = "platform"
+                address  = "${var.ip_address}/16"
+                linkName = "eth0"
+                family   = "inet4"
+                scope    = "global"
+                flags    = "permanent"
+                layer    = "platform"
               }
             ]
             routes = [
               {
-                family       = "inet4"
-                dst          = ""
-                gateway      = var.gateway
-                outLinkName  = "eth0"
-                table        = "main"
-                priority     = 1024
-                scope        = "global"
-                type         = "unicast"
-                protocol     = "static"
-                layer        = "platform"
+                family      = "inet4"
+                dst         = ""
+                gateway     = var.gateway
+                outLinkName = "eth0"
+                table       = "main"
+                priority    = 1024
+                scope       = "global"
+                type        = "unicast"
+                protocol    = "static"
+                layer       = "platform"
               }
             ]
             hostnames = [
@@ -74,11 +74,11 @@ locals {
         enabled = false
         registries = {
           kubernetes = { disabled = true }
-          service = { disabled = true }
+          service    = { disabled = true }
         }
       }
       network = { cni = { name = "none" } }
-      proxy = { disabled = true }
+      proxy   = { disabled = true }
     }
   }
 
@@ -97,16 +97,16 @@ locals {
 
 # Generate unique pre-auth key for this node
 data "http" "preauth_key" {
-  url = "${var.global_config.headscale_login_server}/api/v1/preauthkey"
+  url    = "${var.global_config.headscale_login_server}/api/v1/preauthkey"
   method = "POST"
   request_headers = {
     Authorization = "Bearer ${var.global_config.headscale_api_key}"
-    Content-Type = "application/json"
+    Content-Type  = "application/json"
   }
   request_body = jsonencode({
-    user = "agentydragon"
-    reusable = false
-    ephemeral = false
+    user       = "agentydragon"
+    reusable   = false
+    ephemeral  = false
     expiration = timeadd(timestamp(), "1h")
   })
 }
@@ -126,8 +126,8 @@ data "talos_image_factory_urls" "urls" {
 
 # Download the disk image with pre-installed Talos
 resource "proxmox_virtual_environment_download_file" "disk_image" {
-  content_type = "import"  # Correct content type for disk images
-  datastore_id = "local"   # Use local datastore (now configured with import support)
+  content_type = "import" # Correct content type for disk images
+  datastore_id = "local"  # Use local datastore (now configured with import support)
   node_name    = var.proxmox_node_name
   url          = replace(data.talos_image_factory_urls.urls.urls.disk_image, "metal-amd64.raw.zst", "metal-amd64.qcow2")
   file_name    = "talos-${var.node_name}-${var.talos_version}-${substr(sha256(local.schematic_yaml), 0, 8)}.qcow2"
@@ -144,34 +144,34 @@ resource "proxmox_virtual_environment_vm" "vm" {
   bios            = "ovmf"
   machine         = "q35"
   scsi_hardware   = "virtio-scsi-single"
-  
+
   operating_system {
     type = "l26"
   }
-  
+
   cpu {
     type  = "host"
     cores = 4
   }
-  
+
   memory {
     dedicated = 4 * 1024
   }
-  
+
   vga {
     type = "qxl"
   }
-  
+
   network_device {
     bridge = "vmbr0"
   }
-  
+
   efi_disk {
     datastore_id = "local-zfs"
     file_format  = "raw"
     type         = "4m"
   }
-  
+
   # Use pre-installed Talos disk image as main boot disk
   disk {
     datastore_id = "local-zfs"
@@ -183,7 +183,7 @@ resource "proxmox_virtual_environment_vm" "vm" {
     file_format  = "raw"
     import_from  = proxmox_virtual_environment_download_file.disk_image.id
   }
-  
+
   agent {
     enabled = true
     trim    = true
@@ -196,7 +196,7 @@ resource "terraform_data" "restart_reminder" {
   triggers_replace = [
     proxmox_virtual_environment_download_file.disk_image.id
   ]
-  
+
   provisioner "local-exec" {
     command = <<-EOT
       echo ""
@@ -206,7 +206,7 @@ resource "terraform_data" "restart_reminder" {
       echo ""
     EOT
   }
-  
+
   depends_on = [proxmox_virtual_environment_vm.vm]
 }
 
@@ -220,17 +220,17 @@ data "talos_machine_configuration" "config" {
   kubernetes_version = var.kubernetes_version
   examples           = false
   docs               = false
-  
+
   config_patches = concat([
     yamlencode(local.common_machine_config),
     yamlencode(local.tailscale_extension_config)
-  ], var.node_type == "controller" ? [
+    ], var.node_type == "controller" ? [
     yamlencode({
       machine = {
         network = {
           interfaces = [{
             interface = "eth0"
-            vip = { ip = var.cluster_vip }
+            vip       = { ip = var.cluster_vip }
           }]
         }
       }
@@ -244,7 +244,7 @@ resource "talos_machine_configuration_apply" "apply" {
   machine_configuration_input = data.talos_machine_configuration.config.machine_configuration
   endpoint                    = var.ip_address
   node                        = var.ip_address
-  
+
   # Note: Network configuration is now handled by META key 10 in the ISO
   # Only include Tailscale configuration in the runtime patches
   config_patches = [
@@ -254,12 +254,12 @@ resource "talos_machine_configuration_apply" "apply" {
       name       = "tailscale"
       environment = [
         "TS_AUTHKEY=${jsondecode(data.http.preauth_key.response_body).preAuthKey.key}",
-        var.node_type == "controller" ? 
-          "TS_EXTRA_ARGS=--login-server=${var.global_config.headscale_login_server} --accept-routes --advertise-routes=10.0.0.0/16" :
-          "TS_EXTRA_ARGS=--login-server=${var.global_config.headscale_login_server} --accept-routes"
+        var.node_type == "controller" ?
+        "TS_EXTRA_ARGS=--login-server=${var.global_config.headscale_login_server} --accept-routes --advertise-routes=10.0.0.0/16" :
+        "TS_EXTRA_ARGS=--login-server=${var.global_config.headscale_login_server} --accept-routes"
       ]
     })
   ]
-  
+
   depends_on = [proxmox_virtual_environment_vm.vm]
 }

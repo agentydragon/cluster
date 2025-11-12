@@ -18,13 +18,13 @@ spec:
     # Install CRDs automatically
     crds:
       enabled: true
-    
+
     # Enable metrics
     prometheus:
       enabled: true
       servicemonitor:
         enabled: false  # Enable later when we have Prometheus
-    
+
     # Resource configuration
     resources:
       limits:
@@ -33,7 +33,7 @@ spec:
       requests:
         cpu: 10m
         memory: 32Mi
-    
+
     webhook:
       # Configure additional DNS names for webhook certificate
       extraArgs:
@@ -45,7 +45,7 @@ spec:
         requests:
           cpu: 10m
           memory: 32Mi
-    
+
     cainjector:
       resources:
         limits:

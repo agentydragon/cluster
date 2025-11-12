@@ -39,10 +39,10 @@ spec:
             nodePort: 30400
           https:
             nodePort: 30401
-        
+
     # External URL (used for OIDC redirects)
     externalURL: https://registry.test-cluster.agentydragon.com
-    
+
     # Persistence configuration
     persistence:
       enabled: true
@@ -59,12 +59,12 @@ spec:
           size: 1Gi
         trivy:
           size: 5Gi
-          
+
     # Admin password from Vault via ExternalSecret
     harborAdminPassword: ""  # Will be set via existingSecret
     existingSecretAdminPassword: "harbor-secrets"
     existingSecretAdminPasswordKey: "admin-password"
-    
+
     # Core services
     core:
       replicas: 1
@@ -75,7 +75,7 @@ spec:
         limits:
           memory: 512Mi
           cpu: 500m
-          
+
     # Registry configuration
     registry:
       replicas: 1
@@ -86,7 +86,7 @@ spec:
         limits:
           memory: 512Mi
           cpu: 200m
-          
+
     # PostgreSQL database
     database:
       type: internal
@@ -99,7 +99,7 @@ spec:
           limits:
             memory: 512Mi
             cpu: 200m
-            
+
     # Redis cache
     redis:
       type: internal
@@ -111,7 +111,7 @@ spec:
           limits:
             memory: 512Mi
             cpu: 200m
-            
+
     # Trivy vulnerability scanner
     trivy:
       enabled: true
@@ -122,11 +122,11 @@ spec:
         limits:
           cpu: 1000m
           memory: 1Gi
-          
+
     # Notary (optional)
     notary:
       enabled: false
-      
+
     # Job service
     jobservice:
       replicas: 1
@@ -137,7 +137,7 @@ spec:
         limits:
           memory: 512Mi
           cpu: 200m
-          
+
     # Portal (web UI)
     portal:
       replicas: 1

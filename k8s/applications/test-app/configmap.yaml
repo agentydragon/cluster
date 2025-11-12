@@ -21,11 +21,11 @@ data:
     <body>
         <div class="container">
             <h1>🎉 Talos Cluster Test Application</h1>
-            
+
             <div class="status">
                 ✅ External HTTPS connectivity is working!
             </div>
-            
+
             <h2>Infrastructure Stack</h2>
             <ul>
                 <li><strong>Cluster</strong>: Talos Linux Kubernetes</li>
@@ -35,12 +35,12 @@ data:
                 <li><strong>Proxy</strong>: VPS nginx → Tailscale → NodePort 30443</li>
                 <li><strong>GitOps</strong>: Flux CD managing deployments</li>
             </ul>
-            
+
             <div class="info">
                 <strong>Access URL</strong>: <code>https://test.test-cluster.agentydragon.com/</code><br>
                 <strong>Deployed via</strong>: Git commit → Flux → Kubernetes
             </div>
-            
+
             <h2>Request Information</h2>
             <p><strong>Timestamp</strong>: <script>document.write(new Date().toISOString())</script></p>
             <p><strong>User Agent</strong>: <script>document.write(navigator.userAgent)</script></p>

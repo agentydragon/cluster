@@ -10,15 +10,15 @@ spec:
     kind: GitRepository
     name: cluster
     namespace: flux-system
-  
+
   # Depend on Vault config and secrets
   dependsOn:
     - name: vault-config
       namespace: flux-system
-  
+
   # Use in-cluster service account
   serviceAccountName: tf-runner
-  
+
   # Store Terraform state in Kubernetes secret
   backendConfig:
     customConfiguration: |
@@ -27,7 +27,7 @@ spec:
         config_path      = "/tmp/kubeconfig"
         namespace        = "flux-system"
       }
-  
+
   # Variables for Terraform
   vars:
     - name: authentik_url

@@ -17,7 +17,7 @@ Execute those commands with the direnv loaded, or use `direnv exec .`.
 - VMs connected to Headscale mesh (100.64.0.14-18)
 - Static IPs -> baked into Image Factory QCOW2 disks together with Tailscale extension + QEMU guest agent
 - CNI: Cilium with Talos-specific security configuration
-- **VIP high availability**: 10.0.0.20 load-balances across controllers  
+- **VIP high availability**: 10.0.0.20 load-balances across controllers
 - **API server networking fix**: BPF hostLegacyRouting for static pod connectivity to worker nodes
 - **External HTTPS connectivity**: Complete VPS proxy → Tailscale → cluster ingress chain
 - **NGINX Ingress HA**: 2 replicas on worker nodes with NodePort 30080/30443
@@ -45,7 +45,7 @@ Execute those commands with the direnv loaded, or use `direnv exec .`.
 - **VIP Management**: Automatic kube-vip deployment for high availability
 
 ### External Connectivity
-- **Domain**: `*.test-cluster.agentydragon.com` 
+- **Domain**: `*.test-cluster.agentydragon.com`
 - **HTTPS chain**: Internet → VPS nginx proxy → Tailscale VPN → NodePort → NGINX Ingress → Applications
 - **SSL termination**: Let's Encrypt wildcard certificates on VPS
 - **Live test**: https://test.test-cluster.agentydragon.com/
@@ -120,5 +120,5 @@ kube-vip leader election → VIP (10.0.0.20) floats between controllers → Load
 ## External Dependencies
 
 - **Proxmox host**: `atlas` at 10.0.0.5 for VM hosting
-- **VPS**: nginx proxy and PowerDNS for external connectivity  
+- **VPS**: nginx proxy and PowerDNS for external connectivity
 - **GitHub**: Repository hosting and Flux source
