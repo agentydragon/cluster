@@ -71,23 +71,7 @@ kubectl --server=https://10.0.0.20:6443 get nodes
 
 ## Routine Maintenance
 
-### Essential Operations
-```bash
-# Check Flux status
-flux get all
-
-# Force reconciliation  
-flux reconcile helmrelease sealed-secrets
-
-# Create sealed secret
-kubectl create secret generic my-secret --from-literal=key=value --dry-run=client -o yaml | \
-  kubeseal -o yaml > my-sealed-secret.yaml
-
-# Check cluster health
-kubectl get nodes -o wide
-```
-
-For detailed operations (scaling, maintenance, troubleshooting), see **OPERATIONS.md**.
+For all operational procedures including scaling, maintenance, diagnostics, and troubleshooting, see **OPERATIONS.md**.
 
 ## How Things Are Wired Together
 

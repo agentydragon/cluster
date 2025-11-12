@@ -2,6 +2,26 @@
 
 Operational procedures for day-to-day cluster management, scaling, maintenance, and troubleshooting.
 
+## Essential Operations
+
+```bash
+# Check cluster health
+kubectl get nodes -o wide
+
+# Check Flux status
+flux get all
+
+# Force reconciliation  
+flux reconcile helmrelease sealed-secrets
+
+# Create sealed secret
+kubectl create secret generic my-secret --from-literal=key=value --dry-run=client -o yaml | \
+  kubeseal -o yaml > my-sealed-secret.yaml
+
+# Fetch certificate (verify controller access)
+kubeseal --fetch-cert
+```
+
 ## Node Operations
 
 ### Adding New Nodes
