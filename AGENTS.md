@@ -35,6 +35,15 @@ This repository uses specialized documentation files for different purposes:
 3. **Keep both in sync** - when implementation is complete, move details from PLAN.md to BOOTSTRAP.md
 4. **Document current state accurately** - especially important for infrastructure that changes over time
 
+## Command Execution Context
+
+**All kubectl, talosctl, kubeseal, and flux commands** in this repository documentation assume execution within the cluster's direnv environment. Commands should be run either:
+
+1. From `/home/agentydragon/code/cluster/` directory (direnv auto-loaded)
+2. Using `direnv exec .` prefix if not in the directory
+
+This provides consistent tool versions (nix-managed) and automatic KUBECONFIG/TALOSCONFIG environment variables.
+
 ## Usage for Claude Code
 
 When working on this cluster:

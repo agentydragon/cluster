@@ -204,3 +204,5 @@ Uses Nix + direnv for consistent tool versions:
 - **shell.nix**: kubeseal v0.32.2, talosctl, fluxcd from nixpkgs-unstable
 - **.envrc**: Auto-exports KUBECONFIG and TALOSCONFIG when entering directory
 - **Version consistency**: All tools from nix store, no system dependencies
+
+**Command Execution**: All kubectl, talosctl, kubeseal, and flux commands in this documentation assume execution within the cluster's direnv environment (either from this directory or using `direnv exec .` prefix).
