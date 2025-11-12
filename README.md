@@ -73,22 +73,22 @@ kubectl --server=https://10.0.0.20:6443 get nodes
 ### Node Operations
 ```bash
 # Restart node (graceful)
-direnv exec . talosctl -n 10.0.0.21 reboot
+talosctl -n 10.0.0.21 reboot
 
 # View node status
-direnv exec . talosctl -n 10.0.0.11,10.0.0.12,10.0.0.13 version
+talosctl -n 10.0.0.11,10.0.0.12,10.0.0.13 version
 
 # Check kubelet issues (common after restarts)
-direnv exec . talosctl -n 10.0.0.21 service kubelet restart
+talosctl -n 10.0.0.21 service kubelet restart
 ```
 
 ### Application Management
 ```bash
 # Check Flux status
-direnv exec . flux get all
+flux get all
 
 # Force reconciliation
-direnv exec . flux reconcile helmrelease sealed-secrets
+flux reconcile helmrelease sealed-secrets
 
 # Check specific application
 kubectl get all -n kube-system -l app.kubernetes.io/name=sealed-secrets
@@ -98,10 +98,10 @@ kubectl get all -n kube-system -l app.kubernetes.io/name=sealed-secrets
 ```bash
 # Create sealed secret
 kubectl create secret generic my-secret --from-literal=key=value --dry-run=client -o yaml | \
-  direnv exec . kubeseal -o yaml > my-sealed-secret.yaml
+  kubeseal -o yaml > my-sealed-secret.yaml
 
 # Fetch certificate (verify controller access)
-direnv exec . kubeseal --fetch-cert
+kubeseal --fetch-cert
 ```
 
 ### Cluster Scaling
@@ -163,7 +163,7 @@ kube-vip leader election → VIP (10.0.0.20) floats between controllers → Load
 ### Nodes NotReady
 Usually kubelet services stuck after restart:
 ```bash
-direnv exec . talosctl -n 10.0.0.21 service kubelet restart
+talosctl -n 10.0.0.21 service kubelet restart
 ```
 
 ### Ingress Not Accessible
@@ -180,14 +180,14 @@ kubectl get pods -n ingress-system -o wide
 Verify controller and service discovery:
 ```bash
 kubectl get all -n kube-system | grep sealed
-direnv exec . kubeseal --fetch-cert  # Should return certificate
+kubeseal --fetch-cert  # Should return certificate
 ```
 
 ### GitOps Not Reconciling
 Check Flux status and force reconciliation:
 ```bash
-direnv exec . flux get all
-direnv exec . flux reconcile source git cluster
+flux get all
+flux reconcile source git cluster
 ```
 
 ## External Dependencies
