@@ -350,38 +350,7 @@ Add Let's Encrypt task to VPS playbook:
 
 ### Nginx Proxy Configuration
 
-Create nginx site template (`nginx-sites/test-cluster.agentydragon.com.j2`):
-
-```nginx
-# Wildcard proxy for Talos cluster services
-server {
-    listen 80;
-    server_name *.test-cluster.agentydragon.com;
-    return 301 https://$host$request_uri;
-}
-
-server {
-    listen 443 ssl http2;
-    server_name *.test-cluster.agentydragon.com;
-
-    ssl_certificate /etc/letsencrypt/live/test-cluster-wildcard/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/test-cluster-wildcard/privkey.pem;
-
-    # Proxy to Talos cluster NGINX Ingress Controller
-    location / {
-        proxy_pass https://w0:30443;  # NodePort via Tailscale
-        
-        # Preserve original hostname for ingress routing
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-        
-        # Disable SSL verification for internal connections
-        proxy_ssl_verify off;
-    }
-}
-```
+Create nginx site template at `/home/agentydragon/code/ducktape/ansible/nginx-sites/test-cluster.agentydragon.com.j2` with wildcard proxy configuration for `*.test-cluster.agentydragon.com` → `w0:30443` via Tailscale.
 
 ### Deploy External Connectivity
 
