@@ -54,12 +54,28 @@ This command:
 kubectl get nodes -o wide  # Wait for Flux to deploy Cilium (nodes become Ready)
 flux get all               # Check GitOps status
 kubectl --server=https://10.0.0.20:6443 get nodes  # Test VIP
-kubectl get pods -A  # Verify all applications deployed
 ```
 
-### Step 3: External Connectivity via VPS
+### Step 3: Generate Bootstrap Secrets
 
-#### Step 3.1: DNS Delegation
+Before platform services can deploy, generate bootstrap secrets:
+
+```bash
+# Generate bootstrap tokens
+for service in "vault:vault:root-token" "authentik:authentik:bootstrap-token"; do
+  IFS=':' read -r name ns key <<< "$service"
+  openssl rand -hex 32 | kubectl create secret generic ${name}-bootstrap --from-file=${key}=/dev/stdin --namespace=${ns} --dry-run=client -o yaml | kubeseal -o yaml > k8s/infrastructure/platform/${name}/${name}-bootstrap-sealed.yaml
+done
+```
+
+#### Test Platform Services
+```bash
+flux get ks infrastructure-platform  # Check platform services status
+```
+
+### Step 4: External Connectivity via VPS
+
+#### Step 4.1: DNS Delegation
 
 Create NS delegation records in Route 53 to allow Let's Encrypt DNS-01 validation for `test-cluster.agentydragon.com` via PowerDNS on the VPS:
 ```
