@@ -51,9 +51,12 @@ spec:
         cstor:
           enabled: false
 
-    # LocalPV Hostpath provisioner
+    # LocalPV Hostpath provisioner (using dependency chart)
     localpv-provisioner:
       enabled: true
+      # Dependency chart parameters - control OPENEBS_IO_BASE_PATH env var
+      localpv:
+        basePath: "/var/lib/openebs/local"
       # Enable helper pod for directory creation on nodes
       helperPod:
         image:
@@ -66,10 +69,6 @@ spec:
         isDefaultClass: true
         name: "openebs-hostpath"
         basePath: "/var/lib/openebs/local" # Use /var/lib which is rw-mounted in Talos kubelet
-
-    # Correct parameter for OPENEBS_IO_BASE_PATH environment variable
-    localprovisioner:
-      basePath: "/var/lib/openebs/local"
 
     # Disable other components
     mayastor:
