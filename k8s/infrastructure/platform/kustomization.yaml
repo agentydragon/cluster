@@ -8,3 +8,4 @@ resources:
   - vault-config.yaml
   - authentik-config.yaml
   - services-config.yaml
+  - powerdns

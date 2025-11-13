@@ -13,6 +13,4 @@ spec:
     name: flux-system
   timeout: 10m0s
   wait: true
-  # Depends on platform for tf-controller CRDs (Terraform resources)
-  dependsOn:
-    - name: platform
+  # Can run in parallel with core since networking doesn't depend on CRDs
