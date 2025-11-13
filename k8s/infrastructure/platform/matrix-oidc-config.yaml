@@ -1,7 +1,7 @@
 apiVersion: infra.contrib.fluxcd.io/v1alpha2
 kind: Terraform
 metadata:
-  name: harbor-oidc-config
+  name: matrix-oidc-config
   namespace: flux-system
 spec:
   interval: 15m
@@ -25,31 +25,27 @@ spec:
   backendConfig:
     customConfiguration: |
       backend "kubernetes" {
-        secret_suffix    = "harbor-oidc-config"
+        secret_suffix    = "matrix-oidc-config"
         config_path      = "/tmp/kubeconfig"
         namespace        = "flux-system"
       }
 
-  # Variables for Terraform - only Harbor-specific
+  # Variables for Terraform - only Matrix-specific
   vars:
     - name: authentik_url
       value: "https://auth.test-cluster.agentydragon.com"
     - name: authentik_external_url
       value: "https://auth.test-cluster.agentydragon.com"
-    - name: harbor_url
-      value: "https://registry.test-cluster.agentydragon.com"
-    - name: harbor_external_url
-      value: "https://registry.test-cluster.agentydragon.com"
-    - name: harbor_username
-      value: "admin"
+    - name: matrix_external_url
+      value: "https://matrix.test-cluster.agentydragon.com"
     - name: vault_address
       value: "https://vault.test-cluster.agentydragon.com"
     - name: kubeconfig_path
       value: "/tmp/kubeconfig"
-    # Only include what Harbor needs
+    # Only include what Matrix needs
     - name: enable_harbor
-      value: "true"
+      value: "false"
     - name: enable_gitea
       value: "false"
     - name: enable_matrix
-      value: "false"
+      value: "true"

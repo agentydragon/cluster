@@ -1,7 +1,7 @@
 apiVersion: infra.contrib.fluxcd.io/v1alpha2
 kind: Terraform
 metadata:
-  name: services-config
+  name: gitea-oidc-config
   namespace: flux-system
 spec:
   interval: 15m
@@ -11,9 +11,11 @@ spec:
     name: cluster
     namespace: flux-system
 
-  # Depend on Authentik config being ready
+  # Depend on Authentik config and sso-secrets being ready
   dependsOn:
     - name: authentik-config
+      namespace: flux-system
+    - name: sso-secrets
       namespace: flux-system
 
   # Use in-cluster service account
@@ -23,30 +25,29 @@ spec:
   backendConfig:
     customConfiguration: |
       backend "kubernetes" {
-        secret_suffix    = "services-config"
+        secret_suffix    = "gitea-oidc-config"
         config_path      = "/tmp/kubeconfig"
         namespace        = "flux-system"
       }
 
-  # Variables for Terraform
+  # Variables for Terraform - only Gitea-specific
   vars:
     - name: authentik_url
       value: "https://auth.test-cluster.agentydragon.com"
     - name: authentik_external_url
       value: "https://auth.test-cluster.agentydragon.com"
-    - name: harbor_url
-      value: "https://registry.test-cluster.agentydragon.com"
-    - name: harbor_external_url
-      value: "https://registry.test-cluster.agentydragon.com"
-    - name: harbor_username
-      value: "admin"
     - name: gitea_url
       value: "https://git.test-cluster.agentydragon.com"
     - name: gitea_external_url
       value: "https://git.test-cluster.agentydragon.com"
-    - name: matrix_external_url
-      value: "https://matrix.test-cluster.agentydragon.com"
     - name: vault_address
       value: "https://vault.test-cluster.agentydragon.com"
     - name: kubeconfig_path
       value: "/tmp/kubeconfig"
+    # Only include what Gitea needs
+    - name: enable_harbor
+      value: "false"
+    - name: enable_gitea
+      value: "true"
+    - name: enable_matrix
+      value: "false"

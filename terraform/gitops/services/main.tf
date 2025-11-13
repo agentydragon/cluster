@@ -41,6 +41,7 @@ data "vault_kv_secret_v2" "matrix_secrets" {
 
 # Harbor OIDC Configuration (following ducktape pattern)
 resource "authentik_provider_oauth2" "harbor" {
+  count         = var.enable_harbor ? 1 : 0
   name          = "harbor-oidc"
   client_id     = "harbor"
   client_secret = data.vault_kv_secret_v2.harbor_secrets.data["client-secret"]
@@ -74,9 +75,10 @@ resource "authentik_provider_oauth2" "harbor" {
 }
 
 resource "authentik_application" "harbor" {
+  count             = var.enable_harbor ? 1 : 0
   name              = "Harbor Registry"
   slug              = "harbor"
-  protocol_provider = authentik_provider_oauth2.harbor.id
+  protocol_provider = authentik_provider_oauth2.harbor[0].id
 
   meta_launch_url  = var.harbor_external_url
   meta_description = "Private container registry with vulnerability scanning"
@@ -107,6 +109,7 @@ resource "authentik_application" "harbor" {
 
 # Gitea OIDC Configuration
 resource "authentik_provider_oauth2" "gitea" {
+  count         = var.enable_gitea ? 1 : 0
   name          = "gitea-oidc"
   client_id     = "gitea"
   client_secret = data.vault_kv_secret_v2.gitea_secrets.data["client-secret"]
@@ -136,9 +139,10 @@ resource "authentik_provider_oauth2" "gitea" {
 }
 
 resource "authentik_application" "gitea" {
+  count             = var.enable_gitea ? 1 : 0
   name              = "Gitea Git Service"
   slug              = "gitea"
-  protocol_provider = authentik_provider_oauth2.gitea.id
+  protocol_provider = authentik_provider_oauth2.gitea[0].id
 
   meta_launch_url  = var.gitea_external_url
   meta_description = "Git service with web interface"
@@ -167,6 +171,7 @@ resource "authentik_application" "gitea" {
 
 # Matrix OIDC Configuration (for future use)
 resource "authentik_provider_oauth2" "matrix" {
+  count         = var.enable_matrix ? 1 : 0
   name          = "matrix-oidc"
   client_id     = "matrix"
   client_secret = data.vault_kv_secret_v2.matrix_secrets.data["client-secret"]
@@ -196,9 +201,10 @@ resource "authentik_provider_oauth2" "matrix" {
 }
 
 resource "authentik_application" "matrix" {
+  count             = var.enable_matrix ? 1 : 0
   name              = "Matrix Chat"
   slug              = "matrix"
-  protocol_provider = authentik_provider_oauth2.matrix.id
+  protocol_provider = authentik_provider_oauth2.matrix[0].id
 
   meta_launch_url  = var.matrix_external_url
   meta_description = "Decentralized chat and collaboration"

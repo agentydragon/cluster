@@ -3,7 +3,10 @@ kind: Kustomization
 resources:
   - vault
   - authentik
+  - tf-runner-rbac.yaml
   - sso-secrets.yaml
   - vault-config.yaml
   - authentik-config.yaml
-  - services-config.yaml
+  - harbor-oidc-config.yaml
+  - gitea-oidc-config.yaml
+  - matrix-oidc-config.yaml

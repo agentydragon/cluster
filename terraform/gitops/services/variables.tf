@@ -46,5 +46,33 @@ variable "matrix_external_url" {
   default     = "https://matrix.test-cluster.agentydragon.com"
 }
 
-# vault_address and kubeconfig_path moved to shared module
-# Uses defaults from ../modules/providers/variables.tf
+variable "vault_address" {
+  description = "Vault server URL"
+  type        = string
+  default     = "https://vault.test-cluster.agentydragon.com"
+}
+
+variable "kubeconfig_path" {
+  description = "Path to kubeconfig file"
+  type        = string
+  default     = "/tmp/kubeconfig"
+}
+
+# Enable/disable individual services
+variable "enable_harbor" {
+  description = "Enable Harbor OIDC configuration"
+  type        = bool
+  default     = false
+}
+
+variable "enable_gitea" {
+  description = "Enable Gitea OIDC configuration"
+  type        = bool
+  default     = false
+}
+
+variable "enable_matrix" {
+  description = "Enable Matrix OIDC configuration"
+  type        = bool
+  default     = false
+}

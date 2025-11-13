@@ -1,2 +1,11 @@
 # Variables for secrets module
-# No additional variables needed - uses only Kubernetes provider via common module
+variable "vault_address" {
+  description = "Vault server URL"
+  type        = string
+}
+
+variable "kubeconfig_path" {
+  description = "Path to kubeconfig file"
+  type        = string
+  default     = "/tmp/kubeconfig"
+}
