@@ -15,7 +15,7 @@ spec:
 
   # Depend on PowerDNS and secrets being ready
   dependsOn:
-    - name: networking
+    - name: powerdns
       namespace: flux-system
     - name: powerdns-secrets
       namespace: flux-system

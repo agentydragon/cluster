@@ -1,25 +1,31 @@
 # Claude Code Instructions
 
 ## SSH Access
+
 Use `ssh root@atlas` to access the Proxmox host. No password required (SSH keys configured).
 
 ## Talos CLI Access
+
 - Run `talosctl` commands from cluster directory (direnv auto-loaded)
 - Use `direnv exec /home/agentydragon/code/cluster talosctl` if running from other directories
 - The direnv config automatically sets `TALOSCONFIG` path and provides talosctl via nix
 
 ## Working Directory
+
 - Infrastructure terraform config: `/home/agentydragon/code/cluster/terraform/infrastructure/`
 - GitOps terraform config: `/home/agentydragon/code/cluster/terraform/gitops/`
-- VMs 105-109 are the working cluster nodes (c0-c2 controllers, w0-w1 workers)
+- VM IDs: 1500-1502 (controlplane0-2), 2000-2001 (worker0-1)
+- Node IPs: 10.0.1.x (controllers), 10.0.2.x (workers), 10.0.3.x (VIPs)
 
 ## Reference Code Location
+
 - `/mnt/tankshare/code/` - Directory for cloned source code and reference implementations
 - `/mnt/tankshare/code/github.com/rgl/` - The RGL terraform-proxmox-talos configuration this project was built upon
   - Uses `./do init` to build custom Talos qcow2 images with extensions via Docker imager
   - The `build_talos_image()` function creates `tmp/talos/talos-${version}.qcow2` locally
 
 ## Key Files
+
 - `talos.tf` - Talos machine configurations with Tailscale
 - `proxmox.tf` - VM definitions
 - `variables.tf` - Configuration variables
@@ -28,20 +34,24 @@ Use `ssh root@atlas` to access the Proxmox host. No password required (SSH keys 
 ## Project Documentation Strategy
 
 ### docs/BOOTSTRAP.md
+
 **Purpose**: ONLY straight-line sequence to recreate a functioning cluster from unpopulated Proxmox.
 
 **Content**:
+
 - Step-by-step instructions for cold-starting the Talos cluster from nothing
 - Complete deployment procedures (terraform, CNI, applications, external connectivity)
 - Basic verification steps only (run `terraform/infrastructure/health-check.sh`)
 - **NO troubleshooting** (would be too verbose - half a megabyte)
 
-**Maintenance**: This document should be continuously updated to reflect the current working state. When new components are added or procedures change, docs/BOOTSTRAP.md must be updated to maintain an accurate "recipe" for reproducing the cluster.
+**Maintenance**: Continuously update to reflect current state. Changes require BOOTSTRAP.md updates.
 
 ### docs/OPERATIONS.md
+
 **Purpose**: Day-to-day cluster management procedures including scaling, maintenance, and troubleshooting.
 
 **Content**:
+
 - Node operations (adding, removing, restarting)
 - System diagnostics and VM console management
 - Comprehensive troubleshooting guide with symptoms and solutions
@@ -50,16 +60,19 @@ Use `ssh root@atlas` to access the Proxmox host. No password required (SSH keys 
 **Maintenance**: Updated when operational procedures change or new troubleshooting scenarios are discovered.
 
 ### docs/PLAN.md
+
 **Purpose**: Describes high-level goals we want to implement, lists what we finished, and what remains to be done as items.
 
 **Content**:
+
 - Project overview and architecture decisions
-- Completed features with status markers (✅)
+- Completed features with status markers ([x])
 - Remaining tasks as checkbox items ([ ])
+- Partially complete tasks as ([ ] PARTIAL)
 - Design documents for planned features
 - Strategic technical decisions and rationale
 
-**Maintenance**: This document tracks the project roadmap and evolution. Completed items should be marked as done and moved to "What We Successfully Achieved" sections. New goals and tasks should be added to remaining work sections.
+**Maintenance**: Tracks project roadmap. Move completed items to "Achieved" sections, add new goals.
 
 ## Key Principles
 
@@ -70,7 +83,7 @@ Use `ssh root@atlas` to access the Proxmox host. No password required (SSH keys 
 
 ## Command Execution Context
 
-**All kubectl, talosctl, kubeseal, flux, and helm commands** assume execution from the cluster directory (direnv auto-loaded) or using `direnv exec .` prefix if run elsewhere.
+**All kubectl, talosctl, kubeseal, flux, and helm commands** assume cluster directory execution or `direnv exec .`.
 
 This provides consistent tool versions (nix-managed) and automatic KUBECONFIG/TALOSCONFIG environment variables.
 

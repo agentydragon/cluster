@@ -21,21 +21,28 @@ Execute those commands with the direnv loaded, or use `direnv exec .`.
 - **API server networking fix**: BPF hostLegacyRouting for static pod connectivity to worker nodes
 - **External HTTPS connectivity**: Complete VPS proxy → Tailscale → cluster ingress chain
 - **NGINX Ingress HA**: 2 replicas on worker nodes accessing MetalLB VIP 10.0.3.2
-- **End-to-end testing**: Test application accessible via https://test.test-cluster.agentydragon.com/
+- **End-to-end testing**: Test application accessible via <https://test.test-cluster.agentydragon.com/>
 
 ### Infrastructure
+
 - Network: 10.0.0.0/16, gateway 10.0.0.1
 - 5 Talos nodes: 3 controllers (controlplane0-2 = 10.0.1.1-3) + 2 workers (worker0-1 = 10.0.2.1-2)
 - Cluster API VIP: `10.0.3.1` (kube-vip load balancer across controllers)
-- MetalLB VIP pool: `10.0.3.2` (ingress), `10.0.3.10-20` (services)
+- MetalLB VIP pools:
+  - `ingress-pool`: `10.0.3.2` (dedicated ingress)
+  - `dns-pool`: `10.0.3.3` (dedicated PowerDNS)
+  - `services-pool`: `10.0.3.4-20` (Harbor, Gitea, etc.)
 
 ### Platform Services
+
 - **NGINX Ingress**: HA deployment (2 replicas on workers, MetalLB LoadBalancer 10.0.3.2)
-- **cert-manager**: Automatic SSL certificate management
+- **PowerDNS**: Authoritative DNS server with API (MetalLB LoadBalancer 10.0.3.3)
+- **cert-manager**: Automatic SSL certificate management with PowerDNS DNS-01 challenges
 - **sealed-secrets**: Encrypted secrets in Git
 - **Flux GitOps**: Declarative cluster management from this repository
 
 ### Key Implementation Details
+
 - **Image Factory**: QCOW2 disk images with META key 10 static IP configuration
 - **Terraform Modules**: Clean per-node architecture with unified configuration
 - **Bootstrap Automation**: Single `terraform apply` handles everything
@@ -43,14 +50,15 @@ Execute those commands with the direnv loaded, or use `direnv exec .`.
 - **VIP Management**: Automatic kube-vip deployment for high availability
 
 ### External Connectivity
+
 - **Domain**: `*.test-cluster.agentydragon.com`
 - **HTTPS chain**: Internet → VPS nginx proxy → Tailscale VPN → NodePort → NGINX Ingress → Applications
 - **SSL termination**: Let's Encrypt wildcard certificates on VPS
-- **Live test**: https://test.test-cluster.agentydragon.com/
+- **Live test**: <https://test.test-cluster.agentydragon.com/>
 
 ## Repository Structure
 
-```
+```text
 cluster/
 ├── shell.nix, .envrc      # direnv (KUBECONFIG, TALOSCONFIG, kubeseal CLI, ...)
 ├── docs/
@@ -79,6 +87,7 @@ cluster/
 ```
 
 ## Prerequisites
+
 - Proxmox host `atlas` with SSH access
 - direnv configured in cluster directory
 - Internet access for image downloads
@@ -86,10 +95,13 @@ cluster/
 ## How Things Are Wired Together
 
 ### Network Architecture
-Internet (443) → `*.test-cluster.agentydragon.com` VPS nginx proxy → Tailscale VPN → MetalLB VIP (10.0.3.2:443) → NGINX Ingress → Apps
+
+Internet (443) → VPS nginx proxy → Tailscale VPN → MetalLB VIP (10.0.3.2:443) → NGINX Ingress → Apps
 
 - **VPS**: `~/code/ducktape/ansible/nginx-sites/test-cluster.agentydragon.com.j2`
-- **DNS**: `*.test-cluster.agentydragon.com` → VPS IP → PowerDNS with Let's Encrypt DNS-01
+- **DNS Architecture**:
+  - VPS PowerDNS delegates `test-cluster.agentydragon.com` → cluster PowerDNS (10.0.3.3)
+  - In-cluster PowerDNS enables Let's Encrypt DNS-01 challenges for SSL certs
 - **LoadBalancer**: NGINX Ingress uses MetalLB VIP 10.0.3.2 instead of NodePort
 - **Cilium**: `kubeProxyReplacement: true` with privileged port protection enabled
 
@@ -99,6 +111,7 @@ Internet (443) → `*.test-cluster.agentydragon.com` VPS nginx proxy → Tailsca
 - Secret management: local `kubeseal` → sealed-secrets controller → K8s Secret → Application pods
 
 ### VIP High Availability
+
 kube-vip leader election → VIP (10.0.3.1) floats between controllers → Load balances API requests
 
 **Bootstrap order**: First controller (10.0.1.1) → Cluster formation → VIP establishment → HA active

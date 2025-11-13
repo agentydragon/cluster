@@ -1,0 +1,28 @@
+# Minimal Cilium bootstrap values - shared between Terraform and Flux
+cluster:
+  name: talos-cluster
+  id: 1
+
+# Kubernetes API server configuration (using VIP for HA)
+k8sServiceHost: "10.0.3.1"
+k8sServicePort: "6443"
+
+# IPAM configuration - use cluster-pool for cross-node routing
+ipam:
+  mode: cluster-pool
+  operator:
+    clusterPoolIPv4PodCIDRList:
+      - "10.244.0.0/16"
+
+# Enable kube-proxy replacement
+kubeProxyReplacement: "true"
+
+# Basic Talos compatibility
+cgroup:
+  hostRoot: /sys/fs/cgroup
+  autoMount:
+    enabled: false
+
+# BPF configuration for static pod connectivity
+bpf:
+  hostLegacyRouting: true

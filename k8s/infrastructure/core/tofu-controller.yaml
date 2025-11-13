@@ -18,7 +18,7 @@ spec:
     runner:
       serviceAccount:
         annotations:
-          eks.amazonaws.com/role-arn: ""  # Not needed for on-prem
+          eks.amazonaws.com/role-arn: "" # Not needed for on-prem
 
     # Security context for Terraform runner pods
     podSecurityContext:

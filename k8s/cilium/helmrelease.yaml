@@ -93,7 +93,7 @@ spec:
 
     # BPF configuration for static pod connectivity (API server)
     bpf:
-      hostLegacyRouting: true  # Route static pod traffic through host stack
+      hostLegacyRouting: true # Route static pod traffic through host stack
 
     # Enable endpoint routes for improved host connectivity
     endpointRoutes:

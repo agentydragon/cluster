@@ -9,6 +9,10 @@ pkgs.mkShell {
     pkgs.talosctl
     pkgs.fluxcd
     pkgs.kubernetes-helm
+    pkgs.kustomize  # For kustomize build validation
+    pkgs.kubeconform  # For Kubernetes manifest validation
+    pkgs.markdownlint-cli  # For markdown linting
+    pkgs.nodePackages.prettier  # For YAML formatting
     pkgs.tflint
     pkgs.yq-go  # YAML/JSON conversion tool
     pkgs.popeye  # Kubernetes cluster health checker

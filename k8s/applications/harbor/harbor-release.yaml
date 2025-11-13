@@ -61,7 +61,7 @@ spec:
           size: 5Gi
 
     # Admin password from Vault via ExternalSecret
-    harborAdminPassword: ""  # Will be set via existingSecret
+    harborAdminPassword: "" # Will be set via existingSecret
     existingSecretAdminPassword: "harbor-secrets"
     existingSecretAdminPasswordKey: "admin-password"
 

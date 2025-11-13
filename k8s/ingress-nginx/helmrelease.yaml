@@ -29,7 +29,7 @@ spec:
         - key: "node-role.kubernetes.io/control-plane"
           operator: "Exists"
           effect: "NoSchedule"
-        - key: "node-role.kubernetes.io/master"  # Legacy key
+        - key: "node-role.kubernetes.io/master" # Legacy key
           operator: "Exists"
           effect: "NoSchedule"
 
@@ -37,18 +37,18 @@ spec:
       affinity:
         podAntiAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
-          - weight: 100
-            podAffinityTerm:
-              labelSelector:
-                matchLabels:
-                  app.kubernetes.io/name: ingress-nginx
-                  app.kubernetes.io/component: controller
-              topologyKey: kubernetes.io/hostname
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    app.kubernetes.io/name: ingress-nginx
+                    app.kubernetes.io/component: controller
+                topologyKey: kubernetes.io/hostname
 
       # Service configuration - LoadBalancer with MetalLB
       service:
         type: LoadBalancer
-        loadBalancerIP: 10.0.3.2  # Dedicated ingress VIP
+        loadBalancerIP: 10.0.3.2 # Dedicated ingress VIP
         annotations:
           metallb.universe.tf/address-pool: ingress-pool
         ports:
@@ -70,7 +70,7 @@ spec:
       metrics:
         enabled: true
         serviceMonitor:
-          enabled: false  # Enable later when we have Prometheus
+          enabled: false # Enable later when we have Prometheus
 
       # Resource limits
       resources:

@@ -8,18 +8,18 @@ metadata:
 spec:
   ingressClassName: nginx
   tls:
-  - hosts:
-    - test.test-cluster.agentydragon.com
-    # Note: TLS termination happens at VPS nginx proxy
-    # This section is for documentation/future cert-manager integration
+    - hosts:
+        - test.test-cluster.agentydragon.com
+      # Note: TLS termination happens at VPS nginx proxy
+      # This section is for documentation/future cert-manager integration
   rules:
-  - host: test.test-cluster.agentydragon.com
-    http:
-      paths:
-      - path: /
-        pathType: Prefix
-        backend:
-          service:
-            name: test-web-server
-            port:
-              number: 80
+    - host: test.test-cluster.agentydragon.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: test-web-server
+                port:
+                  number: 80

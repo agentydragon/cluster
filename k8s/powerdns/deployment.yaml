@@ -43,7 +43,7 @@ metadata:
   labels:
     app: powerdns
 spec:
-  replicas: 1  # DNS should be singular for consistency
+  replicas: 1 # DNS should be singular for consistency
   selector:
     matchLabels:
       app: powerdns
@@ -53,51 +53,51 @@ spec:
         app: powerdns
     spec:
       containers:
-      - name: powerdns
-        image: powerdns/pdns-auth-master:latest
-        ports:
-        - name: dns-udp
-          containerPort: 53
-          protocol: UDP
-        - name: dns-tcp
-          containerPort: 53
-          protocol: TCP
-        - name: api
-          containerPort: 8081
-          protocol: TCP
-        env:
-        - name: PDNS_API_KEY
-          valueFrom:
-            secretKeyRef:
-              name: powerdns-api-key
-              key: powerdns_api_key
-        volumeMounts:
-        - name: config
-          mountPath: /etc/powerdns
-        - name: data
-          mountPath: /var/lib/powerdns
-        resources:
-          requests:
-            memory: "128Mi"
-            cpu: "100m"
-          limits:
-            memory: "256Mi"
-            cpu: "200m"
-        livenessProbe:
-          tcpSocket:
-            port: 53
-          initialDelaySeconds: 30
-          periodSeconds: 10
-        readinessProbe:
-          httpGet:
-            path: /api/v1/servers/localhost
-            port: 8081
-          initialDelaySeconds: 10
-          periodSeconds: 5
+        - name: powerdns
+          image: powerdns/pdns-auth-master:latest
+          ports:
+            - name: dns-udp
+              containerPort: 53
+              protocol: UDP
+            - name: dns-tcp
+              containerPort: 53
+              protocol: TCP
+            - name: api
+              containerPort: 8081
+              protocol: TCP
+          env:
+            - name: PDNS_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: powerdns-api-key
+                  key: powerdns_api_key
+          volumeMounts:
+            - name: config
+              mountPath: /etc/powerdns
+            - name: data
+              mountPath: /var/lib/powerdns
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "256Mi"
+              cpu: "200m"
+          livenessProbe:
+            tcpSocket:
+              port: 53
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /api/v1/servers/localhost
+              port: 8081
+            initialDelaySeconds: 10
+            periodSeconds: 5
       volumes:
-      - name: config
-        configMap:
-          name: powerdns-config
-      - name: data
-        persistentVolumeClaim:
-          claimName: powerdns-data
+        - name: config
+          configMap:
+            name: powerdns-config
+        - name: data
+          persistentVolumeClaim:
+            claimName: powerdns-data

@@ -1,45 +1,23 @@
-# Bootstrap Cilium CNI to break chicken-and-egg problem
-# Flux needs CNI to schedule pods, but CNI comes from Flux
-# This manual installation allows Flux to start, then Flux takes over Cilium management
-
-# Read the existing HelmRelease YAML to extract values
-data "local_file" "cilium_helmrelease" {
-  filename = "${path.root}/../../k8s/infrastructure/networking/cilium/helmrelease.yaml"
-}
-
-locals {
-  # Parse the HelmRelease YAML and extract values
-  cilium_helmrelease = yamldecode(data.local_file.cilium_helmrelease.content)
-  cilium_values = merge(
-    local.cilium_helmrelease.spec.values,
-    {
-      # Override with dynamic terraform values
-      k8sServiceHost = var.cluster_vip
-    }
-  )
-}
-
+# Bootstrap Cilium CNI only to break chicken-and-egg problem
+# Flux will manage everything else through HelmReleases
 resource "helm_release" "cilium_bootstrap" {
   name       = "cilium"
   repository = "https://helm.cilium.io/"
   chart      = "cilium"
-  version    = local.cilium_helmrelease.spec.chart.spec.version
+  version    = "1.16.5"
   namespace  = "kube-system"
 
-  # Use the exact same values from the HelmRelease YAML
-  values = [yamlencode(local.cilium_values)]
+  # Use shared bootstrap config - SSOT with Flux
+  values = [file("${path.module}/../../k8s/platform/cilium-bootstrap-values.yaml")]
 
   # Wait for cluster to be ready
   depends_on = [
     null_resource.wait_for_k8s_api
   ]
 
-  # Allow Flux to take over management later
+  # Allow Flux to take over management
   lifecycle {
-    ignore_changes = [
-      version,
-      values
-    ]
+    ignore_changes = [values, version]
   }
 }
 
@@ -70,14 +48,8 @@ resource "null_resource" "wait_for_k8s_api" {
 }
 
 # Wait for nodes to become Ready after CNI installation
-resource "time_sleep" "wait_for_cni" {
-  depends_on      = [helm_release.cilium_bootstrap]
-  create_duration = "30s" # Give CNI time to start
-}
-
-# Use kubectl wait which has proper retry and timeout logic
 resource "null_resource" "wait_for_nodes_ready" {
-  depends_on = [time_sleep.wait_for_cni]
+  depends_on = [helm_release.cilium_bootstrap]
 
   provisioner "local-exec" {
     command = "kubectl wait --for=condition=Ready nodes --all --timeout=300s"

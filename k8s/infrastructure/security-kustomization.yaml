@@ -11,6 +11,6 @@ spec:
   sourceRef:
     kind: GitRepository
     name: flux-system
-  # Depend on networking for PowerDNS API access
+  # Depend on PowerDNS for API access needed by cert-manager webhook
   dependsOn:
-    - name: networking
+    - name: powerdns

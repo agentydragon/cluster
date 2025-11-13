@@ -23,7 +23,7 @@ spec:
     prometheus:
       enabled: true
       servicemonitor:
-        enabled: false  # Enable later when we have Prometheus
+        enabled: false # Enable later when we have Prometheus
 
     # Resource configuration
     resources:
@@ -37,7 +37,7 @@ spec:
     webhook:
       # Configure additional DNS names for webhook certificate
       extraArgs:
-      - --dynamic-serving-dns-names=cert-manager-webhook,cert-manager-webhook.cert-manager,cert-manager-webhook.cert-manager.svc,cert-manager-webhook.cert-manager.svc.cluster.local
+        - --dynamic-serving-dns-names=cert-manager-webhook,cert-manager-webhook.cert-manager,cert-manager-webhook.cert-manager.svc,cert-manager-webhook.cert-manager.svc.cluster.local
       resources:
         limits:
           cpu: 100m

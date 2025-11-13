@@ -42,7 +42,6 @@ spec:
 
     # Speaker configuration (BGP/L2 announcements)
     speaker:
-
       resources:
         limits:
           cpu: 100m

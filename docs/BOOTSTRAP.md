@@ -1,10 +1,11 @@
 # Talos Cluster Bootstrap Playbook
 
-This document provides step-by-step instructions for cold-starting the Talos cluster from nothing and managing individual nodes.
+Step-by-step instructions for cold-starting the Talos cluster from nothing and managing individual nodes.
 
 ## Cold-Start Cluster Deployment
 
 ### Prerequisites
+
 - Proxmox host (`atlas`) accessible via SSH
 - Ansible vault configured with API tokens
 - `direnv` configured in cluster directory
@@ -12,6 +13,7 @@ This document provides step-by-step instructions for cold-starting the Talos clu
 - Access to AWS Route 53 for `agentydragon.com`
 
 ### Step 1: Fully Declarative Deployment
+
 ```bash
 cd terraform/infrastructure
 terraform apply
@@ -23,12 +25,13 @@ terraform apply
 **Prerequisites:** Ensure `gh auth login` is completed for GitHub access.
 
 This **single command** handles:
+
 - QCOW2 disk image from Talos Image Factory with baked-in static IP configuration
 - VM creation with pre-configured networking
 - Talos machine configuration application
 - Kubernetes cluster initialization and bootstrap
 - **Cilium CNI bootstrap** to enable pod scheduling (solves Flux chicken-and-egg problem)
-- **Auto-generated kubeconfig** pointing to VIP for HA kubectl access
+- **Auto-generated kubeconfig** pointing to VIP for HA kubectl access (see VIP Bootstrap Solution below)
 - **Nodes become Ready** after CNI installation
 - **Flux GitOps bootstrap** using `gh auth token` for GitHub PAT
 - **Deploy key creation** in GitHub repository
@@ -36,6 +39,7 @@ This **single command** handles:
 - **Infrastructure deployment** starts automatically (platform services require bootstrap secrets)
 
 #### Test
+
 ```bash
 kubectl get nodes -o wide  # Nodes should be Ready with CNI installed
 flux get all               # Check GitOps status - should show healthy reconciliations
@@ -67,49 +71,61 @@ flux reconcile source git cluster --wait
 flux reconcile ks infrastructure-platform --wait
 ```
 
-#### Test
+#### Verification
+
 ```bash
 flux get ks infrastructure-platform  # Check platform services status
 kubectl get pods -n vault -n authentik  # Verify platform pods starting
 ```
 
-### Step 3: External Connectivity via VPS
+### Step 3: External Connectivity via DNS Delegation
 
-#### Step 3.1: DNS Delegation
+#### Step 3.1: DNS Delegation Setup
 
-Create NS delegation records in Route 53 to allow Let's Encrypt DNS-01 validation for `test-cluster.agentydragon.com` via PowerDNS on the VPS:
-```
-Record Name: test-cluster.agentydragon.com
-Record Type: NS
-Record Value: ns1.agentydragon.com
-TTL: 3600
-```
+Create NS delegation in Route 53 for `test-cluster.agentydragon.com` to VPS PowerDNS, then delegate to cluster.
 
-#### Step 3.2: PowerDNS configuration
+#### Step 3.2: VPS Configuration Updates
 
-Add `test-cluster.agentydragon.com` domain configuration to `~/code/ducktape/ansible/host_vars/vps/powerdns.yml` with SOA, NS, and wildcard A records pointing to VPS IP.
+Update `~/code/ducktape` repository configurations:
 
-#### Step 3.3: Let's Encrypt task
+- **PowerDNS**: Add delegation in `ansible/host_vars/vps/powerdns.yml` to cluster PowerDNS VIP (10.0.3.3)
+- **NGINX**: Update `ansible/nginx-sites/test-cluster.agentydragon.com.j2` for SNI passthrough to cluster ingress VIP (10.0.3.2:443)
 
-Add Let's Encrypt task to VPS playbook, to provision wildcard certificate for `*.test-cluster.agentydragon.com` using DNS-01 challenge via PowerDNS.
-
-#### Step 3.4: NGINX Proxy Site Configuration
-
-Create nginx site template at `~/code/ducktape/ansible/nginx-sites/test-cluster.agentydragon.com.j2` with wildcard proxy configuration for `*.test-cluster.agentydragon.com` → `w0:30443` via Tailscale.
-
-#### Step 3.5: Deploy VPS configuration
+#### Step 3.3: Deploy VPS Configuration
 
 ```bash
-cd ~/code/ducktape/ansible  # From your Ansible directory
-ansible-playbook vps.yaml -t powerdns,nginx-sites   # Deploy PowerDNS zones and nginx config
-ansible-playbook vps.yaml -t test-cluster-wildcard  # Create Let's Encrypt certificates
+cd ~/code/ducktape/ansible
+ansible-playbook vps.yaml -t powerdns,nginx-sites
 ```
 
-#### Step 3.6: Test External Connectivity
+#### Step 3.4: Wait for In-Cluster PowerDNS
+
+Monitor Flux deployment of platform services:
 
 ```bash
-dig foo.test-cluster.agentydragon.com  # Should resolve to: 172.235.48.86 (VPS IP)
-curl https://test.test-cluster.agentydragon.com/ # Should return HTTP/2 200
+flux get ks infrastructure-platform  # Wait for platform services
+kubectl get pods -n dns-system       # Verify PowerDNS pod running
+kubectl get svc powerdns-external    # Should show LoadBalancer IP 10.0.3.3
+```
+
+#### Step 3.5: Test DNS Delegation Chain
+
+```bash
+# Test VPS → cluster DNS delegation
+dig @ns1.agentydragon.com test-cluster.agentydragon.com NS
+# Test cluster PowerDNS directly
+dig @10.0.3.3 test.test-cluster.agentydragon.com
+# Test SNI passthrough (port 8443)
+curl https://test.test-cluster.agentydragon.com:8443/
 ```
 
 Cluster should now be operational with GitOps and external HTTPS connectivity.
+
+## VIP Bootstrap Solution
+
+The cluster solves the VIP chicken-and-egg problem (can't bootstrap with VIP that doesn't exist yet) through terraform:
+
+1. Bootstrap uses direct controller IP (`10.0.1.1:6443`)
+2. Generated kubeconfig uses VIP (`10.0.3.1:6443`) for operations
+
+Users only see the final VIP-based kubeconfig - the bootstrap complexity is internal to terraform.

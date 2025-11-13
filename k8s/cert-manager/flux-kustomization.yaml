@@ -15,3 +15,12 @@ spec:
   wait: true
   dependsOn:
     - name: cilium
+    - name:
+        powerdns # TODO: Could split cert-manager core vs Let's Encrypt integration if needed
+        # PowerDNS only required for our DNS-01 challenges with PowerDNS webhook
+  # Verify cert-manager's own capabilities are ready
+  healthChecks:
+    - apiVersion: cert-manager.io/v1
+      kind: ClusterIssuer
+      name: letsencrypt-prod
+      namespace: ""

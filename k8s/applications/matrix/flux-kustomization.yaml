@@ -1,0 +1,19 @@
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: matrix
+  namespace: flux-system
+spec:
+  interval: 10m
+  timeout: 5m
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+  path: "./k8s/applications/matrix"
+  prune: true
+  wait: true
+  dependsOn:
+    - name: ingress-nginx # Matrix needs ingress controller for external access
+    - name: cert-manager # Matrix needs certificates for TLS
+    - name: platform # Matrix may need platform services (storage, etc.)

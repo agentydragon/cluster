@@ -14,6 +14,17 @@ flux get all
 # Force reconciliation
 flux reconcile helmrelease sealed-secrets
 
+# Check MetalLB LoadBalancer services
+kubectl get svc --all-namespaces -o wide | grep LoadBalancer
+
+# Check MetalLB status
+kubectl get pods -n metallb-system
+kubectl get ipaddresspools -n metallb-system
+
+# Check PowerDNS
+kubectl get pods -n dns-system
+kubectl get svc powerdns-external -n dns-system
+
 # Create sealed secret
 kubectl create secret generic my-secret --from-literal=key=value --dry-run=client -o yaml | \
   kubeseal -o yaml > my-sealed-secret.yaml
@@ -26,7 +37,8 @@ kubeseal --fetch-cert
 
 ### Adding New Nodes
 
-**Controller Node**
+### Controller Node
+
 ```bash
 cd /home/agentydragon/code/cluster/terraform/infrastructure
 
@@ -43,22 +55,24 @@ terraform apply
 
 ### Node Maintenance
 
-**Restart Single Node**
+### Restart Single Node
+
 ```bash
-# Gracefully restart a node (example: controller-1)
+# Gracefully restart a node (example: controlplane0)
 talosctl \
-  --endpoints 10.0.0.11 \
-  --nodes 10.0.0.11 \
+  --endpoints 10.0.1.1 \
+  --nodes 10.0.1.1 \
   reboot
 
 # Or force restart via Proxmox
-ssh root@atlas 'qm reboot 106'
+ssh root@atlas 'qm reboot 1500'
 ```
 
-**Remove Node**
+### Remove Node
+
 ```bash
 # From Kubernetes perspective
-kubectl delete node talos-controller-1
+kubectl delete node talos-controlplane0
 
 # Update terraform.tfvars to reduce count, then:
 terraform apply
@@ -68,39 +82,46 @@ terraform apply
 
 ### VM Console Management
 
-**Take VM Screenshots**
+### Take VM Screenshots
 
 See `~/.claude/skills/proxmox-vm-screenshot/vm-screenshot.sh`
 
-**Direct VM Console Access**
+### Direct VM Console Access
+
 ```bash
 # Interactive console access (from Proxmox host)
 ssh root@atlas
-qm terminal 106  # controller-1
+qm terminal 1500  # controlplane0
 ```
 
 ## Troubleshooting Common Issues
 
 ### Bootstrap Hanging
+
 **Symptoms**: `talosctl bootstrap` times out or hangs
 **Solution**: Verify cluster_endpoint points to first controller IP, not VIP:
+
 ```hcl
-cluster_endpoint = "https://10.0.0.11:6443"  # NOT 10.0.0.20:6443
+cluster_endpoint = "https://10.0.1.1:6443"  # NOT 10.0.3.1:6443
 ```
 
 ### Static IP Not Working
+
 **Symptoms**: VMs get DHCP addresses instead of static IPs
 **Solution**: Check META key 10 configuration in module and restart VMs
 
 ### API Not Responding
+
 **Symptoms**: `connection refused` on port 50000
 **Solution**: Wait longer for boot, check console via screenshots
 
 ### Network Connectivity Issues
+
 **Symptoms**: Cannot reach VMs on expected IPs
 **Solution**: Verify network configuration in terraform.tfvars matches infrastructure
 
 ### Let's Encrypt DNS Challenge Fails
+
 **Symptoms**: `REFUSED` responses during certificate creation
 **Root Causes & Solutions**:
 
@@ -120,6 +141,7 @@ cluster_endpoint = "https://10.0.0.11:6443"  # NOT 10.0.0.20:6443
    - **Fix**: Update `powerdns_allow_dnsupdate_from` in Ansible
 
 ### NodePort Services Not Accessible Externally
+
 **Symptoms**: 502 Bad Gateway or connection refused to NodePorts
 **Root Causes & Solutions**:
 
@@ -139,19 +161,22 @@ cluster_endpoint = "https://10.0.0.11:6443"  # NOT 10.0.0.20:6443
    - **Fix**: Target w0/w1 instead of c0/c1/c2 (controllers)
 
 ### Worker Nodes Become NotReady
+
 **Symptoms**: `kubectl get nodes` shows workers as "NotReady", pods stuck in Pending
 **Root Cause**: Kubelet services stuck waiting for volumes to mount (after restarts/updates)
 **Solution**: Restart kubelet services using talosctl
+
 ```bash
 # Restart kubelet on affected nodes
-talosctl -n 10.0.0.21 service kubelet restart  # w0
-talosctl -n 10.0.0.22 service kubelet restart  # w1
+talosctl -n 10.0.2.1 service kubelet restart  # worker0
+talosctl -n 10.0.2.2 service kubelet restart  # worker1
 
 # Verify nodes return to Ready status
 kubectl get nodes
 ```
 
 ### NGINX Ingress Controller in CrashLoopBackOff
+
 **Symptoms**: NGINX controller pods failing to start, "no service found" errors
 **Root Causes & Solutions**:
 
@@ -171,9 +196,50 @@ kubectl get nodes
    - **Fix**: Keep only one ingress configuration, clean up old namespaces
 
 ### Flux Controllers Not Starting
+
 **Symptoms**: Flux pods stuck in ContainerCreating, GitOps not working
 **Root Cause**: Worker nodes NotReady prevents pod scheduling
 **Solution**: Fix underlying node issues first, then Flux recovers automatically
+
+### PowerDNS DNS Delegation Issues
+
+**Symptoms**: DNS queries fail, cert-manager DNS-01 challenges fail
+**Root Causes & Solutions**:
+
+1. **VIP Not Assigned to PowerDNS Service**:
+   - **Symptom**: `kubectl get svc powerdns-external` shows `<pending>` for EXTERNAL-IP
+   - **Solution**: Check MetalLB configuration and pod status
+   - **Fix**: Verify MetalLB speaker pods running, check IPAddressPool config
+
+2. **DNS Delegation Chain Broken**:
+   - **Symptom**: `dig @ns1.agentydragon.com test-cluster.agentydragon.com NS` fails
+   - **Solution**: Check VPS PowerDNS zone configuration
+   - **Fix**: Verify delegation records point to cluster PowerDNS VIP
+
+3. **PowerDNS API Not Accessible**:
+   - **Symptom**: cert-manager fails to create DNS-01 challenge records
+   - **Solution**: Check PowerDNS pod logs and API service
+   - **Fix**: Verify PowerDNS API key secret exists in dns-system namespace
+
+### MetalLB LoadBalancer Issues
+
+**Symptoms**: LoadBalancer services stuck in Pending, no external IP assigned
+**Root Causes & Solutions**:
+
+1. **MetalLB Speaker Pods Not Running**:
+   - **Symptom**: `kubectl get pods -n metallb-system` shows speaker pods failing
+   - **Solution**: Check for CNI issues, node network configuration
+   - **Fix**: Restart MetalLB components after resolving network issues
+
+2. **IP Pool Conflicts**:
+   - **Symptom**: Some services get IPs while others don't
+   - **Solution**: Check IPAddressPool configuration for overlaps
+   - **Fix**: Ensure pool ranges don't conflict and specify correct pools in service annotations
+
+3. **L2 Advertisement Issues**:
+   - **Symptom**: External IP assigned but not reachable from outside cluster
+   - **Solution**: Check L2Advertisement configuration and ARP tables
+   - **Fix**: Verify L2Advertisement covers all required IPAddressPools
 
 ## Reference Information
 
@@ -181,9 +247,17 @@ kubectl get nodes
 
 | Node | VM ID | IP Address | Role |
 |------|-------|------------|------|
-| controller-1 | 106 | 10.0.0.11 | Controller |
-| controller-2 | 107 | 10.0.0.12 | Controller |
-| controller-3 | 108 | 10.0.0.13 | Controller |
-| worker-1 | 109 | 10.0.0.21 | Worker |
-| worker-2 | 110 | 10.0.0.22 | Worker |
-| **VIP** | - | 10.0.0.20 | Load Balancer |
+| controlplane0 | 1500 | 10.0.1.1 | Controller |
+| controlplane1 | 1501 | 10.0.1.2 | Controller |
+| controlplane2 | 1502 | 10.0.1.3 | Controller |
+| worker0 | 2000 | 10.0.2.1 | Worker |
+| worker1 | 2001 | 10.0.2.2 | Worker |
+
+### VIP Assignments
+
+| Service | IP Address | Pool | Purpose |
+|---------|------------|------|---------|
+| **Cluster API** | 10.0.3.1 | - | Kubernetes API HA VIP |
+| **Ingress** | 10.0.3.2 | ingress-pool | NGINX Ingress LoadBalancer |
+| **PowerDNS** | 10.0.3.3 | dns-pool | DNS server LoadBalancer |
+| **Services** | 10.0.3.4-20 | services-pool | Harbor, Gitea, etc. |

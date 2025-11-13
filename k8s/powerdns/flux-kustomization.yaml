@@ -14,4 +14,19 @@ spec:
   prune: true
   wait: true
   dependsOn:
-    - name: metallb
+    - name: metallb-config # Wait for MetalLB + IPAddressPools
+  # Ensure MetalLB can assign VIP before creating LoadBalancer service
+  healthChecks:
+    - apiVersion: metallb.io/v1beta1
+      kind: IPAddressPool
+      name: dns-pool
+      namespace: metallb-system
+    # Verify PowerDNS own services are ready
+    - apiVersion: v1
+      kind: Service
+      name: powerdns-api
+      namespace: dns-system
+    - apiVersion: v1
+      kind: Endpoints
+      name: powerdns-api
+      namespace: dns-system

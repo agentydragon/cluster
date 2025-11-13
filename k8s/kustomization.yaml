@@ -1,13 +1,16 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
-  # Individual components with explicit dependencies
-  - cilium
-  - cert-manager
-  - metallb
-  - ingress-nginx
-  - powerdns
+  # Platform services deployed via Flux HelmReleases
+  - platform
   # Traditional layers
   - infrastructure/core-kustomization.yaml
   - infrastructure/platform-kustomization.yaml
-  - infrastructure/applications-kustomization.yaml
+  # Individual Vault/External Secrets with dependencies
+  - vault-flux-kustomization.yaml
+  - external-secrets-flux-kustomization.yaml
+  # Individual application kustomizations with specific dependencies
+  - applications/harbor/flux-kustomization.yaml
+  - applications/gitea/flux-kustomization.yaml
+  - applications/matrix/flux-kustomization.yaml
+  - applications/test-app/flux-kustomization.yaml

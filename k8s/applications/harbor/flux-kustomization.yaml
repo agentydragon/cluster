@@ -1,0 +1,20 @@
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: harbor
+  namespace: flux-system
+spec:
+  interval: 10m
+  timeout: 5m
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+  path: "./k8s/applications/harbor"
+  prune: true
+  wait: true
+  dependsOn:
+    - name: ingress-nginx # Harbor needs ingress controller for external access
+    - name: cert-manager # Harbor needs certificates for TLS
+    - name: vault # Harbor uses Vault secrets via External Secrets
+    - name: platform # Harbor may need platform services (storage, etc.)

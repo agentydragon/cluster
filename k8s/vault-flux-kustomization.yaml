@@ -1,0 +1,27 @@
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: vault
+  namespace: flux-system
+spec:
+  interval: 10m
+  timeout: 5m
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+  path: "./k8s/infrastructure/platform/vault"
+  prune: true
+  wait: true
+  dependsOn:
+    - name: platform # Basic platform services
+  # Verify Vault's own service is ready
+  healthChecks:
+    - apiVersion: v1
+      kind: Service
+      name: vault
+      namespace: vault-system
+    - apiVersion: apps/v1
+      kind: Deployment
+      name: vault
+      namespace: vault-system
