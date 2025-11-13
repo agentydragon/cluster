@@ -4,4 +4,3 @@ resources:
   - authentik-bootstrap-sealed.yaml
   - authentik-release.yaml
   - authentik-token-secret.yaml
-  - ../authentik-config.yaml
