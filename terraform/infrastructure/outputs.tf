@@ -40,10 +40,24 @@ resource "terraform_data" "vip_health_check" {
   depends_on = [talos_cluster_kubeconfig.talos]
 }
 
+# Generate VIP kubeconfig by modifying YAML structure
+locals {
+  kubeconfig_parsed = yamldecode(talos_cluster_kubeconfig.talos.kubeconfig_raw)
+  kubeconfig_vip = yamlencode(merge(local.kubeconfig_parsed, {
+    clusters = [
+      merge(local.kubeconfig_parsed.clusters[0], {
+        cluster = merge(local.kubeconfig_parsed.clusters[0].cluster, {
+          server = "https://${var.cluster_vip}:6443"
+        })
+      })
+    ]
+  }))
+}
+
 # Output VIP kubeconfig (high availability, for daily use)
 output "kubeconfig_vip" {
   description = "Kubernetes client configuration using VIP (high availability)"
-  value       = replace(talos_cluster_kubeconfig.talos.kubeconfig_raw, var.cluster_endpoint, "https://${var.cluster_vip}:6443")
+  value       = local.kubeconfig_vip
   sensitive   = true
   depends_on  = [terraform_data.vip_health_check]
 }
@@ -51,7 +65,7 @@ output "kubeconfig_vip" {
 # Default kubeconfig (backwards compatibility - points to VIP)
 output "kubeconfig" {
   description = "Default Kubernetes client configuration (VIP for HA)"
-  value       = replace(talos_cluster_kubeconfig.talos.kubeconfig_raw, var.cluster_endpoint, "https://${var.cluster_vip}:6443")
+  value       = local.kubeconfig_vip
   sensitive   = true
   depends_on  = [terraform_data.vip_health_check]
 }
