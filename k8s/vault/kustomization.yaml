@@ -5,7 +5,5 @@ resources:
   - rbac.yaml
   - operator.yaml  
   - instance.yaml
-  # External secrets integration (existing)
-  - cluster-secret-store.yaml
-  - external-secrets.yaml
+  # Terraform configuration (existing)
   - config.yaml
