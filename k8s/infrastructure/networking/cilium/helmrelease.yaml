@@ -111,5 +111,5 @@ spec:
     # Configure NodePort handling
     nodePort:
       enabled: true
-      # Listen on all interfaces (eth0 and tailscale0)
-      bindProtection: false
+      # Protect privileged ports (default: true)
+      bindProtection: true

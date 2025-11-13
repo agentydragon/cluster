@@ -1,0 +1,48 @@
+---
+# Terraform resource to manage PowerDNS zones and records
+apiVersion: infra.contrib.fluxcd.io/v1alpha2
+kind: Terraform
+metadata:
+  name: powerdns-config
+  namespace: flux-system
+spec:
+  interval: 15m
+  path: ./terraform/dns/powerdns
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+    namespace: flux-system
+
+  # Depend on PowerDNS and secrets being ready
+  dependsOn:
+    - name: networking
+      namespace: flux-system
+    - name: powerdns-secrets
+      namespace: flux-system
+
+  # Use in-cluster service account
+  serviceAccountName: tf-runner
+
+  # Store Terraform state in Kubernetes secret
+  backendConfig:
+    customConfiguration: |
+      backend "kubernetes" {
+        secret_suffix    = "powerdns-config"
+        config_path      = "/tmp/kubeconfig"
+        namespace        = "flux-system"
+      }
+
+  # Variables for Terraform
+  vars:
+    - name: powerdns_server_url
+      value: "http://powerdns-api.dns-system:8081"
+    - name: cluster_domain
+      value: "test-cluster.agentydragon.com"
+
+  # Variables from secrets
+  varsFrom:
+    - kind: Secret
+      name: powerdns-api-key
+      namespace: dns-system
+      varsKeys:
+        - powerdns_api_key

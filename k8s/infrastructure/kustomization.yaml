@@ -4,3 +4,4 @@ resources:
   - core-kustomization.yaml
   - networking-kustomization.yaml
   - platform-kustomization.yaml
+  - security-kustomization.yaml

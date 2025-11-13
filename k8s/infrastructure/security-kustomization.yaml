@@ -1,0 +1,16 @@
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1beta2
+kind: Kustomization
+metadata:
+  name: security
+  namespace: flux-system
+spec:
+  interval: 10m
+  path: "./k8s/infrastructure/security"
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+  # Depend on networking for PowerDNS API access
+  dependsOn:
+    - name: networking

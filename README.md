@@ -14,22 +14,23 @@ Execute those commands with the direnv loaded, or use `direnv exec .`.
 ## Cluster State
 
 - VMs run Talos, configured and bootstrapped with Terraform (`terraform/infrastructure/`)
-- VMs connected to Headscale mesh (100.64.0.14-18)
+- VMs connected to Headscale mesh
 - Static IPs -> baked into Image Factory QCOW2 disks together with Tailscale extension + QEMU guest agent
 - CNI: Cilium with Talos-specific security configuration (with kube-proxy replacement and BPF hostLegacyRouting)
-- **VIP high availability**: 10.0.0.20 load-balances across controllers
+- **VIP high availability**: 10.0.3.1 load-balances across controllers
 - **API server networking fix**: BPF hostLegacyRouting for static pod connectivity to worker nodes
 - **External HTTPS connectivity**: Complete VPS proxy → Tailscale → cluster ingress chain
-- **NGINX Ingress HA**: 2 replicas on worker nodes with NodePort 30080/30443
+- **NGINX Ingress HA**: 2 replicas on worker nodes accessing MetalLB VIP 10.0.3.2
 - **End-to-end testing**: Test application accessible via https://test.test-cluster.agentydragon.com/
 
 ### Infrastructure
 - Network: 10.0.0.0/16, gateway 10.0.0.1
-- 5 Talos nodes: 3 controllers (c0-2 = 10.0.0.11-13) + 2 workers (w0-1 = 10.0.0.21-22)
-- Cluster VIP: `10.0.0.20` (load balancer across controllers)
+- 5 Talos nodes: 3 controllers (controlplane0-2 = 10.0.1.1-3) + 2 workers (worker0-1 = 10.0.2.1-2)
+- Cluster API VIP: `10.0.3.1` (kube-vip load balancer across controllers)
+- MetalLB VIP pool: `10.0.3.2` (ingress), `10.0.3.10-20` (services)
 
 ### Platform Services
-- **NGINX Ingress**: HA deployment (2 replicas on workers, NodePort 30080/30443)
+- **NGINX Ingress**: HA deployment (2 replicas on workers, MetalLB LoadBalancer 10.0.3.2)
 - **cert-manager**: Automatic SSL certificate management
 - **sealed-secrets**: Encrypted secrets in Git
 - **Flux GitOps**: Declarative cluster management from this repository
@@ -51,12 +52,20 @@ Execute those commands with the direnv loaded, or use `direnv exec .`.
 
 ```
 cluster/
-├── terraform/              # Terraform configurations
-│   ├── infrastructure/    # VM infrastructure (Proxmox + Talos) - manual bootstrap
-│   │   ├── modules/talos-node/ # Reusable node configuration module
-│   │   └── tmp/talos/     # Generated disk images
-│   └── gitops/            # SSO service configuration - GitOps managed
-│       ├── authentik/     # Authentik provider configuration
+├── shell.nix, .envrc      # direnv (KUBECONFIG, TALOSCONFIG, kubeseal CLI, ...)
+├── docs/
+│   ├── BOOTSTRAP.md       # Procedure to bootstrap from empty Proxmox
+│   ├── OPERATIONS.md      # Commands for management, troubleshooting
+│   └── PLAN.md            # Future roadmap, strategic decisions
+├── CLAUDE.md, AGENTS.md   # Instructions for AI agents
+├── terraform/
+│   ├── infrastructure/    # Basic cluster infra (Proxmox, Talos, Cilium, Flux), manually applied
+│   │   ├── talosconfig    # Talos configuration to access node Talos APIs (generated, gitignored)
+│   │   ├── kubeconfig     # Kube config (generated, gitignored)
+│   │   ├── modules/talos-node/ # Reusable Talos node module
+│   │   └── tmp/           # Temporary files (e.g., per-node baked Talos disk images)
+│   └── gitops/            # tofu-controller managed Terraform
+│       ├── authentik/     # Authentik SSO provider configuration
 │       ├── vault/         # Vault configuration
 │       ├── secrets/       # Secret generation
 │       └── services/      # Service integration configs
@@ -66,16 +75,7 @@ cluster/
 │   │   ├── networking/    # Cilium, cert-manager, ingress-system
 │   │   └── platform/      # Vault, Authentik (SSO services)
 │   └── applications/      # End-user applications (Gitea, Harbor, Matrix)
-├── flux-system/           # Flux controllers (auto-generated)
-├── bootstrap-secrets/     # Bootstrap secret templates
-├── scripts/               # Utility scripts
-├── shell.nix             # Nix development environment
-├── .envrc                # direnv configuration (KUBECONFIG, TALOSCONFIG)
-├── docs/
-│   ├── BOOTSTRAP.md      # Complete deployment procedures
-│   ├── OPERATIONS.md     # Day-to-day cluster management
-│   └── PLAN.md          # Project roadmap and strategic decisions
-└── AGENTS.md            # Documentation strategy for Claude Code
+└── flux-system/           # Flux controllers (auto-generated)
 ```
 
 ## Prerequisites
@@ -86,12 +86,12 @@ cluster/
 ## How Things Are Wired Together
 
 ### Network Architecture
-Internet (443) → `*.test-cluster.agentydragon.com` VPS nginx proxy → Tailscale VPN → Worker NodePort (30443) → NGINX Ingress → Apps
+Internet (443) → `*.test-cluster.agentydragon.com` VPS nginx proxy → Tailscale VPN → MetalLB VIP (10.0.3.2:443) → NGINX Ingress → Apps
 
 - **VPS**: `~/code/ducktape/ansible/nginx-sites/test-cluster.agentydragon.com.j2`
 - **DNS**: `*.test-cluster.agentydragon.com` → VPS IP → PowerDNS with Let's Encrypt DNS-01
-- **NodePort**: NGINX Ingress binds to 30080/30443 on worker nodes w0/w1
-- **Cilium**: `kubeProxyReplacement: true` with `bindProtection: false` for external NodePort access
+- **LoadBalancer**: NGINX Ingress uses MetalLB VIP 10.0.3.2 instead of NodePort
+- **Cilium**: `kubeProxyReplacement: true` with privileged port protection enabled
 
 - Static IP Bootstrap: Terraform → Image Factory API → Custom QCOW2 with META key 10 → VM boots with static IP (no DHCP)
 - GitOps Flow: Git Commit → Flux detects change → Applies K8s manifests → Applications updated
@@ -99,23 +99,14 @@ Internet (443) → `*.test-cluster.agentydragon.com` VPS nginx proxy → Tailsca
 - Secret management: local `kubeseal` → sealed-secrets controller → K8s Secret → Application pods
 
 ### VIP High Availability
-kube-vip leader election → VIP (10.0.0.20) floats between controllers → Load balances API requests
+kube-vip leader election → VIP (10.0.3.1) floats between controllers → Load balances API requests
 
-**Bootstrap order**: First controller (10.0.0.11) → Cluster formation → VIP establishment → HA active
+**Bootstrap order**: First controller (10.0.1.1) → Cluster formation → VIP establishment → HA active
 
-## Key File Locations
-
-- **Infrastructure Terraform**: `terraform/infrastructure/` (manual bootstrap)
-- **GitOps Terraform**: `terraform/gitops/` (tofu-controller managed)
-- **Talos config**: `terraform/infrastructure/talosconfig.yml` (generated, gitignored)
-- **Kube config**: `terraform/infrastructure/kubeconfig` (generated, gitignored)
-- **Environment**: `.envrc` (direnv)
-- **Kubernetes manifests**: `k8s/`
-- **VPS nginx config**: `~/code/ducktape/ansible/nginx-sites/`
-- **VPS PowerDNS config**: `~/code/ducktape/ansible/host_vars/vps/powerdns.yml`
-
-## External Dependencies
+## External dependencies
 
 - **Proxmox host**: `atlas` at 10.0.0.5 for VM hosting
-- **VPS**: nginx proxy and PowerDNS for external connectivity
 - **GitHub**: Repository hosting and Flux source
+- **VPS**: nginx proxy and PowerDNS for external connectivity, configured under `~/code/ducktape` repo:
+  - nginx: `ansible/nginx-sites/`
+  - PowerDNS: `ansible/host_vars/vps/powerdns.yml`

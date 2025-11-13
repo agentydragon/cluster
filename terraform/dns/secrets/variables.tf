@@ -1,0 +1,1 @@
+# No variables needed - uses in-cluster service account authentication

@@ -1,0 +1,15 @@
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: powerdns-data
+  namespace: dns-system
+  labels:
+    app: powerdns
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi  # Small but persistent storage for DNS database
+  # storageClassName: default  # Use default storage class
