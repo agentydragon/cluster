@@ -13,7 +13,6 @@ spec:
     name: flux-system
   timeout: 5m0s
   wait: true
-  # Depend on core infrastructure being ready
   dependsOn:
     - name: core
       namespace: flux-system

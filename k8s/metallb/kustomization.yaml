@@ -4,4 +4,5 @@ resources:
   - flux-kustomization.yaml
   - helmrepository.yaml
   - helmrelease.yaml
-  - ipaddresspool.yaml
+  - config-flux-kustomization.yaml
+  - metallb-config

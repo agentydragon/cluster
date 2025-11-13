@@ -10,7 +10,7 @@ spec:
   sourceRef:
     kind: GitRepository
     name: flux-system
-  path: "./k8s/platform/metallb-config"
+  path: "./k8s/metallb/metallb-config"
   prune: true
   wait: true
   dependsOn:

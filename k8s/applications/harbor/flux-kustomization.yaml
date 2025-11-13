@@ -14,7 +14,8 @@ spec:
   prune: true
   wait: true
   dependsOn:
-    - name: ingress-nginx # Harbor needs ingress controller for external access
-    - name: cert-manager # Harbor needs certificates for TLS
-    - name: vault # Harbor uses Vault secrets via External Secrets
-    - name: platform # Harbor may need platform services (storage, etc.)
+    - name: ingress-nginx
+    - name: cert-manager
+    - name: vault
+    - name: external-secrets
+    - name: authentik

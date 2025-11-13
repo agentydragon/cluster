@@ -14,6 +14,8 @@ spec:
   prune: true
   wait: true
   dependsOn:
-    - name: ingress-nginx # Matrix needs ingress controller for external access
-    - name: cert-manager # Matrix needs certificates for TLS
-    - name: platform # Matrix may need platform services (storage, etc.)
+    - name: ingress-nginx
+    - name: cert-manager
+    - name: vault
+    - name: external-secrets
+    - name: authentik

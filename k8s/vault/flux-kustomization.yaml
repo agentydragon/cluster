@@ -14,7 +14,7 @@ spec:
   prune: true
   wait: true
   dependsOn:
-    - name: platform # Basic platform services
+    # platform dependency removed - add specific dependencies as needed
   # Verify Vault's own service is ready
   healthChecks:
     - apiVersion: v1

@@ -1,7 +1,0 @@
-apiVersion: kustomize.config.k8s.io/v1beta1
-kind: Kustomization
-resources:
-  # Vault resources managed via individual Flux kustomizations
-  # See: k8s/vault-flux-kustomization.yaml and k8s/external-secrets-flux-kustomization.yaml
-  - vault-bootstrap-sealed.yaml
-  - vault-release.yaml

@@ -1,10 +1,13 @@
-apiVersion: helm.toolkit.fluxcd.io/v2
+---
+# Cilium HelmRelease for Flux to manage (takes over from Terraform bootstrap)
+apiVersion: helm.toolkit.fluxcd.io/v2beta2
 kind: HelmRelease
 metadata:
   name: cilium
-  namespace: kube-system
+  namespace: flux-system
 spec:
   interval: 30m
+  targetNamespace: kube-system
   chart:
     spec:
       chart: cilium
@@ -13,7 +16,7 @@ spec:
         kind: HelmRepository
         name: cilium
         namespace: flux-system
-      interval: 12h
+  # Flux will take over management from Terraform bootstrap
   values:
     cluster:
       name: talos-cluster
@@ -32,11 +35,9 @@ spec:
 
     # Enable native routing for cross-node pod communication
     routingMode: native
-
-    # Required for native routing with cluster-pool IPAM
     ipv4NativeRoutingCIDR: "10.244.0.0/16"
 
-    # Enable IPv4 and masquerading for native routing
+    # Enable IPv4 and masquerading
     ipv4:
       enabled: true
     ipMasqAgent:
@@ -88,12 +89,12 @@ spec:
     l2announcements:
       enabled: true
 
-    # Enable kube-proxy replacement (required since kube-proxy is disabled in Talos)
+    # Enable kube-proxy replacement
     kubeProxyReplacement: "true"
 
-    # BPF configuration for static pod connectivity (API server)
+    # BPF configuration for static pod connectivity
     bpf:
-      hostLegacyRouting: true # Route static pod traffic through host stack
+      hostLegacyRouting: true
 
     # Enable endpoint routes for improved host connectivity
     endpointRoutes:
@@ -111,5 +112,4 @@ spec:
     # Configure NodePort handling
     nodePort:
       enabled: true
-      # Protect privileged ports (default: true)
       bindProtection: true

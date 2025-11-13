@@ -29,20 +29,7 @@ bpf:
 
 # Talos-specific security context configuration
 securityContext:
-  capabilities:
-    # Disable problematic init container capabilities for Talos
-    cleanCiliumState: []
-    # Standard agent capabilities that work with Talos
-    ciliumAgent:
-      - "CHOWN"
-      - "KILL"
-      - "NET_ADMIN"
-      - "NET_RAW"
-      - "IPC_LOCK"
-      - "SYS_MODULE"
-      - "SYS_ADMIN"
-      - "SYS_RESOURCE"
-      - "DAC_OVERRIDE"
-      - "FOWNER"
-      - "SETGID"
-      - "SETUID"
+  # Use privileged mode for Talos - simpler and more reliable than individual capabilities
+  # TODO: Revert to individual capabilities once we figure out the proper set for Talos
+  # The issue was "can't apply capabilities: operation not permitted" with specific caps
+  privileged: true

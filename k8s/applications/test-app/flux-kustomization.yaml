@@ -15,4 +15,4 @@ spec:
   wait: true
   dependsOn:
     - name: ingress-nginx # test-app has ingress.yaml requiring ingress controller
-    - name: platform # Basic platform services
+    # platform dependency removed - test-app only needs ingress-nginx which is already specified

@@ -16,7 +16,7 @@ repos:
         entry: kubeconform
         language: system
         files: ^k8s/.*\.yaml$
-        exclude: (flux-system/|flux-kustomization|kustomization|cilium-bootstrap-values)\.yaml$
+        exclude: (flux-system/|flux-kustomization|kustomization|bootstrap-values)\.yaml$
         args: ["--ignore-missing-schemas", "--skip", "Certificate,Issuer,ClusterIssuer"]
 
   - repo: local

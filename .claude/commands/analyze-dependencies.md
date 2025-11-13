@@ -1,6 +1,7 @@
-# `/analyze-dependencies [service-pattern]`
+# `/validate-deployment-ordering [service-pattern]`
 
-Perform comprehensive dependency analysis for Kubernetes services and deployments to identify explicit vs implicit dependencies.
+Validate zero-state deployment ordering to catch "terraform apply" breaking issues like CRD usage before
+installation, circular dependencies, and layer violations.
 
 ## Command Usage
 
@@ -11,9 +12,9 @@ Perform comprehensive dependency analysis for Kubernetes services and deployment
 **Examples:**
 
 ```bash
-/analyze-dependencies  # Analyze all services
-/analyze-dependencies powerdns                    # Specific service
-/analyze-dependencies storage and network layers  # Free-form specification
+/validate-deployment-ordering  # Check entire cluster for ordering issues
+/validate-deployment-ordering cert-manager        # Specific component
+/validate-deployment-ordering applications        # Focus on application layer
 ```
 
 ## Operation
@@ -27,77 +28,51 @@ Perform comprehensive dependency analysis for Kubernetes services and deployment
 - Filter by pattern if provided
 - Identify service types and layers
 
-### 2. Dependency Analysis (Open-Ended Reasoning)
+### 2. Zero-State Deployment Validation
 
-**Use your full capabilities and intelligence to discover and analyze ALL relevant dependency relationships**.
-This includes but is not limited to:
+**Focus on catching the "obvious foot-guns" that break `terraform apply` from clean Proxmox state.**
 
-#### Known Specific Dependency Types
+#### Primary Failure Patterns to Detect
 
-- **VIP Assignment**: MetalLB LoadBalancer IP allocation (10.0.3.x ranges)
-- **CNI/Networking**: Cilium pod networking, kube-proxy replacement
-- **Upstream Services**: Service-to-service communications, API dependencies
-- **DNS Resolution**: PowerDNS, external DNS, cluster DNS
-- **Certificate Dependencies**: cert-manager, Let's Encrypt, PowerDNS webhook
-- **Storage**: PVCs, storage classes, persistent data
-- **Load Balancing**: MetalLB speaker/controller, IPAddressPools, L2Advertisement
-- **Ingress**: NGINX ingress controller, ingress classes, routing rules
+##### CRD Usage Before Installation
 
-- **Security**: RBAC, service accounts, secrets, network policies
-- **External Services**: VPS connectivity, Tailscale VPN, internet access
+- **MetalLB CRDs**: IPAddressPool, L2Advertisement resources before MetalLB helm chart
+- **cert-manager CRDs**: ClusterIssuer, Certificate before cert-manager installation
+- **external-secrets CRDs**: ExternalSecret, ClusterSecretStore before external-secrets controller
+- **Custom CRDs**: Any `apiVersion: *.io/*` resource before CRD installation
 
-##### Runtime Dependencies
+##### Layer Ordering Violations
 
-- Kubernetes API server availability
-- etcd cluster health
-- Node scheduling and resource availability
-- Container runtime (containerd)
+- **Platform resources before infrastructure**: IPAddressPools before MetalLB controller
+- **Applications before platform**: Services before ingress controller
+- **Resources before CRD installation**: Any custom resource before its CRD
 
-- Image registry access
-- Network connectivity (internal/external)
-- Storage backend availability
+##### Circular Dependencies Requiring Multi-Stage Deploy
 
-##### Deployment Dependencies
+- **Vault ↔ Authentik**: Bootstrap credentials vs OIDC integration
+- **cert-manager ↔ Services**: Certificate chicken-and-egg problems
+- **DNS ↔ Certificates**: DNS-01 challenges requiring DNS service
 
-- Namespace existence and RBAC
-- CRD installation and versions
+##### Missing Explicit Dependencies
 
-- Operator/controller readiness
-- Init containers and job completion
-- Resource quotas and limits
-- Pod security policies/standards
+- **Applications missing external-secrets dependency**: ExternalSecret usage without controller dependency
+- **Health checks on non-existent resources**: Checking resources before they can exist
+- **Flux dependsOn gaps**: Missing explicit ordering between related services
 
-##### Configuration
+##### Monolithic Dependencies (Anti-Pattern)
 
-- ConfigMaps and environment variables
-
-- Secrets and credential management
-- Service discovery and endpoints
-- Network policies and firewall rules
-- Ingress rules and TLS certificates
-- Monitoring and logging configuration
-
-##### External Systems
-
-- VPS nginx proxy configuration
-- Route 53 DNS delegation
-- Let's Encrypt ACME servers
-- Container registries (Docker Hub, etc.)
-- GitHub/Git repository access
-- Tailscale/Headscale mesh connectivity
+- **Over-broad layer dependencies**: Services depending on entire "core" layer when only needing 2 components
+- **Unnecessary coupling**: Components forced to wait for unrelated services in same layer
+- **Deployment bottlenecks**: Single large dependency blocking multiple independent services
 
 **Agent Instructions:**
 
-- **Reason deeply** about each service's operational requirements
-
-- **Trace data flows** and communication paths between components
-- **Identify hidden dependencies** not explicitly declared
-- **Consider failure scenarios** and cascade effects
-
-- **Examine configuration files** for implicit requirements
-- **Analyze network patterns** and port dependencies
-- **Check for timing dependencies** and race conditions
-- **Discover external integrations** and third-party services
+- **Trace deployment ordering** through kustomization.yaml resource lists
+- **Verify CRD installation timing** relative to custom resource usage
+- **Identify bootstrap sequencing issues** that prevent cold-start deployment
+- **Check Flux dependsOn chains** for gaps and circular references
+- **Flag monolithic dependencies** where services depend on entire layers instead of specific components
+- **Recommend dependency splitting** to reduce coupling and improve parallel deployment
 
 ### 3. Dependency Verification
 
@@ -124,62 +99,85 @@ Check for explicit dependency management:
 
 ### 4. Output Format
 
-For each entity, report dependencies grouped by type and verification status:
+**Focus on deployment-breaking issues, not operational monitoring.**
 
 ```markdown
-## Service: [SERVICE_NAME]
-**Type:** [HelmRelease|Kustomization|Deployment]
-**Namespace:** [NAMESPACE]
-**Layer:** [Core|Platform|Security|Applications]
-**Files Analyzed:** [LIST_OF_CONFIG_FILES]
+# 🚨 CRITICAL: CRD Usage Before Installation
 
-#### Infrastructure Dependencies
-- ✅ **[DEPENDENCY]**: [DETAILED_REASON] - *Explicitly checked via [METHOD]*
-- ❌ **[DEPENDENCY]**: [DETAILED_REASON] - *NOT checked*
-- ⚠️  **[DEPENDENCY]**: [DETAILED_REASON] - *Partially checked via [METHOD]*
+## [CRD_FAMILY] - Used before installation
+**Problem**: [DESCRIPTION_OF_CRD_BEFORE_CHART]
 
-#### Service Dependencies
-- ✅ **[DEPENDENCY]**: [DETAILED_REASON] - *Explicitly checked via [METHOD]*
-- ❌ **[DEPENDENCY]**: [DETAILED_REASON] - *NOT checked*
+**Locations using CRDs**:
+- `path/file.yaml:line` - Resource type and usage context
 
-#### External Dependencies
-- ✅ **[DEPENDENCY]**: [DETAILED_REASON] - *Explicitly checked via [METHOD]*
-- ❌ **[DEPENDENCY]**: [DETAILED_REASON] - *NOT checked*
+**CRD Installation**: [WHERE_CRDS_GET_INSTALLED]
 
-#### Hidden/Implicit Dependencies Discovered
-- ❌ **[HIDDEN_DEP]**: [ANALYSIS_OF_WHY_NEEDED] - *Discovered via [REASONING_METHOD]*
+**Deployment Order Problem**:
+[CURRENT_BAD_ORDER_EXPLANATION]
 
-### Dependency Chain Analysis
-[SERVICE] → [IMMEDIATE_DEP] → [TRANSITIVE_DEP] → [ROOT_DEP]
+**Fix**: [SPECIFIC_SOLUTION]
 
-### Data Flow Analysis
-*Reasoning about how data/requests flow through dependencies*
+---
 
-### Failure Cascade Analysis
-*Reasoning about what happens when each dependency fails*
+# 🔥 CRITICAL: Circular Dependencies
 
-### Risk Assessment
-- **Critical Risk**: [COUNT] unchecked dependencies that cause service failure
-- **High Risk**: [COUNT] unchecked dependencies that cause degradation
-- **Medium Risk**: [COUNT] partially checked dependencies
-- **Low Risk**: [COUNT] fully verified dependencies
+## [SERVICE_A] ↔ [SERVICE_B] Bootstrap Circle
+**Problem**: [DESCRIPTION_OF_CIRCULAR_DEPENDENCY]
 
-### Specific Recommendations (Prioritized)
+**Current approach**: [HOW_ITS_HANDLED_NOW]
+**Recommended**: [MULTI_STAGE_OR_BOOTSTRAP_SOLUTION]
 
-1. **CRITICAL**: Add explicit check for [DEP] because [FAILURE_IMPACT]
-2. **HIGH**: Implement health check for [DEP] via [SPECIFIC_METHOD]
-3. **MEDIUM**: Consider timeout/retry for [DEP] to handle [SPECIFIC_SCENARIO]
+---
+
+# 🟡 LAYER ORDERING VIOLATIONS
+
+## [PROBLEM_DESCRIPTION]
+**Current order**: [BAD_ORDER_WITH_LINE_REFS]
+**Should be**: [CORRECT_ORDER_WITH_EXPLANATION]
+**Impact**: [WHAT_BREAKS_ON_COLD_START]
+
+---
+
+# ❌ MISSING EXPLICIT DEPENDENCIES
+
+## [SERVICE] missing [DEPENDENCY_TYPE] dependency
+**Problem**: [WHAT_RESOURCE_IS_USED_WITHOUT_DEPENDENCY]
+**Files**: [FILE_REFERENCES]
+**Fix**: [SPECIFIC_DEPENDENCY_TO_ADD]
+
+---
+
+# 🔀 MONOLITHIC DEPENDENCY ANTI-PATTERNS
+
+## [SERVICE] depends on entire [LAYER] instead of specific components
+**Problem**: [SERVICE] depends on "[LAYER]" containing [N] services but only needs [SPECIFIC_SERVICES]
+**Impact**: Unnecessary deployment coupling and serialization
+**Current**: `dependsOn: - name: [LAYER]`
+**Recommended**: Split into specific dependencies:
+```yaml
+dependsOn:
+  - name: [SPECIFIC_SERVICE_1]
+  - name: [SPECIFIC_SERVICE_2]
 ```
 
-### Global Cluster Report
+```yaml
 
-After analyzing all services, provide:
+### 5. Prioritized Fix List
 
-- Cross-service dependency matrix
+**Focus on what will immediately break zero-state deployment:**
 
-- Cluster-wide single points of failure
-- Dependency cycles and circular dependencies
-- Overall cluster resilience assessment
+## CRITICAL (Fix Before Next Deploy)
+1. **CRD ordering issues** - Will cause immediate failure
+2. **Layer violations** - Resources created before controllers exist
+3. **Circular bootstraps** - Prevent successful cold-start
+
+## HIGH (Fix Soon)
+1. **Missing explicit dependencies** - Race conditions on deploy
+2. **Health checks on missing resources** - Deployment hangs
+
+## MEDIUM (Optimization)
+1. **Monolithic dependencies** - Break up over-broad layer dependencies for better parallelism
+2. **Dependency chain improvements** - Better reliability
 
 ## Analysis Categories
 
@@ -239,9 +237,11 @@ After analyzing all services, provide:
 
 ## Expected Outputs
 
-1. **Individual Service Reports**: Detailed dependency analysis per service
-2. **Cluster-wide Dependency Graph**: Visual representation of all dependencies
-3. **Gap Analysis**: Prioritized list of missing dependency checks
-4. **Implementation Plan**: Specific steps to add missing verifications
+1. **Critical CRD Issues**: Resources used before CRD installation
+2. **Layer Ordering Violations**: Components deployed in wrong sequence
+3. **Circular Dependencies**: Bootstrap chicken-and-egg problems
+4. **Missing Dependencies**: Flux dependsOn gaps causing race conditions
+5. **Prioritized Fix List**: What to fix first for successful zero-state deployment
 
-This command provides comprehensive visibility into service dependencies and ensures reliable cluster operations.
+This command prevents "oops, I forgot X depends on Y" deployment failures and ensures reliable
+`terraform apply` from clean Proxmox state.
