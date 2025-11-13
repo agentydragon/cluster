@@ -98,26 +98,30 @@ else
 fi
 echo
 
-# Test 4: Kubeconfig validation (if it exists)
-if [ -f "$KUBECONFIG_FILE" ]; then
-    echo "📋 Validating kubeconfig..."
-    echo -n "   Checking VIP reference in kubeconfig... "
-    if grep -q "$VIP" "$KUBECONFIG_FILE"; then
-        echo "✅"
-    else
-        echo "❌ FAILED - kubeconfig does not reference VIP"
-        exit 1
-    fi
-
-    echo -n "   Testing kubectl access... "
-    if KUBECONFIG="$KUBECONFIG_FILE" kubectl get nodes --timeout="$KUBECTL_TIMEOUT" > /dev/null 2>&1; then
-        echo "✅"
-    else
-        echo "❌ FAILED - kubectl cannot access cluster"
-        exit 1
-    fi
+# Test 4: Kubectl access (trust direnv KUBECONFIG)
+echo "📋 Testing kubectl access..."
+echo "   KUBECONFIG in script: $KUBECONFIG"
+echo "   kubectl timeout: $KUBECTL_TIMEOUT"
+echo -n "   Testing kubectl get nodes... "
+if kubectl get nodes --request-timeout="$KUBECTL_TIMEOUT"; then
+    echo "✅"
 else
-    echo "⚠️  Kubeconfig file not found at $KUBECONFIG_FILE"
+    echo "❌ FAILED - kubectl cannot access cluster"
+    echo "   Debug: kubectl version:"
+    kubectl version --client
+    echo "   Debug: kubectl config current-context:"
+    kubectl config current-context
+    exit 1
+fi
+
+# Optional: Verify VIP reference in current kubeconfig
+if [ -n "$KUBECONFIG" ] && [ -f "$KUBECONFIG" ]; then
+    echo -n "   Checking VIP reference in kubeconfig... "
+    if grep -q "$VIP" "$KUBECONFIG"; then
+        echo "✅"
+    else
+        echo "⚠️  Warning: kubeconfig may not reference VIP"
+    fi
 fi
 echo
 

@@ -36,7 +36,7 @@ output "kubeconfig_bootstrap" {
 output "cluster_config" {
   description = "Complete cluster configuration for external tooling"
   value = {
-    vip             = var.cluster_networks.vip
+    vip             = var.cluster_vip
     api_port        = 6443
     connect_timeout = 5
     max_timeout     = 10
