@@ -27,7 +27,7 @@ variable "cluster_name" {
 variable "cluster_vip" {
   description = "Virtual IP for HA cluster access (different from bootstrap endpoint)"
   type        = string
-  default     = "10.0.0.20" # Safe default in management network
+  default     = "10.0.3.1" # Cluster API VIP in dedicated VIP subnet
 }
 
 # Network configuration - simple and explicit

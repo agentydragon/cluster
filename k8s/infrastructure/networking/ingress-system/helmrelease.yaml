@@ -24,15 +24,17 @@ spec:
       # Use Deployment instead of DaemonSet for NodePort
       kind: Deployment
 
-      # Run on worker nodes (they also have Tailscale connectivity)
+      # Allow running on all nodes for better HA with VIP
+      tolerations:
+        - key: "node-role.kubernetes.io/control-plane"
+          operator: "Exists"
+          effect: "NoSchedule"
+        - key: "node-role.kubernetes.io/master"  # Legacy key
+          operator: "Exists"
+          effect: "NoSchedule"
+
+      # Spread pods across different nodes for HA
       affinity:
-        nodeAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            nodeSelectorTerms:
-            - matchExpressions:
-              - key: node-role.kubernetes.io/control-plane
-                operator: DoesNotExist
-        # Spread pods across different nodes for HA
         podAntiAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
           - weight: 100
@@ -43,12 +45,19 @@ spec:
                   app.kubernetes.io/component: controller
               topologyKey: kubernetes.io/hostname
 
-      # Service configuration - NodePort with standard ports
+      # Service configuration - LoadBalancer with MetalLB
       service:
-        type: NodePort
-        nodePorts:
-          http: 30080
-          https: 30443
+        type: LoadBalancer
+        loadBalancerIP: 10.0.3.2  # Dedicated ingress VIP
+        annotations:
+          metallb.universe.tf/address-pool: ingress-pool
+        ports:
+          http: 80
+          https: 443
+        # Keep NodePort as backup/fallback
+        # nodePorts:
+        #   http: 30080
+        #   https: 30443
 
       # Ingress class configuration
       ingressClassResource:
