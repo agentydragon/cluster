@@ -1,9 +1,8 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
-  # Bank-Vaults operator and Vault instance
+  # Bank-Vaults Vault instance (operator deployed separately)
   - rbac.yaml
-  - operator.yaml  
   - instance.yaml
   # Terraform configuration (existing)
   - config.yaml
