@@ -43,11 +43,40 @@ This document tracks project roadmap and strategic architecture decisions for th
 - [ ] **Matrix/Synapse**: Chat platform with Authentik SSO integration
 - [ ] **Cross-integration**: Vault OIDC auth + Authentik-Vault secrets management
 
-### Storage & Infrastructure Tasks
+### Storage & Infrastructure Tasks - CRITICAL DISCOVERY
+
+**🚨 OpenEBS LocalPV Talos Incompatibility Discovered**
+
+Through systematic diagnosis of Bank-Vaults storage failures, discovered critical incompatibility:
+
+**Root Cause Analysis:**
+- ✅ OpenEBS LocalPV provisioner correctly creates PV objects and directories on host filesystem (`/var/lib/openebs/local/pvc-*`)  
+- ✅ Helper pods (`init-pvc-*`) run successfully and create directories with proper permissions
+- ❌ **Kubelet cannot access OpenEBS directories** - kubelet runs in container with limited mounts
+- ❌ In Talos kubelet.go:159, only `/var/lib/kubelet` is mounted, NOT `/var/lib/openebs`
+- Result: PVC shows "Bound" but pods fail with "path does not exist" errors
+
+**Diagnostic Process Used:**
+1. Created minimal test PVC → tight feedback loop (PVC status → helper pod → directory creation → mount failure)
+2. Deployed privileged debug pod → verified directories exist on host filesystem  
+3. Examined Talos kubelet source → confirmed kubelet container mount restrictions
+4. **Conclusion**: OpenEBS creates directories kubelet cannot see due to Talos containerized kubelet design
+
+**Solutions Required:**
+- [ ] **Add OpenEBS mount to Talos machine config**: Modify kubelet extraMounts to include `/var/lib/openebs`
+- [ ] **Alternative**: Switch to Longhorn or Proxmox CSI with proper Talos integration
+- [ ] **Temporary**: Use hostPath volumes directly (not production-suitable)
+
+**Lessons:**
+- Talos kubelet containerization requires explicit mount configuration for storage providers
+- Always test storage with actual pod mounting, not just PV provisioning
+- Tight diagnostic feedback loops (test PVC → debug pod → source analysis) are essential
+
+### Other Storage & Infrastructure Tasks
 
 - [ ] PARTIAL **Stream-level SNI Implementation**: SNI passthrough configured on port 8443, cluster handles SSL certificates
 - [ ] **VPS proxy resilience**: Test ingress HA - VPS nginx → MetalLB VIP pod failure handling
-- [ ] **Storage Evaluation**: Currently using OpenEBS LocalPV for simplicity. Consider:
+- [ ] **Storage Evaluation PRIORITY**: Currently blocked on OpenEBS LocalPV incompatibility. Consider:
   - **Longhorn**: Distributed storage with replication across nodes
   - **Proxmox CSI**: Native Proxmox storage integration
   - **Rook-Ceph**: Enterprise-grade distributed storage (overkill for testing cluster)
