@@ -8,7 +8,7 @@ resource "helm_release" "cilium_bootstrap" {
   namespace  = "kube-system"
 
   # Use shared bootstrap config - SSOT with Flux
-  values = [file("${path.module}/../../k8s/cilium/cilium-bootstrap-values.yaml")]
+  values = [file("${path.module}/../../k8s/cilium/bootstrap-values.yaml")]
 
   # Wait for cluster to be ready
   depends_on = [
