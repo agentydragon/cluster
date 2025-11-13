@@ -43,10 +43,14 @@ This document tracks project roadmap and strategic architecture decisions for th
 - [ ] **Matrix/Synapse**: Chat platform with Authentik SSO integration
 - [ ] **Cross-integration**: Vault OIDC auth + Authentik-Vault secrets management
 
-### Other Infrastructure Tasks
+### Storage & Infrastructure Tasks
 
 - [ ] PARTIAL **Stream-level SNI Implementation**: SNI passthrough configured on port 8443, cluster handles SSL certificates
 - [ ] **VPS proxy resilience**: Test ingress HA - VPS nginx → MetalLB VIP pod failure handling
+- [ ] **Storage Evaluation**: Currently using OpenEBS LocalPV for simplicity. Consider:
+  - **Longhorn**: Distributed storage with replication across nodes
+  - **Proxmox CSI**: Native Proxmox storage integration
+  - **Rook-Ceph**: Enterprise-grade distributed storage (overkill for testing cluster)
 - [ ] **Complete SNI Migration**: Move remaining VPS services to stream-level SNI passthrough
 
 ### Low-priority freezer

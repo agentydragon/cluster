@@ -4,6 +4,7 @@ kind: Kustomization
 resources:
   - core/flux-kustomization.yaml
   - cilium/flux-kustomization.yaml
+  - storage/flux-kustomization.yaml
   - metallb/flux-kustomization.yaml
   - metallb/config-flux-kustomization.yaml
   - cert-manager/flux-kustomization.yaml

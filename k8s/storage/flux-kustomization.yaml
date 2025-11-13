@@ -1,7 +1,7 @@
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
-  name: vault-operator
+  name: storage
   namespace: flux-system
 spec:
   interval: 10m
@@ -9,14 +9,14 @@ spec:
   sourceRef:
     kind: GitRepository
     name: flux-system
-  path: "./k8s/vault-operator"
+  path: "./k8s/storage"
   prune: true
   wait: true
   dependsOn:
-    - name: storage # Operator will create Vault instances that need storage
-  # Verify operator deployment is ready
+    - name: cilium # Storage needs networking
+  # Verify OpenEBS LocalPV provisioner is ready
   healthChecks:
     - apiVersion: apps/v1
       kind: Deployment
-      name: operator
-      namespace: vault
+      name: openebs-localpv-provisioner
+      namespace: openebs

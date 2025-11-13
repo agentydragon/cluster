@@ -1,0 +1,69 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: openebs
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: HelmRepository
+metadata:
+  name: openebs
+  namespace: openebs
+spec:
+  interval: 24h
+  url: https://openebs.github.io/charts
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: openebs
+  namespace: openebs
+spec:
+  interval: 15m
+  chart:
+    spec:
+      chart: openebs
+      version: "4.1.1"
+      sourceRef:
+        kind: HelmRepository
+        name: openebs
+        namespace: openebs
+  values:
+    # Only install LocalPV provisioner (lightweight)
+    engines:
+      local:
+        lvm:
+          enabled: false
+        zfs:
+          enabled: false
+        hostpath:
+          enabled: true  # Simple hostPath volumes
+      replicated:
+        mayastor:
+          enabled: false
+        jiva:
+          enabled: false
+        cstor:
+          enabled: false
+
+    # LocalPV Hostpath provisioner
+    localpv-provisioner:
+      enabled: true
+      hostpathClass:
+        # Default storage class for the cluster
+        isDefaultClass: true
+        name: "openebs-hostpath"
+        basePath: "/var/lib/openebs/local"
+
+    # Disable other components
+    mayastor:
+      enabled: false
+    
+    # Basic resource limits
+    resources:
+      requests:
+        memory: 50Mi
+        cpu: 50m
+      limits:
+        memory: 100Mi
+        cpu: 100m

@@ -11,13 +11,14 @@ spec:
   # Bank-Vaults automatically handles initialization and unsealing
   bankVaultsImage: "ghcr.io/bank-vaults/bank-vaults:1.21.0"
 
-  # Storage configuration - each replica gets its own PVC
+  # Storage configuration - each replica gets its own PVC  
   volumeClaimTemplates:
     - metadata:
         name: vault-raft
       spec:
         accessModes:
           - ReadWriteOnce
+        storageClassName: openebs-hostpath
         resources:
           requests:
             storage: 10Gi
