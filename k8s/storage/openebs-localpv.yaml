@@ -3,6 +3,11 @@ apiVersion: v1
 kind: Namespace
 metadata:
   name: openebs
+  labels:
+    # Pod Security Standards - Allow privileged containers for storage provisioner
+    pod-security.kubernetes.io/enforce: privileged
+    pod-security.kubernetes.io/audit: privileged
+    pod-security.kubernetes.io/warn: privileged
 ---
 apiVersion: source.toolkit.fluxcd.io/v1
 kind: HelmRepository
@@ -11,7 +16,7 @@ metadata:
   namespace: openebs
 spec:
   interval: 24h
-  url: https://openebs.github.io/openebs  # New registry location as of Oct 2024
+  url: https://openebs.github.io/openebs # New registry location as of Oct 2024
 ---
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
@@ -23,7 +28,7 @@ spec:
   chart:
     spec:
       chart: openebs
-      version: "4.2.0"  # Latest version
+      version: "4.2.0" # Latest version
       sourceRef:
         kind: HelmRepository
         name: openebs
@@ -37,7 +42,7 @@ spec:
         zfs:
           enabled: false
         hostpath:
-          enabled: true  # Simple hostPath volumes
+          enabled: true # Simple hostPath volumes
       replicated:
         mayastor:
           enabled: false
@@ -49,6 +54,12 @@ spec:
     # LocalPV Hostpath provisioner
     localpv-provisioner:
       enabled: true
+      # Enable helper pod for directory creation on nodes
+      helperPod:
+        image:
+          registry: quay.io
+          repository: openebs/linux-utils
+          tag: "3.4.0"
       hostpathClass:
         # Default storage class for the cluster
         isDefaultClass: true
@@ -58,7 +69,7 @@ spec:
     # Disable other components
     mayastor:
       enabled: false
-    
+
     # Basic resource limits
     resources:
       requests:

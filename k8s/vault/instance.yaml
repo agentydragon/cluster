@@ -5,13 +5,13 @@ metadata:
   name: "instance"
   namespace: "vault"
 spec:
-  size: 3  # HA cluster with 3 replicas for failover
+  size: 3 # HA cluster with 3 replicas for failover
   image: "hashicorp/vault:1.17.2"
 
   # Bank-Vaults automatically handles initialization and unsealing
-  bankVaultsImage: "ghcr.io/bank-vaults/bank-vaults:1.21.0"
+  bankVaultsImage: "ghcr.io/bank-vaults/bank-vaults:v1.32.0"
 
-  # Storage configuration - each replica gets its own PVC  
+  # Storage configuration - each replica gets its own PVC
   volumeClaimTemplates:
     - metadata:
         name: vault-raft
@@ -40,7 +40,7 @@ spec:
     listener:
       tcp:
         address: "0.0.0.0:8200"
-        tls_disable: true  # Simplified for cluster-internal communication
+        tls_disable: true # Simplified for cluster-internal communication
         cluster_address: "0.0.0.0:8201"
     # Dynamic API/cluster addresses for HA
     api_addr: "http://POD_IP:8200"
