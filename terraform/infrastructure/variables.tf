@@ -108,3 +108,16 @@ variable "headscale_login_server" {
   type        = string
   default     = "https://agentydragon.com:8080"
 }
+
+# GitHub configuration for Flux GitOps
+variable "github_owner" {
+  description = "GitHub owner/organization for Flux GitOps"
+  type        = string
+  default     = "agentydragon"
+}
+
+variable "github_repository" {
+  description = "GitHub repository name for Flux GitOps"
+  type        = string
+  default     = "cluster"
+}

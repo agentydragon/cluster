@@ -22,6 +22,22 @@ terraform {
       source  = "hashicorp/local"
       version = "~> 2.5.0"
     }
+    helm = {
+      source  = "hashicorp/helm"
+      version = "~> 2.12"
+    }
+    null = {
+      source  = "hashicorp/null"
+      version = "~> 3.2"
+    }
+    kubernetes = {
+      source  = "hashicorp/kubernetes"
+      version = "~> 2.35"
+    }
+    time = {
+      source  = "hashicorp/time"
+      version = "~> 0.12"
+    }
   }
 
   backend "local" {
@@ -35,4 +51,14 @@ provider "proxmox" {
   endpoint  = "https://${var.proxmox_node_name}:8006/api2/json"
   insecure  = var.proxmox_tls_insecure
   api_token = "${local.vault_secrets.vault_proxmox_terraform_token_id}=${local.vault_secrets.vault_proxmox_terraform_token_secret}"
+}
+
+provider "helm" {
+  kubernetes {
+    config_path = local_file.kubeconfig.filename
+  }
+}
+
+provider "kubernetes" {
+  config_path = local_file.kubeconfig.filename
 }

@@ -20,40 +20,30 @@ terraform apply
 ./stage1-health-check.py
 ```
 
-This handles:
+**Prerequisites:** Ensure `gh auth login` is completed for GitHub access.
+
+This **single command** handles:
 - QCOW2 disk image from Talos Image Factory with baked-in static IP configuration
 - VM creation with pre-configured networking
 - Talos machine configuration application
 - Kubernetes cluster initialization and bootstrap
+- **Cilium CNI bootstrap** to enable pod scheduling (solves Flux chicken-and-egg problem)
 - **Auto-generated kubeconfig** pointing to VIP for HA kubectl access
-
-### Step 2: Setup GitOps with Flux
-
-Bootstrap Flux to manage the cluster via this GitHub repository (requires GitHub PAT).
-
-```bash
-flux bootstrap github \
-  --owner=agentydragon \
-  --repository=cluster \
-  --path=k8s \
-  --personal \
-  --read-write-key
-```
-
-This command:
-- Installs Flux controllers in `flux-system` namespace
-- Creates deploy key in GitHub repository
-- Deploys Cilium CNI via GitOps (nodes become Ready)
-- Deploys infrastructure automatically (platform services require bootstrap secrets)
+- **Nodes become Ready** after CNI installation
+- **Flux GitOps bootstrap** using `gh auth token` for GitHub PAT
+- **Deploy key creation** in GitHub repository
+- **Seamless Flux takeover** of Cilium management via GitOps
+- **Infrastructure deployment** starts automatically (platform services require bootstrap secrets)
 
 #### Test
 ```bash
-kubectl get nodes -o wide  # Wait for Flux to deploy Cilium (nodes become Ready)
-flux get all               # Check GitOps status
+kubectl get nodes -o wide  # Nodes should be Ready with CNI installed
+flux get all               # Check GitOps status - should show healthy reconciliations
+kubectl get pods -A        # All system pods should be running
 # Note: kubectl automatically uses VIP (10.0.0.20) for HA - no manual --server needed
 ```
 
-### Step 3: Generate Bootstrap Secrets
+### Step 2: Generate Bootstrap Secrets
 
 Before platform services can deploy, generate bootstrap secrets and commit them to git:
 
@@ -83,9 +73,9 @@ flux get ks infrastructure-platform  # Check platform services status
 kubectl get pods -n vault -n authentik  # Verify platform pods starting
 ```
 
-### Step 4: External Connectivity via VPS
+### Step 3: External Connectivity via VPS
 
-#### Step 4.1: DNS Delegation
+#### Step 3.1: DNS Delegation
 
 Create NS delegation records in Route 53 to allow Let's Encrypt DNS-01 validation for `test-cluster.agentydragon.com` via PowerDNS on the VPS:
 ```
@@ -95,19 +85,19 @@ Record Value: ns1.agentydragon.com
 TTL: 3600
 ```
 
-#### Step 4.2: PowerDNS configuration
+#### Step 3.2: PowerDNS configuration
 
 Add `test-cluster.agentydragon.com` domain configuration to `~/code/ducktape/ansible/host_vars/vps/powerdns.yml` with SOA, NS, and wildcard A records pointing to VPS IP.
 
-#### Step 4.3: Let's Encrypt task
+#### Step 3.3: Let's Encrypt task
 
 Add Let's Encrypt task to VPS playbook, to provision wildcard certificate for `*.test-cluster.agentydragon.com` using DNS-01 challenge via PowerDNS.
 
-#### Step 4.4: NGINX Proxy Site Configuration
+#### Step 3.4: NGINX Proxy Site Configuration
 
 Create nginx site template at `~/code/ducktape/ansible/nginx-sites/test-cluster.agentydragon.com.j2` with wildcard proxy configuration for `*.test-cluster.agentydragon.com` → `w0:30443` via Tailscale.
 
-#### Step 4.5: Deploy VPS configuration
+#### Step 3.5: Deploy VPS configuration
 
 ```bash
 cd ~/code/ducktape/ansible  # From your Ansible directory
@@ -115,7 +105,7 @@ ansible-playbook vps.yaml -t powerdns,nginx-sites   # Deploy PowerDNS zones and 
 ansible-playbook vps.yaml -t test-cluster-wildcard  # Create Let's Encrypt certificates
 ```
 
-#### Step 4.6: Test External Connectivity
+#### Step 3.6: Test External Connectivity
 
 ```bash
 dig foo.test-cluster.agentydragon.com  # Should resolve to: 172.235.48.86 (VPS IP)
