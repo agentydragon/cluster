@@ -27,7 +27,7 @@ locals {
               {
                 family      = "inet4"
                 dst         = ""
-                gateway     = var.gateway
+                gateway     = var.shared_config.gateway
                 outLinkName = "eth0"
                 table       = "main"
                 priority    = 1024
@@ -55,7 +55,7 @@ locals {
     }
   })
 
-  # Common machine configuration
+  # Common machine configuration (includes Tailscale extension)
   common_machine_config = {
     machine = {
       features = {
@@ -79,32 +79,27 @@ locals {
       }
       network = { cni = { name = "none" } }
       proxy   = { disabled = true }
-    }
-  }
-
-  # Tailscale extension configuration
-  tailscale_extension_config = {
-    machine = {
       install = {
         extensions = [{
           image = "ghcr.io/siderolabs/tailscale:latest"
         }]
       }
     }
+    # Empty cluster section for tailscale
     cluster = {}
   }
 }
 
 # Generate unique pre-auth key for this node
 data "http" "preauth_key" {
-  url    = "${var.global_config.headscale_login_server}/api/v1/preauthkey"
+  url    = "${var.shared_config.global_config.headscale_login_server}/api/v1/preauthkey"
   method = "POST"
   request_headers = {
-    Authorization = "Bearer ${var.global_config.headscale_api_key}"
+    Authorization = "Bearer ${var.shared_config.global_config.headscale_api_key}"
     Content-Type  = "application/json"
   }
   request_body = jsonencode({
-    user       = "agentydragon"
+    user       = var.shared_config.global_config.headscale_user
     reusable   = false
     ephemeral  = false
     expiration = timeadd(timestamp(), "1h")
@@ -119,7 +114,7 @@ resource "talos_image_factory_schematic" "schematic" {
 # Generate URLs for different image formats
 data "talos_image_factory_urls" "urls" {
   schematic_id  = talos_image_factory_schematic.schematic.id
-  talos_version = var.talos_version
+  talos_version = var.talos_config_base.talos_version
   platform      = "metal"
   architecture  = "amd64"
 }
@@ -128,17 +123,17 @@ data "talos_image_factory_urls" "urls" {
 resource "proxmox_virtual_environment_download_file" "disk_image" {
   content_type = "import" # Correct content type for disk images
   datastore_id = "local"  # Use local datastore (now configured with import support)
-  node_name    = var.proxmox_node_name
+  node_name    = var.shared_config.proxmox_node_name
   url          = replace(data.talos_image_factory_urls.urls.urls.disk_image, "metal-amd64.raw.zst", "metal-amd64.qcow2")
-  file_name    = "talos-${var.node_name}-${var.talos_version}-${substr(sha256(local.schematic_yaml), 0, 8)}.qcow2"
+  file_name    = "talos-${talos_image_factory_schematic.schematic.id}-amd64.qcow2"
   overwrite    = true
 }
 
 # Create the VM
 resource "proxmox_virtual_environment_vm" "vm" {
-  name            = "${var.prefix}-${var.node_name}"
+  name            = "${var.shared_config.prefix}-${var.node_name}"
   vm_id           = var.vm_id
-  node_name       = var.proxmox_node_name
+  node_name       = var.shared_config.proxmox_node_name
   tags            = sort(["talos", var.node_type, "kubernetes", "terraform"])
   stop_on_destroy = true
   bios            = "ovmf"
@@ -211,26 +206,39 @@ resource "terraform_data" "restart_reminder" {
 }
 
 # Generate machine configuration based on node type
+# This is as close as Terraform gets to "take this object + add these fields"
+locals {
+  # Merge base talos config + node-specific machine_type
+  machine_config = merge(
+    var.talos_config_base, # All the shared talos fields
+    {
+      machine_type    = var.node_type                                         # Node-specific override
+      machine_secrets = var.talos_config_base.machine_secrets.machine_secrets # Extract the actual secrets
+    }
+  )
+}
+
 data "talos_machine_configuration" "config" {
-  cluster_name       = var.cluster_name
-  cluster_endpoint   = var.cluster_endpoint
-  machine_secrets    = var.machine_secrets.machine_secrets
-  machine_type       = var.node_type == "controller" ? "controlplane" : "worker"
-  talos_version      = "v${var.talos_version}"
-  kubernetes_version = var.kubernetes_version
-  examples           = false
-  docs               = false
+  # Unfortunately Terraform doesn't support object splatting in resources
+  # This repetition is unavoidable but at least it's explicit
+  cluster_name       = local.machine_config.cluster_name
+  cluster_endpoint   = local.machine_config.cluster_endpoint
+  machine_secrets    = local.machine_config.machine_secrets
+  machine_type       = local.machine_config.machine_type
+  talos_version      = local.machine_config.talos_version
+  kubernetes_version = local.machine_config.kubernetes_version
+  examples           = local.machine_config.examples
+  docs               = local.machine_config.docs
 
   config_patches = concat([
-    yamlencode(local.common_machine_config),
-    yamlencode(local.tailscale_extension_config)
-    ], var.node_type == "controller" ? [
+    yamlencode(local.common_machine_config) # Now includes tailscale extension
+    ], var.node_type == "controlplane" ? [
     yamlencode({
       machine = {
         network = {
           interfaces = [{
             interface = "eth0"
-            vip       = { ip = var.cluster_vip }
+            vip       = { ip = var.shared_config.cluster_vip }
           }]
         }
       }
@@ -238,15 +246,15 @@ data "talos_machine_configuration" "config" {
   ] : [])
 }
 
-# Apply configuration to the node - now enabled since static IP boot is working
+# Apply runtime configuration to the running node (connects via pre-configured IP)
 resource "talos_machine_configuration_apply" "apply" {
-  client_configuration        = var.machine_secrets.client_configuration
+  client_configuration        = var.talos_config_base.machine_secrets.client_configuration
   machine_configuration_input = data.talos_machine_configuration.config.machine_configuration
-  endpoint                    = var.ip_address
-  node                        = var.ip_address
+  endpoint                    = var.ip_address # Node already has static IP from schematic
+  node                        = var.ip_address # Node already has static IP from schematic
 
-  # Note: Network configuration is now handled by META key 10 in the ISO
-  # Only include Tailscale configuration in the runtime patches
+  # Apply runtime patches (Tailscale service config with dynamic auth keys)
+  # Network/IP configuration is already handled by schematic META key during boot
   config_patches = [
     yamlencode({
       apiVersion = "v1alpha1"
@@ -254,12 +262,12 @@ resource "talos_machine_configuration_apply" "apply" {
       name       = "tailscale"
       environment = [
         "TS_AUTHKEY=${jsondecode(data.http.preauth_key.response_body).preAuthKey.key}",
-        var.node_type == "controller" ?
-        "TS_EXTRA_ARGS=--login-server=${var.global_config.headscale_login_server} --accept-routes --advertise-routes=10.0.0.0/16" :
-        "TS_EXTRA_ARGS=--login-server=${var.global_config.headscale_login_server} --accept-routes"
+        "TS_EXTRA_ARGS=${var.shared_config.tailscale_base_args}${var.node_type == "controlplane" ? " ${var.shared_config.tailscale_route_args}" : ""}"
       ]
     })
   ]
 
   depends_on = [proxmox_virtual_environment_vm.vm]
 }
+
+

@@ -16,7 +16,7 @@ Execute those commands with the direnv loaded, or use `direnv exec .`.
 - VMs run Talos, configured and bootstrapped with Terraform (`terraform/infrastructure/`)
 - VMs connected to Headscale mesh (100.64.0.14-18)
 - Static IPs -> baked into Image Factory QCOW2 disks together with Tailscale extension + QEMU guest agent
-- CNI: Cilium with Talos-specific security configuration
+- CNI: Cilium with Talos-specific security configuration (with kube-proxy replacement and BPF hostLegacyRouting)
 - **VIP high availability**: 10.0.0.20 load-balances across controllers
 - **API server networking fix**: BPF hostLegacyRouting for static pod connectivity to worker nodes
 - **External HTTPS connectivity**: Complete VPS proxy → Tailscale → cluster ingress chain
@@ -29,7 +29,6 @@ Execute those commands with the direnv loaded, or use `direnv exec .`.
 - Cluster VIP: `10.0.0.20` (load balancer across controllers)
 
 ### Platform Services
-- **Cilium v1.16.5**: CNI with kube-proxy replacement and BPF hostLegacyRouting
 - **NGINX Ingress**: HA deployment (2 replicas on workers, NodePort 30080/30443)
 - **cert-manager**: Automatic SSL certificate management
 - **sealed-secrets**: Encrypted secrets in Git

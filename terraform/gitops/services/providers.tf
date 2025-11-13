@@ -1,23 +1,16 @@
 # Provider configuration for services module
+# Only imports providers actually needed by this module
 
-module "common" {
-  source        = "../modules/providers"
-  vault_enabled = true
-  # Uses defaults from common module
+module "vault_provider" {
+  source = "../modules/vault-provider"
+}
+
+module "authentik_provider" {
+  source = "../modules/authentik-provider"
 }
 
 provider "kubernetes" {
   # Uses in-cluster authentication when running in tofu-controller
-}
-
-provider "vault" {
-  address = "https://vault.test-cluster.agentydragon.com"
-  token   = module.common.vault_root_token
-}
-
-provider "authentik" {
-  url   = "https://auth.test-cluster.agentydragon.com"
-  token = module.common.authentik_bootstrap_token
 }
 
 # Harbor provider will be configured once Harbor is deployed with admin credentials

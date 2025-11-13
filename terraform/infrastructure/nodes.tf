@@ -4,51 +4,88 @@ locals {
   global_config = {
     headscale_api_key      = local.vault_secrets.vault_headscale_api_key
     headscale_login_server = var.headscale_login_server
+    headscale_user         = var.headscale_user
   }
 
-  # Define all cluster nodes - 3 controllers + 2 workers
-  nodes = {
-    # Controller nodes
-    c0 = {
-      type       = "controller"
-      vm_id      = 105
-      ip_address = cidrhost(var.cluster_node_network, var.cluster_node_network_first_controller_hostnum) # Should be 10.0.0.11
+  # Define node types and their configuration in a single data structure
+  node_types = {
+    controlplane = {
+      count    = var.controller_count
+      vm_start = var.vm_id_ranges.controller_start
+      cidr     = var.cluster_networks.controller_cidr
     }
-    c1 = {
-      type       = "controller"
-      vm_id      = 106
-      ip_address = cidrhost(var.cluster_node_network, var.cluster_node_network_first_controller_hostnum + 1) # Should be 10.0.0.12
-    }
-    c2 = {
-      type       = "controller"
-      vm_id      = 107
-      ip_address = cidrhost(var.cluster_node_network, var.cluster_node_network_first_controller_hostnum + 2) # Should be 10.0.0.13
-    }
-
-    # Worker nodes
-    w0 = {
-      type       = "worker"
-      vm_id      = 108
-      ip_address = cidrhost(var.cluster_node_network, var.cluster_node_network_first_worker_hostnum) # Should be 10.0.0.21
-    }
-    w1 = {
-      type       = "worker"
-      vm_id      = 109
-      ip_address = cidrhost(var.cluster_node_network, var.cluster_node_network_first_worker_hostnum + 1) # Should be 10.0.0.22
+    worker = {
+      count    = var.worker_count
+      vm_start = var.vm_id_ranges.worker_start
+      cidr     = var.cluster_networks.worker_cidr
     }
   }
 
-  # Split nodes by type for outputs and bootstrap
-  controller_nodes = { for k, v in local.nodes : k => v if v.type == "controller" }
-  worker_nodes     = { for k, v in local.nodes : k => v if v.type == "worker" }
+  # Generate all nodes dynamically from node_types configuration
+  nodes = merge([
+    for node_type, config in local.node_types : {
+      for i in range(config.count) : "${node_type}${i}" => {
+        type       = node_type
+        vm_id      = config.vm_start + i
+        ip_address = cidrhost(config.cidr, i + 1)
+      }
+    }
+  ]...)
+
+  # Group nodes by type dynamically as lists
+  nodes_by_type = {
+    for node_type in keys(local.node_types) : node_type => [
+      for k, v in local.nodes : merge(v, { name = k }) if v.type == node_type
+    ]
+  }
+
+  # Validation: ensure generated nodes don't have overlapping VM IDs or IP addresses
+  _validate_vm_ids = (
+    length([for node in local.nodes : node.vm_id]) == length(toset([for node in local.nodes : node.vm_id])) ?
+    null : tobool("VM ID collision detected")
+  )
+  _validate_ip_addresses = (
+    length([for node in local.nodes : node.ip_address]) == length(toset([for node in local.nodes : node.ip_address])) ?
+    null : tobool("IP address collision detected")
+  )
+
+  # DRY endpoints - auto-computed from configuration
+  cluster_vip_endpoint = "https://${var.cluster_vip}:6443"
+
+  # Shared node configuration (DRY)
+  shared_node_config = {
+    # Proxmox-specific config
+    gateway           = var.cluster_networks.gateway
+    proxmox_node_name = var.proxmox_node_name
+    prefix            = var.prefix
+
+    # Additional config
+    cluster_vip   = var.cluster_vip
+    global_config = local.global_config
+
+    # Tailscale config (DRY)
+    tailscale_base_args  = "--login-server=${local.global_config.headscale_login_server} --accept-routes"
+    tailscale_route_args = "--advertise-routes=10.0.0.0/16"
+  }
+
+  # Talos machine configuration base (splattable object)
+  talos_machine_config_base = {
+    cluster_name       = var.cluster_name
+    cluster_endpoint   = local.cluster_vip_endpoint # All nodes use VIP
+    machine_secrets    = talos_machine_secrets.talos
+    talos_version      = var.talos_version
+    kubernetes_version = var.kubernetes_version
+    examples           = false
+    docs               = false
+  }
 }
 
 # Generate machine secrets once for the entire cluster
 resource "talos_machine_secrets" "talos" {
-  talos_version = "v${var.talos_version}"
+  talos_version = var.talos_version
 }
 
-# Create each node using the module
+# Create each node using the module (DRY configuration)
 module "nodes" {
   for_each = local.nodes
   source   = "./modules/talos-node"
@@ -59,39 +96,30 @@ module "nodes" {
   vm_id      = each.value.vm_id
   ip_address = each.value.ip_address
 
-  # Shared configuration
-  gateway            = var.cluster_node_network_gateway
-  proxmox_node_name  = var.proxmox_pve_node_name
-  prefix             = var.prefix
-  talos_version      = var.talos_version
-  cluster_name       = var.cluster_name
-  cluster_endpoint   = var.cluster_endpoint
-  cluster_vip        = var.cluster_vip
-  kubernetes_version = var.kubernetes_version
-  machine_secrets    = talos_machine_secrets.talos
-  global_config      = local.global_config
+  # Pass both shared config and talos base config
+  shared_config     = local.shared_node_config
+  talos_config_base = local.talos_machine_config_base
 }
 
-# Bootstrap the cluster (using first controller)
+# Bootstrap the cluster using first controller
 resource "talos_machine_bootstrap" "talos" {
   client_configuration = talos_machine_secrets.talos.client_configuration
-  endpoint             = local.controller_nodes.c0.ip_address
-  node                 = local.controller_nodes.c0.ip_address
+  endpoint             = local.nodes_by_type.controlplane[0].ip_address
+  node                 = local.nodes_by_type.controlplane[0].ip_address
   depends_on           = [module.nodes]
 }
 
-# Generate kubeconfig (uses first controller to avoid VIP chicken-and-egg)
-# Note: Uses same endpoint as bootstrap, then outputs.tf fixes server URL to VIP
+# Generate kubeconfig for cluster access
 resource "talos_cluster_kubeconfig" "talos" {
   client_configuration = talos_machine_secrets.talos.client_configuration
-  endpoint             = local.controller_nodes.c0.ip_address # Use first controller (reliable)
-  node                 = local.controller_nodes.c0.ip_address # Same as bootstrap endpoint
-  depends_on           = [talos_machine_bootstrap.talos]      # Wait for bootstrap to complete
+  endpoint             = local.nodes_by_type.controlplane[0].ip_address
+  node                 = local.nodes_by_type.controlplane[0].ip_address
+  depends_on           = [talos_machine_bootstrap.talos]
 }
 
 # Generate talos client config
 data "talos_client_configuration" "talos" {
   cluster_name         = var.cluster_name
   client_configuration = talos_machine_secrets.talos.client_configuration
-  endpoints            = [for node in local.controller_nodes : node.ip_address]
+  endpoints            = [for node in local.nodes_by_type.controlplane : node.ip_address]
 }

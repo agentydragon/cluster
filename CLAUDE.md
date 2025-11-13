@@ -28,12 +28,13 @@ Use `ssh root@atlas` to access the Proxmox host. No password required (SSH keys 
 ## Project Documentation Strategy
 
 ### docs/BOOTSTRAP.md
-**Purpose**: Always describes a working bootstrap sequence from unpopulated Proxmox cluster up to where we got in cluster implementation.
+**Purpose**: ONLY straight-line sequence to recreate a functioning cluster from unpopulated Proxmox.
 
 **Content**:
 - Step-by-step instructions for cold-starting the Talos cluster from nothing
 - Complete deployment procedures (terraform, CNI, applications, external connectivity)
-- Verification steps to confirm successful deployment
+- Basic verification steps only (run `terraform/infrastructure/health-check.sh`)
+- **NO troubleshooting** (would be too verbose - half a megabyte)
 
 **Maintenance**: This document should be continuously updated to reflect the current working state. When new components are added or procedures change, docs/BOOTSTRAP.md must be updated to maintain an accurate "recipe" for reproducing the cluster.
 

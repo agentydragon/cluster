@@ -17,3 +17,4 @@ output "schematic_id" {
   description = "Image Factory schematic ID"
   value       = talos_image_factory_schematic.schematic.id
 }
+

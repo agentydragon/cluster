@@ -5,11 +5,11 @@ variable "node_name" {
 }
 
 variable "node_type" {
-  description = "Type of node: controller or worker"
+  description = "Talos machine type: controlplane or worker"
   type        = string
   validation {
-    condition     = contains(["controller", "worker"], var.node_type)
-    error_message = "node_type must be either 'controller' or 'worker'."
+    condition     = contains(["controlplane", "worker"], var.node_type)
+    error_message = "node_type must be either 'controlplane' or 'worker'."
   }
 }
 
@@ -23,62 +23,36 @@ variable "ip_address" {
   type        = string
 }
 
-variable "gateway" {
-  description = "Network gateway"
-  type        = string
-}
-
-# Proxmox configuration
-variable "proxmox_node_name" {
-  description = "Proxmox node name"
-  type        = string
-}
-
-variable "prefix" {
-  description = "VM name prefix"
-  type        = string
-  default     = "talos"
-}
-
-# Talos configuration
-variable "talos_version" {
-  description = "Talos version"
-  type        = string
-}
-
-variable "cluster_name" {
-  description = "Talos cluster name"
-  type        = string
-}
-
-variable "cluster_endpoint" {
-  description = "Kubernetes API server endpoint"
-  type        = string
-}
-
-variable "cluster_vip" {
-  description = "Virtual IP for cluster control plane (only used for controllers)"
-  type        = string
-  default     = ""
-}
-
-variable "kubernetes_version" {
-  description = "Kubernetes version"
-  type        = string
-}
-
-variable "machine_secrets" {
-  description = "Talos machine secrets"
-  type        = any
-  sensitive   = true
-}
-
-# Global configuration passed from root
-variable "global_config" {
-  description = "Global configuration object"
+# Shared configuration for proxmox/tailscale/etc
+variable "shared_config" {
+  description = "Shared configuration for all nodes (non-talos)"
   type = object({
-    headscale_api_key      = string
-    headscale_login_server = string
+    gateway           = string
+    proxmox_node_name = string
+    prefix            = string
+    cluster_vip       = string
+    global_config = object({
+      headscale_api_key      = string
+      headscale_login_server = string
+      headscale_user         = string
+    })
+    tailscale_base_args  = string
+    tailscale_route_args = string
+  })
+  sensitive = true
+}
+
+# Talos machine configuration base (for merging)
+variable "talos_config_base" {
+  description = "Base talos machine configuration (splattable)"
+  type = object({
+    cluster_name       = string
+    cluster_endpoint   = string
+    machine_secrets    = any
+    talos_version      = string
+    kubernetes_version = string
+    examples           = bool
+    docs               = bool
   })
   sensitive = true
 }

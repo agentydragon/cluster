@@ -15,6 +15,9 @@ This document provides step-by-step instructions for cold-starting the Talos clu
 ```bash
 cd terraform/infrastructure
 terraform apply
+
+# After terraform completes, run the health check script to verify everything is working:
+./health-check.sh
 ```
 
 This handles:
@@ -22,15 +25,11 @@ This handles:
 - VM creation with pre-configured networking
 - Talos machine configuration application
 - Kubernetes cluster initialization and bootstrap
-- **Automated cluster health checks** (controllers, VIP, Kubernetes APIs)
 - **Auto-generated kubeconfig** pointing to VIP for HA kubectl access
-
-Terraform will automatically verify cluster health and fail if any issues are detected.
 
 ### Step 2: Setup GitOps with Flux
 
 Bootstrap Flux to manage the cluster via this GitHub repository (requires GitHub PAT).
-This installs Cilium and all infra automatically.
 
 ```bash
 flux bootstrap github \
@@ -45,7 +44,7 @@ This command:
 - Installs Flux controllers in `flux-system` namespace
 - Creates deploy key in GitHub repository
 - Deploys Cilium CNI via GitOps (nodes become Ready)
-- Deploys all infrastructure and applications automatically
+- Deploys infrastructure automatically (platform services require bootstrap secrets)
 
 #### Test
 ```bash
@@ -78,7 +77,7 @@ flux reconcile source git cluster --wait
 flux reconcile ks infrastructure-platform --wait
 ```
 
-#### Test Platform Services
+#### Test
 ```bash
 flux get ks infrastructure-platform  # Check platform services status
 kubectl get pods -n vault -n authentik  # Verify platform pods starting
@@ -96,19 +95,19 @@ Record Value: ns1.agentydragon.com
 TTL: 3600
 ```
 
-#### Step 3.2: PowerDNS configuration
+#### Step 4.2: PowerDNS configuration
 
 Add `test-cluster.agentydragon.com` domain configuration to `~/code/ducktape/ansible/host_vars/vps/powerdns.yml` with SOA, NS, and wildcard A records pointing to VPS IP.
 
-#### Step 3.3: Let's Encrypt task
+#### Step 4.3: Let's Encrypt task
 
 Add Let's Encrypt task to VPS playbook, to provision wildcard certificate for `*.test-cluster.agentydragon.com` using DNS-01 challenge via PowerDNS.
 
-#### Step 3.4: NGINX Proxy Site Configuration
+#### Step 4.4: NGINX Proxy Site Configuration
 
 Create nginx site template at `~/code/ducktape/ansible/nginx-sites/test-cluster.agentydragon.com.j2` with wildcard proxy configuration for `*.test-cluster.agentydragon.com` → `w0:30443` via Tailscale.
 
-#### Step 3.5: Deploy VPS configuration
+#### Step 4.5: Deploy VPS configuration
 
 ```bash
 cd ~/code/ducktape/ansible  # From your Ansible directory
@@ -116,11 +115,11 @@ ansible-playbook vps.yaml -t powerdns,nginx-sites   # Deploy PowerDNS zones and 
 ansible-playbook vps.yaml -t test-cluster-wildcard  # Create Let's Encrypt certificates
 ```
 
-#### Step 3.6: Test External Connectivity
+#### Step 4.6: Test External Connectivity
 
 ```bash
 dig foo.test-cluster.agentydragon.com  # Should resolve to: 172.235.48.86 (VPS IP)
 curl https://test.test-cluster.agentydragon.com/ # Should return HTTP/2 200
 ```
 
-Cluster should now be fully operational with GitOps-managed infrastructure and external HTTPS connectivity.
+Cluster should now be operational with GitOps and external HTTPS connectivity.

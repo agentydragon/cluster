@@ -1,4 +1,4 @@
-# Outputs for providers module
+# Outputs from common data sources
 
 output "vault_root_token" {
   description = "Vault root token from Kubernetes secret"
