@@ -10,7 +10,7 @@ spec:
   prune: true
   sourceRef:
     kind: GitRepository
-    name: cluster
+    name: flux-system
   timeout: 2m0s
   wait: true
   # Can run in parallel with core since networking doesn't depend on CRDs
