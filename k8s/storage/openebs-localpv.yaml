@@ -54,6 +54,8 @@ spec:
     # LocalPV Hostpath provisioner
     localpv-provisioner:
       enabled: true
+      # Override base path to use /var/lib which is rw-mounted in Talos kubelet
+      basePath: "/var/lib/openebs/local"
       # Enable helper pod for directory creation on nodes
       helperPod:
         image:
