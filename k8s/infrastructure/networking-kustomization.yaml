@@ -11,6 +11,6 @@ spec:
   sourceRef:
     kind: GitRepository
     name: flux-system
-  timeout: 2m0s
+  timeout: 10m0s
   wait: true
   # Can run in parallel with core since networking doesn't depend on CRDs
