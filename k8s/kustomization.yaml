@@ -4,4 +4,4 @@ resources:
   - infrastructure/core-kustomization.yaml
   - infrastructure/networking-kustomization.yaml
   - infrastructure/platform-kustomization.yaml
-  - applications
+  - infrastructure/applications-kustomization.yaml
