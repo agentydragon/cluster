@@ -7,15 +7,7 @@ data "external" "vault_secrets" {
       VAULT_YAML=$(printf "%s" "$VAULT_PASS" | ansible-vault view --vault-password-file=/dev/stdin "$HOME/code/ducktape/ansible/terraform-secrets.vault")
 
       # Convert YAML to JSON for external data source
-      echo "$VAULT_YAML" | python3 -c "
-import sys, yaml, json
-try:
-    data = yaml.safe_load(sys.stdin)
-    print(json.dumps(data))
-except Exception as e:
-    print('{\"error\": \"Failed to parse YAML: ' + str(e) + '\"}', file=sys.stderr)
-    exit(1)
-"
+      echo "$VAULT_YAML" | yq -o json
     EOT
   ]
 }

@@ -10,6 +10,7 @@ pkgs.mkShell {
     pkgs.fluxcd
     pkgs.kubernetes-helm
     pkgs.tflint
+    pkgs.yq-go  # YAML/JSON conversion tool
     # Use kubeseal from unstable to get v0.32.2
     unstable.kubeseal
   ];
