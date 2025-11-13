@@ -1,28 +1,23 @@
-# Read secrets from Vault for provider authentication
-data "kubernetes_secret" "vault_root_token" {
-  metadata {
-    name      = "vault-root-token"
-    namespace = "vault"
-  }
+# Provider configuration for services module
+
+module "common" {
+  source        = "../modules/providers"
+  vault_enabled = true
+  # Uses defaults from common module
 }
 
-data "vault_kv_secret_v2" "authentik_secrets" {
-  mount = "kv"
-  name  = "sso/authentik"
+provider "kubernetes" {
+  # Uses in-cluster authentication when running in tofu-controller
 }
 
-# For now, we'll use admin password from Harbor secret (need to generate this first)
-# This will be created by the Harbor deployment process
-
-# Provider configurations
 provider "vault" {
-  address = var.vault_address
-  token   = data.kubernetes_secret.vault_root_token.data["root-token"]
+  address = "https://vault.test-cluster.agentydragon.com"
+  token   = module.common.vault_root_token
 }
 
 provider "authentik" {
-  url   = var.authentik_url
-  token = data.vault_kv_secret_v2.authentik_secrets.data["bootstrap-token"]
+  url   = "https://auth.test-cluster.agentydragon.com"
+  token = module.common.authentik_bootstrap_token
 }
 
 # Harbor provider will be configured once Harbor is deployed with admin credentials
@@ -38,7 +33,3 @@ provider "authentik" {
 #   base_url = var.gitea_url
 #   token    = "will-be-configured-later"
 # }
-
-provider "kubernetes" {
-  config_path = var.kubeconfig_path
-}

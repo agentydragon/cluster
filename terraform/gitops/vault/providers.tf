@@ -3,6 +3,7 @@
 module "common" {
   source        = "../modules/providers"
   vault_enabled = true
+  # Uses default vault_address from common module
 }
 
 provider "kubernetes" {
@@ -10,6 +11,6 @@ provider "kubernetes" {
 }
 
 provider "vault" {
-  address = var.vault_address
+  address = "https://vault.test-cluster.agentydragon.com"
   token   = module.common.vault_root_token
 }

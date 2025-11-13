@@ -24,17 +24,15 @@ Execute those commands with the direnv loaded, or use `direnv exec .`.
 - **End-to-end testing**: Test application accessible via https://test.test-cluster.agentydragon.com/
 
 ### Infrastructure
-- **5-node Talos cluster**: 3 controllers (10.0.0.11-13) + 2 workers (10.0.0.21-22)
-- **Controllers**: `10.0.0.11`, `10.0.0.12`, `10.0.0.13` (c0, c1, c2)
-- **Workers**: `10.0.0.21`, `10.0.0.22` (w0, w1)
-- **Cluster VIP**: `10.0.0.20` (load balancer across controllers)
-- **Network**: All nodes on 10.0.0.0/16 with gateway 10.0.0.1
+- Network: 10.0.0.0/16, gateway 10.0.0.1
+- 5 Talos nodes: 3 controllers (c0-2 = 10.0.0.11-13) + 2 workers (w0-1 = 10.0.0.21-22)
+- Cluster VIP: `10.0.0.20` (load balancer across controllers)
 
 ### Platform Services
 - **Cilium v1.16.5**: CNI with kube-proxy replacement and BPF hostLegacyRouting
 - **NGINX Ingress**: HA deployment (2 replicas on workers, NodePort 30080/30443)
 - **cert-manager**: Automatic SSL certificate management
-- **sealed-secrets**: Encrypted secrets in Git (kubeseal v0.32.2)
+- **sealed-secrets**: Encrypted secrets in Git
 - **Flux GitOps**: Declarative cluster management from this repository
 
 ### Key Implementation Details

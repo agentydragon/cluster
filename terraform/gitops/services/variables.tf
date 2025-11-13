@@ -46,14 +46,5 @@ variable "matrix_external_url" {
   default     = "https://matrix.test-cluster.agentydragon.com"
 }
 
-variable "vault_address" {
-  description = "Vault server address"
-  type        = string
-  default     = "https://vault.test-cluster.agentydragon.com"
-}
-
-variable "kubeconfig_path" {
-  description = "Path to kubeconfig file"
-  type        = string
-  default     = "/tmp/kubeconfig"
-}
+# vault_address and kubeconfig_path moved to shared module
+# Uses defaults from ../modules/providers/variables.tf
