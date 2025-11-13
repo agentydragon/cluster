@@ -25,6 +25,13 @@ output "talosconfig" {
   sensitive   = true
 }
 
+# Output first controller kubeconfig (reliable, for bootstrap and debugging)
+output "kubeconfig_first_controller" {
+  description = "Kubernetes client configuration for first controller (reliable)"
+  value       = talos_cluster_kubeconfig.talos.kubeconfig_raw
+  sensitive   = true
+}
+
 # Health check: verify VIP is reachable before generating VIP kubeconfig
 resource "terraform_data" "vip_health_check" {
   provisioner "local-exec" {
@@ -33,8 +40,17 @@ resource "terraform_data" "vip_health_check" {
   depends_on = [talos_cluster_kubeconfig.talos]
 }
 
+# Output VIP kubeconfig (high availability, for daily use)
+output "kubeconfig_vip" {
+  description = "Kubernetes client configuration using VIP (high availability)"
+  value       = replace(talos_cluster_kubeconfig.talos.kubeconfig_raw, var.cluster_endpoint, "https://${var.cluster_vip}:6443")
+  sensitive   = true
+  depends_on  = [terraform_data.vip_health_check]
+}
+
+# Default kubeconfig (backwards compatibility - points to VIP)
 output "kubeconfig" {
-  description = "Kubernetes client configuration (corrected to use VIP after health check)"
+  description = "Default Kubernetes client configuration (VIP for HA)"
   value       = replace(talos_cluster_kubeconfig.talos.kubeconfig_raw, var.cluster_endpoint, "https://${var.cluster_vip}:6443")
   sensitive   = true
   depends_on  = [terraform_data.vip_health_check]
