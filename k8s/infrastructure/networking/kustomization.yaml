@@ -3,6 +3,7 @@ kind: Kustomization
 resources:
   - cert-manager
   - cilium
-  - ingress-system
   - metallb
+  - metallb-config
+  - ingress-system
   - powerdns
