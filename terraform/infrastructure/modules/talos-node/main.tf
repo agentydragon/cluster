@@ -6,7 +6,9 @@ locals {
       systemExtensions = {
         officialExtensions = [
           "siderolabs/qemu-guest-agent",
-          "siderolabs/tailscale"
+          "siderolabs/tailscale",
+          "siderolabs/iscsi-tools",
+          "siderolabs/util-linux-tools"
         ]
       }
       meta = [
@@ -67,6 +69,16 @@ locals {
           enabled              = true
           forwardKubeDNSToHost = true
         }
+      }
+      kubelet = {
+        extraMounts = [
+          {
+            destination = "/var/lib/longhorn"
+            type        = "bind"
+            source      = "/var/lib/longhorn"
+            options     = ["bind", "rshared", "rw"]
+          }
+        ]
       }
     }
     cluster = {
