@@ -14,13 +14,13 @@ spec:
   wait: true
   dependsOn:
     - name: cilium # Vault needs networking to function
-  # Verify Vault's own service is ready
+  # Verify Bank-Vaults operator and Vault StatefulSet are ready
   healthChecks:
-    - apiVersion: v1
-      kind: Service
-      name: vault
-      namespace: vault
     - apiVersion: apps/v1
       kind: Deployment
-      name: vault
+      name: operator
+      namespace: vault
+    - apiVersion: apps/v1
+      kind: StatefulSet
+      name: instance
       namespace: vault

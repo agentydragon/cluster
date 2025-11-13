@@ -1,0 +1,101 @@
+---
+apiVersion: "vault.banzaicloud.com/v1alpha1"
+kind: "Vault"
+metadata:
+  name: "instance"
+  namespace: "vault"
+spec:
+  size: 3  # HA cluster with 3 replicas for failover
+  image: "hashicorp/vault:1.17.2"
+
+  # Bank-Vaults automatically handles initialization and unsealing
+  bankVaultsImage: "ghcr.io/bank-vaults/bank-vaults:1.21.0"
+
+  # Storage configuration - each replica gets its own PVC
+  volumeClaimTemplates:
+    - metadata:
+        name: vault-raft
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 10Gi
+
+  volumeMounts:
+    - name: vault-raft
+      mountPath: /vault/file
+
+  # HA Vault server configuration with Raft clustering
+  config:
+    storage:
+      raft:
+        path: "/vault/file"
+        # Raft cluster configuration for HA
+        retry_join:
+          - leader_api_addr: "http://vault-0.vault-headless.vault:8200"
+          - leader_api_addr: "http://vault-1.vault-headless.vault:8200"
+          - leader_api_addr: "http://vault-2.vault-headless.vault:8200"
+    listener:
+      tcp:
+        address: "0.0.0.0:8200"
+        tls_disable: true  # Simplified for cluster-internal communication
+        cluster_address: "0.0.0.0:8201"
+    # Dynamic API/cluster addresses for HA
+    api_addr: "http://POD_IP:8200"
+    cluster_addr: "http://POD_IP:8201"
+    ui: true
+    log_level: "info"
+    # Enable HA mode
+    ha_storage:
+      raft:
+        path: "/vault/file"
+
+  # Automatic unsealing using Kubernetes secrets
+  unsealConfig:
+    options:
+      # Store unseal keys and root token in Kubernetes secrets
+      preFlightChecks: true
+      storeRootToken: true
+    kubernetes:
+      secretNamespace: "vault"
+
+  # Enable essential auth methods and secrets engines
+  externalConfig:
+    auth:
+      - type: kubernetes
+        path: kubernetes
+
+    secrets:
+      - path: kv
+        type: kv
+        description: "General secrets"
+        options:
+          version: 2
+
+  # Service configuration
+  serviceType: NodePort
+  nodePort: 30200
+
+  # Resource limits
+  resources:
+    requests:
+      memory: "256Mi"
+      cpu: "250m"
+    limits:
+      memory: "512Mi"
+      cpu: "500m"
+
+  # Service account
+  serviceAccount: vault
+
+  # Pod anti-affinity for HA - spread replicas across nodes
+  affinity:
+    podAntiAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+        - weight: 100
+          podAffinityTerm:
+            labelSelector:
+              matchLabels:
+                app.kubernetes.io/name: vault
+            topologyKey: kubernetes.io/hostname

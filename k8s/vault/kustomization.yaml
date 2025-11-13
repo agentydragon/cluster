@@ -1,6 +1,11 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
-  - bootstrap-sealed.yaml
-  - helmrelease.yaml
+  # Bank-Vaults operator and Vault instance
+  - rbac.yaml
+  - operator.yaml  
+  - instance.yaml
+  # External secrets integration (existing)
+  - cluster-secret-store.yaml
+  - external-secrets.yaml
   - config.yaml
