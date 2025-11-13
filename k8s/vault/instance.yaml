@@ -9,6 +9,7 @@ spec:
   image: "hashicorp/vault:1.17.2"
 
   # Bank-Vaults automatically handles initialization and unsealing
+  # TODO: IPC_LOCK should not require particularly wide privileges - investigate capability restrictions
   bankVaultsImage: "ghcr.io/bank-vaults/bank-vaults:v1.32.0"
 
   # Storage configuration - each replica gets its own PVC
