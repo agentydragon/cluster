@@ -3,4 +3,3 @@ kind: Kustomization
 resources:
   - harbor-secrets.yaml
   - harbor-release.yaml
-  - ../../infrastructure/platform/services-config.yaml
