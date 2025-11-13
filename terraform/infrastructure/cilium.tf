@@ -47,11 +47,18 @@ resource "null_resource" "wait_for_k8s_api" {
   }
 }
 
-# Wait for nodes to become Ready after CNI installation
+# Wait for all expected nodes to join and become Ready after CNI installation
 resource "null_resource" "wait_for_nodes_ready" {
   depends_on = [helm_release.cilium_bootstrap]
 
   provisioner "local-exec" {
-    command = "kubectl wait --for=condition=Ready nodes --all --timeout=300s"
+    command = <<-EOF
+      echo "Waiting for all expected nodes to become Ready..."
+
+      # Wait for all expected nodes by name (dynamically generated)
+      kubectl wait --for=condition=Ready ${join(" ", [for node_name, _ in local.nodes : "node/${node_name}"])} --timeout=300s
+
+      echo "All ${var.controller_count + var.worker_count} nodes are Ready"
+    EOF
   }
 }
