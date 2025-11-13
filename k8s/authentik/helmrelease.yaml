@@ -63,7 +63,7 @@ spec:
       # Extract bootstrap token from sealed secret
       extraEnvFrom:
         - secretRef:
-            name: authentik-bootstrap
+            name: bootstrap
 
     # Server deployment
     server:

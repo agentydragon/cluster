@@ -1,0 +1,13 @@
+---
+apiVersion: bitnami.com/v1alpha1
+kind: SealedSecret
+metadata:
+  name: bootstrap
+  namespace: vault
+spec:
+  encryptedData:
+    root-token: AgCAl9eMhApKvsNgwb6F3+484k/ihfLlufRTcrNX2uJYCA/ikgQ3AVZQpYSOgGakPP0/3LeCQejEZ2ZpZEniEtDkJRuxrkUSXPQFECzT1AfZXk7a/mCtmwgorsSMVCrasl6INr7SRSV0jFbYru6PTNoow87DZUxmAfR+cy5lED11nKO9GW8fyOP7MLHrChW7np+yX9IWrop5GzAkPHKD6AYJl/q/as+kpbClLH/is4x/euQv7Rg9sKR678dKAremqrsx0dcEgJbO4C56vdzT5Fb0D6rPRBJHqmIHFZPvj52FYwBDoCVFwiprrZdfRG2759Wxm2Cn4rOjAaHfNcDlVPVT46U0Y09rbLqIRfltps6t7vgajqT0iCUrVZKYOKqHNhcWEqBKehCAtIgMXs5t8Y877jfJE1lU9PG40ECcplcbOyvtK1JQmzaG2irqachkR9meWOFt8N53BcS71J2xarKhQcI5kjmIDsraT4pY0B43e48ybH62vExZlS2FofG/96tc4f4Dzt1wCTxRd+z1aZUk7mN5g/SfI9H3UhKG6oTQ2mfMgQTmPl/fdQiikzM5JF6VV8WR0Wxaki++PaEWi+HIHSXBgwLmHIHFe1/cO4qZDL60J5GyRpHUDKdE/zCkJcVrD1c4FidH6AURFZqFVjbDo+ejlgqIutuWwpPC/3mgpt+XO/03T7Xu2vdAMBZ8WmO9QRwBCfNugfrABdkuw5FL8q7OoYpAM0Kfzsemxgf90aacAPetJ/zGOvWFsC4hh7TRRh0UgoIGiXQbO4Y9uhs3EQ==
+  template:
+    metadata:
+      name: bootstrap
+      namespace: vault

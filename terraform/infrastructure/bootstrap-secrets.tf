@@ -5,7 +5,7 @@ locals {
 module "vault_bootstrap_secret" {
   source = "./modules/bootstrap-secret"
 
-  name         = "vault-bootstrap"
+  name         = "bootstrap"
   namespace    = "vault"
   secret_key   = "root-token"
   service_name = "vault"
@@ -17,7 +17,7 @@ module "vault_bootstrap_secret" {
 module "authentik_bootstrap_secret" {
   source = "./modules/bootstrap-secret"
 
-  name         = "authentik-bootstrap"
+  name         = "bootstrap"
   namespace    = "authentik"
   secret_key   = "bootstrap-token"
   service_name = "authentik"
