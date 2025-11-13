@@ -1,4 +1,3 @@
----
 # Cilium HelmRelease for Flux to manage (takes over from Terraform bootstrap)
 apiVersion: helm.toolkit.fluxcd.io/v2beta2
 kind: HelmRelease

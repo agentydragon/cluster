@@ -1,7 +1,6 @@
 # Talos Kubernetes Cluster
 
 5-node Talos Kubernetes cluster (3 controllers, 2 workers) with GitOps management and external HTTPS connectivity.
-
 VMs deploy via single `terraform apply` from the `terraform/infrastructure/` directory.
 
 For operational procedures (maintenance, diagnostics, troubleshooting), see <docs/OPERATIONS.md>.
@@ -15,23 +14,23 @@ Execute those commands with the direnv loaded, or use `direnv exec .`.
 
 - VMs run Talos, configured and bootstrapped with Terraform (`terraform/infrastructure/`)
 - VMs connected to Headscale mesh
-- Static IPs -> baked into Image Factory QCOW2 disks together with Tailscale extension + QEMU guest agent
+- Pre-baked per-node Image Factory disks with static IPs and Tailscale + QEMU guest agent extensions
 - CNI: Cilium with Talos-specific security configuration (with kube-proxy replacement and BPF hostLegacyRouting)
-- **VIP high availability**: 10.0.3.1 load-balances across controllers
 - **API server networking fix**: BPF hostLegacyRouting for static pod connectivity to worker nodes
-- **External HTTPS connectivity**: Complete VPS proxy → Tailscale → cluster ingress chain
-- **NGINX Ingress HA**: 2 replicas on worker nodes accessing MetalLB VIP 10.0.3.2
-- **End-to-end testing**: Test application accessible via <https://test.test-cluster.agentydragon.com/>
+- External HTTPS connectivity: VPS proxy → Tailscale → cluster ingress chain
+- Test application: <https://test.test-cluster.agentydragon.com/>
 
 ### Infrastructure
 
 - Network: 10.0.0.0/16, gateway 10.0.0.1
-- 5 Talos nodes: 3 controllers (controlplane0-2 = 10.0.1.1-3) + 2 workers (worker0-1 = 10.0.2.1-2)
-- Cluster API VIP: `10.0.3.1` (kube-vip load balancer across controllers)
-- MetalLB VIP pools:
-  - `ingress-pool`: `10.0.3.2` (dedicated ingress)
-  - `dns-pool`: `10.0.3.3` (dedicated PowerDNS)
-  - `services-pool`: `10.0.3.4-20` (Harbor, Gitea, etc.)
+- 5 Talos nodes:
+  - 3 controllers (controlplane0-2 = 10.0.1.1-3)
+  - 2 workers (worker0-1 = 10.0.2.1-2)
+- High availability VIP pools:
+  - 10.0.3.1: kube-vip LB across controller Kube API servers
+  - 10.0.3.2 (`ingress-pool`): MetalLB across worker node replicas of NGINX Ingress
+  - 10.0.3.3 (`dns-pool`): PowerDNS
+  - 10.0.3.4-20 (`services-pool`): for future use (Harbor, Gitea, etc.)
 
 ### Platform Services
 
@@ -78,11 +77,18 @@ cluster/
 │       ├── secrets/       # Secret generation
 │       └── services/      # Service integration configs
 ├── k8s/                   # Kubernetes manifests (Flux-managed)
-│   ├── infrastructure/    # Core platform services
-│   │   ├── core/          # sealed-secrets, tofu-controller
-│   │   ├── networking/    # Cilium, cert-manager, ingress-system
-│   │   └── platform/      # Vault, Authentik (SSO services)
-│   └── applications/      # End-user applications (Gitea, Harbor, Matrix)
+│   ├── core/              # CRDs and controllers (sealed-secrets, tofu-controller)
+│   ├── cilium/            # CNI networking
+│   ├── metallb/           # Load balancer
+│   ├── cert-manager/
+│   ├── ingress-nginx/     # HTTP(S) ingress
+│   ├── powerdns/          # DNS server (external)
+│   ├── vault/, external-secrets/  # Secret synchronization
+│   ├── authentik/         # Identity and SSO provider
+│   ├── services-config/   # Authentik SSO config for services, via Terraform
+│   └── applications/
+│       ├── harbor/        # Container registry
+│       └── gitea/, matrix/, test-app/
 └── flux-system/           # Flux controllers (auto-generated)
 ```
 
@@ -98,15 +104,15 @@ cluster/
 
 Internet (443) → VPS nginx proxy → Tailscale VPN → MetalLB VIP (10.0.3.2:443) → NGINX Ingress → Apps
 
-- **VPS**: `~/code/ducktape/ansible/nginx-sites/test-cluster.agentydragon.com.j2`
-- **DNS Architecture**:
+- VPS: `~/code/ducktape/ansible/nginx-sites/test-cluster.agentydragon.com.j2`
+- DNS:
   - VPS PowerDNS delegates `test-cluster.agentydragon.com` → cluster PowerDNS (10.0.3.3)
-  - In-cluster PowerDNS enables Let's Encrypt DNS-01 challenges for SSL certs
-- **LoadBalancer**: NGINX Ingress uses MetalLB VIP 10.0.3.2 instead of NodePort
-- **Cilium**: `kubeProxyReplacement: true` with privileged port protection enabled
+  - In-cluster PowerDNS handles Let's Encrypt DNS-01 challenges to obtain SSL certs
+- LoadBalancer: NGINX Ingress uses MetalLB VIP 10.0.3.2 instead of NodePort
+- Cilium: `kubeProxyReplacement: true` with privileged port protection enabled
 
-- Static IP Bootstrap: Terraform → Image Factory API → Custom QCOW2 with META key 10 → VM boots with static IP (no DHCP)
-- GitOps Flow: Git Commit → Flux detects change → Applies K8s manifests → Applications updated
+- Terraform → Image Factory API → Custom QCOW2 with META key 10 → VMs with static IPs (no DHCP)
+- GitOps Flow: Git commit → Flux detects change → applies k8s manifests
 - Deployment path: `k8s/` directory → Flux Kustomizations → HelmReleases → Running pods
 - Secret management: local `kubeseal` → sealed-secrets controller → K8s Secret → Application pods
 
@@ -114,12 +120,12 @@ Internet (443) → VPS nginx proxy → Tailscale VPN → MetalLB VIP (10.0.3.2:4
 
 kube-vip leader election → VIP (10.0.3.1) floats between controllers → Load balances API requests
 
-**Bootstrap order**: First controller (10.0.1.1) → Cluster formation → VIP establishment → HA active
+Bootstrap order: First controller (10.0.1.1) → Cluster formation → VIP establishment → HA active
 
 ## External dependencies
 
-- **Proxmox host**: `atlas` at 10.0.0.5 for VM hosting
-- **GitHub**: Repository hosting and Flux source
-- **VPS**: nginx proxy and PowerDNS for external connectivity, configured under `~/code/ducktape` repo:
+- ssh access to Proxmox host `atlas` for VM hosting
+- GitHub for Flux
+- VPS: nginx proxy and PowerDNS for external connectivity, configured in `~/code/ducktape` repo:
   - nginx: `ansible/nginx-sites/`
   - PowerDNS: `ansible/host_vars/vps/powerdns.yml`

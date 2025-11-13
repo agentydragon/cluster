@@ -1,4 +1,3 @@
----
 # Terraform resource to manage PowerDNS zones and records
 apiVersion: infra.contrib.fluxcd.io/v1alpha2
 kind: Terraform
