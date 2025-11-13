@@ -74,17 +74,17 @@ spec:
           version: 2
 
   # Service configuration
-  serviceType: NodePort
-  nodePort: 30200
+  serviceType: "NodePort"
 
-  # Resource limits
+  # Resource limits (correct Bank-Vaults schema)
   resources:
-    requests:
-      memory: "256Mi"
-      cpu: "250m"
-    limits:
-      memory: "512Mi"
-      cpu: "500m"
+    vault:
+      requests:
+        memory: "256Mi"
+        cpu: "250m"
+      limits:
+        memory: "512Mi"
+        cpu: "500m"
 
   # Service account
   serviceAccount: vault
