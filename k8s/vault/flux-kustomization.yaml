@@ -13,7 +13,7 @@ spec:
   prune: true
   wait: true
   dependsOn:
-    # platform dependency removed - add specific dependencies as needed
+    - name: cilium # Vault needs networking to function
   # Verify Vault's own service is ready
   healthChecks:
     - apiVersion: v1
