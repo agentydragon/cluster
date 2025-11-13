@@ -22,12 +22,10 @@ This handles:
 - VM creation with pre-configured networking
 - Talos machine configuration application
 - Kubernetes cluster initialization and bootstrap
+- **Automated cluster health checks** (controllers, VIP, Kubernetes APIs)
+- **Auto-generated kubeconfig** pointing to VIP for HA kubectl access
 
-#### Test
-```bash
-for ip in 10.0.0.{11..13} 10.0.0.{21..22}; do ping -c1 $ip; done  # VMs have correct static IPs
-ping 10.0.0.20  # VIP (load balancer) is active
-```
+Terraform will automatically verify cluster health and fail if any issues are detected.
 
 ### Step 2: Setup GitOps with Flux
 
@@ -53,7 +51,7 @@ This command:
 ```bash
 kubectl get nodes -o wide  # Wait for Flux to deploy Cilium (nodes become Ready)
 flux get all               # Check GitOps status
-kubectl --server=https://10.0.0.20:6443 get nodes  # Test VIP
+# Note: kubectl automatically uses VIP (10.0.0.20) for HA - no manual --server needed
 ```
 
 ### Step 3: Generate Bootstrap Secrets
@@ -64,7 +62,10 @@ Before platform services can deploy, generate bootstrap secrets and commit them 
 # Generate bootstrap tokens
 for service in "vault:vault:root-token" "authentik:authentik:bootstrap-token"; do
   IFS=':' read -r name ns key <<< "$service"
-  openssl rand -hex 32 | kubectl create secret generic ${name}-bootstrap --from-file=${key}=/dev/stdin --namespace=${ns} --dry-run=client -o yaml | kubeseal -o yaml > k8s/infrastructure/platform/${name}/${name}-bootstrap-sealed.yaml
+  openssl rand -hex 32 | \
+    kubectl create secret generic ${name}-bootstrap \
+    --from-file=${key}=/dev/stdin --namespace=${ns} --dry-run=client -o yaml | \
+    kubeseal -o yaml > k8s/infrastructure/platform/${name}/${name}-bootstrap-sealed.yaml
 done
 
 # Commit and push to trigger GitOps deployment
