@@ -16,8 +16,8 @@ This document provides step-by-step instructions for cold-starting the Talos clu
 cd terraform/infrastructure
 terraform apply
 
-# After terraform completes, run the health check script to verify everything is working:
-./health-check.sh
+# After terraform completes, run the Stage 1 health check to verify everything is working:
+./stage1-health-check.py
 ```
 
 This handles:

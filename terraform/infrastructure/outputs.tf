@@ -36,14 +36,8 @@ output "kubeconfig_bootstrap" {
 output "cluster_config" {
   description = "Complete cluster configuration for external tooling"
   value = {
-    vip             = var.cluster_vip
-    api_port        = 6443
-    connect_timeout = 5
-    max_timeout     = 10
-    ping_count      = 3
-    ping_timeout    = 5
-    kubeconfig_path = "${path.module}/kubeconfig"
-    kubectl_timeout = "10s"
+    vip      = var.cluster_vip
+    api_port = 6443
   }
 }
 
@@ -52,6 +46,13 @@ resource "local_file" "kubeconfig" {
   content    = talos_cluster_kubeconfig.talos.kubeconfig_raw
   filename   = "${path.module}/kubeconfig"
   depends_on = [talos_cluster_kubeconfig.talos]
+}
+
+# Write talosconfig for health check script
+resource "local_file" "talosconfig" {
+  content    = data.talos_client_configuration.talos.talos_config
+  filename   = "${path.module}/talosconfig.yml"
+  depends_on = [data.talos_client_configuration.talos]
 }
 
 

@@ -8,6 +8,14 @@ repos:
       - id: check-yaml
         args: ['--allow-multiple-documents']
 
+  # Python formatting and linting
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.8.4
+    hooks:
+      - id: ruff
+        args: [--fix]
+      - id: ruff-format
+
   # Terraform formatting
   - repo: https://github.com/antonbabenko/pre-commit-terraform
     rev: v1.96.1

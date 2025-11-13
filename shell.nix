@@ -12,6 +12,10 @@ pkgs.mkShell {
     pkgs.tflint
     pkgs.yq-go  # YAML/JSON conversion tool
     pkgs.popeye  # Kubernetes cluster health checker
+    pkgs.python3  # For health-check.py
+    pkgs.python3Packages.rich  # Rich UI for health-check.py
+    pkgs.python3Packages.aiohttp  # HTTP client for API tests
+    pkgs.python3Packages.kubernetes  # Kubernetes API client
     # Use kubeseal from unstable to get v0.32.2
     unstable.kubeseal
   ];

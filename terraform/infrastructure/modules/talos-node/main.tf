@@ -79,14 +79,7 @@ locals {
       }
       network = { cni = { name = "none" } }
       proxy   = { disabled = true }
-      install = {
-        extensions = [{
-          image = "ghcr.io/siderolabs/tailscale:latest"
-        }]
-      }
     }
-    # Empty cluster section for tailscale
-    cluster = {}
   }
 }
 

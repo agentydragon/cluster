@@ -20,6 +20,7 @@ This document tracks project roadmap and strategic architecture decisions for th
 - [ ] **Backup/recovery**: Document cluster restore procedures and etcd backup automation
 - [ ] **VPS proxy resilience**: Investigate if VPS proxy to just *one* worker's ingress, or is it resilient to losing a worker? (HA)
 - [ ] **VIP bootstrap handling**: Document how we solved VIP chicken-and-egg problem (couldn't bootstrap with cluster_endpoint=VIP since VIP doesn't exist until after bootstrap completes)
+- [ ] **Conditional Tailscale Auth Key Provisioning**: Make Tailscale auth key generation conditional - only provision new keys for nodes that aren't already connected to Tailscale network (avoid unnecessary key regeneration on every terraform apply)
 
 ## SSO Architecture Design
 
