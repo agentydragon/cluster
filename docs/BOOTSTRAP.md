@@ -17,7 +17,7 @@ cd terraform/infrastructure
 terraform apply
 
 # After terraform completes, run the Stage 1 health check to verify everything is working:
-./stage1-health-check.py
+./cluster-health-check.py
 ```
 
 **Prerequisites:** Ensure `gh auth login` is completed for GitHub access.

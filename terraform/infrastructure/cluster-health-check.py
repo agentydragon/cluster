@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Talos cluster Stage 1 health check - validates infrastructure before Flux deployment.
-Tests basic connectivity, APIs, and cluster access without requiring CNI.
+Talos cluster health check - validates complete operational cluster state.
+Tests connectivity, APIs, CNI functionality, and GitOps reconciliation status.
 """
 
 import asyncio
@@ -81,20 +81,32 @@ class NodeTests:
 class ClusterTests:
     """Test results for cluster-level checks"""
 
-    vip_ping: TestResult = field(default_factory=lambda: TestResult(TestStatus.PENDING))
+    vip_talos_api: TestResult = field(
+        default_factory=lambda: TestResult(TestStatus.PENDING)
+    )
     vip_kube_api: TestResult = field(
         default_factory=lambda: TestResult(TestStatus.PENDING)
     )
     nodes_exist: TestResult = field(
         default_factory=lambda: TestResult(TestStatus.PENDING)
     )
+    nodes_ready: TestResult = field(
+        default_factory=lambda: TestResult(TestStatus.PENDING)
+    )
     kubectl_access: TestResult = field(
+        default_factory=lambda: TestResult(TestStatus.PENDING)
+    )
+    cni_pods: TestResult = field(default_factory=lambda: TestResult(TestStatus.PENDING))
+    flux_pods: TestResult = field(
+        default_factory=lambda: TestResult(TestStatus.PENDING)
+    )
+    flux_reconciliation: TestResult = field(
         default_factory=lambda: TestResult(TestStatus.PENDING)
     )
 
 
-class Stage1HealthChecker:
-    """Stage 1 (pre-Flux) cluster health checker"""
+class ClusterHealthChecker:
+    """Complete cluster health checker"""
 
     def __init__(self):
         self.console = Console()
@@ -229,6 +241,100 @@ class Stage1HealthChecker:
 
         return TestResult(TestStatus.PASS)
 
+    async def test_nodes_ready(self) -> TestResult:
+        """Check that all nodes are Ready (CNI working)"""
+        success, stdout, stderr = await self.run_cmd(
+            ["kubectl", "get", "nodes", "--no-headers"], timeout_sec=10
+        )
+
+        if not success:
+            return TestResult(TestStatus.FAIL, stderr.strip())
+
+        lines = stdout.strip().split("\n")
+        not_ready_nodes = [line.split()[0] for line in lines if "NotReady" in line]
+
+        if not_ready_nodes:
+            return TestResult(
+                TestStatus.FAIL, f"NotReady: {', '.join(not_ready_nodes)}"
+            )
+
+        return TestResult(TestStatus.PASS)
+
+    async def test_cni_pods(self) -> TestResult:
+        """Check that CNI pods are running"""
+        success, stdout, stderr = await self.run_cmd(
+            [
+                "kubectl",
+                "get",
+                "pods",
+                "-n",
+                "kube-system",
+                "-l",
+                "k8s-app=cilium",
+                "--no-headers",
+            ],
+            timeout_sec=10,
+        )
+
+        if not success:
+            return TestResult(TestStatus.FAIL, stderr.strip())
+
+        if not stdout.strip():
+            return TestResult(TestStatus.FAIL, "No Cilium pods found")
+
+        lines = stdout.strip().split("\n")
+        not_running = [
+            line.split()[0] for line in lines if "Running" not in line or "0/" in line
+        ]
+
+        if not_running:
+            return TestResult(TestStatus.FAIL, f"Not running: {', '.join(not_running)}")
+
+        return TestResult(TestStatus.PASS)
+
+    async def test_flux_pods(self) -> TestResult:
+        """Check that Flux pods are running"""
+        success, stdout, stderr = await self.run_cmd(
+            ["kubectl", "get", "pods", "-n", "flux-system", "--no-headers"],
+            timeout_sec=10,
+        )
+
+        if not success:
+            return TestResult(TestStatus.FAIL, stderr.strip())
+
+        if not stdout.strip():
+            return TestResult(TestStatus.FAIL, "No Flux pods found")
+
+        lines = stdout.strip().split("\n")
+        not_running = [
+            line.split()[0] for line in lines if "Running" not in line or "0/" in line
+        ]
+
+        if not_running:
+            return TestResult(TestStatus.FAIL, f"Not running: {', '.join(not_running)}")
+
+        return TestResult(TestStatus.PASS)
+
+    async def test_flux_reconciliation(self) -> TestResult:
+        """Check that Flux GitOps reconciliation is healthy"""
+        success, stdout, stderr = await self.run_cmd(
+            ["flux", "get", "kustomizations", "--no-header"], timeout_sec=10
+        )
+
+        if not success:
+            return TestResult(TestStatus.FAIL, stderr.strip())
+
+        if not stdout.strip():
+            return TestResult(TestStatus.SKIP, "No Flux kustomizations yet")
+
+        lines = stdout.strip().split("\n")
+        failed = [line.split()[0] for line in lines if "True" not in line]
+
+        if failed:
+            return TestResult(TestStatus.FAIL, f"Failed: {', '.join(failed)}")
+
+        return TestResult(TestStatus.PASS)
+
     async def test_node_complete(self, node: str) -> None:
         """Run all tests for a single node"""
         node_test = self.node_tests[node]
@@ -267,7 +373,7 @@ class Stage1HealthChecker:
         vip_table.add_column("VIP Test", style="cyan")
         vip_table.add_column("Status")
 
-        vip_table.add_row("Talos API", format_status(self.cluster_tests.vip_ping))
+        vip_table.add_row("Talos API", format_status(self.cluster_tests.vip_talos_api))
         vip_table.add_row("Kube API", format_status(self.cluster_tests.vip_kube_api))
 
         # Cluster tests table
@@ -281,6 +387,14 @@ class Stage1HealthChecker:
         cluster_table.add_row(
             "Nodes Exist", format_status(self.cluster_tests.nodes_exist)
         )
+        cluster_table.add_row(
+            "Nodes Ready", format_status(self.cluster_tests.nodes_ready)
+        )
+        cluster_table.add_row("CNI Pods", format_status(self.cluster_tests.cni_pods))
+        cluster_table.add_row("Flux Pods", format_status(self.cluster_tests.flux_pods))
+        cluster_table.add_row(
+            "Flux Reconciliation", format_status(self.cluster_tests.flux_reconciliation)
+        )
 
         content = Group(
             Text("Node Connectivity", style="bold blue"),
@@ -289,13 +403,11 @@ class Stage1HealthChecker:
             Text(f"VIP ({self.config.vip}) Tests", style="bold green"),
             vip_table,
             Text(""),
-            Text("Cluster Access", style="bold yellow"),
+            Text("Cluster Operational Status", style="bold yellow"),
             cluster_table,
         )
 
-        return Panel(
-            content, title="🚀 Stage 1 Health Check (Pre-Flux)", border_style="blue"
-        )
+        return Panel(content, title="🚀 Cluster Health Check", border_style="blue")
 
     async def run_all_tests(self) -> bool:
         """Run all health checks"""
@@ -315,17 +427,23 @@ class Stage1HealthChecker:
                 # Test VIP
                 async def test_vip():
                     # Test VIP Talos and Kube APIs independently
-                    self.cluster_tests.vip_ping = await self.test_talos_api(
+                    self.cluster_tests.vip_talos_api = await self.test_talos_api(
                         self.config.vip
                     )
                     self.cluster_tests.vip_kube_api = await self.test_kube_api(
                         self.config.vip
                     )
 
-                # Test cluster access
+                # Test cluster access and operational status
                 async def test_cluster():
                     self.cluster_tests.kubectl_access = await self.test_kubectl_access()
                     self.cluster_tests.nodes_exist = await self.test_nodes_exist()
+                    self.cluster_tests.nodes_ready = await self.test_nodes_ready()
+                    self.cluster_tests.cni_pods = await self.test_cni_pods()
+                    self.cluster_tests.flux_pods = await self.test_flux_pods()
+                    self.cluster_tests.flux_reconciliation = (
+                        await self.test_flux_reconciliation()
+                    )
 
                 # Run everything in parallel
                 await asyncio.gather(*node_tasks, test_vip(), test_cluster())
@@ -346,10 +464,18 @@ class Stage1HealthChecker:
                             if tests.node_type == "controller"
                         ),
                         # VIP and cluster access
-                        self.cluster_tests.vip_ping.status == TestStatus.PASS,
+                        self.cluster_tests.vip_talos_api.status == TestStatus.PASS,
                         self.cluster_tests.vip_kube_api.status == TestStatus.PASS,
                         self.cluster_tests.kubectl_access.status == TestStatus.PASS,
                         self.cluster_tests.nodes_exist.status == TestStatus.PASS,
+                        self.cluster_tests.nodes_ready.status == TestStatus.PASS,
+                        # CNI and GitOps (allow SKIP for new clusters before sealed secrets)
+                        self.cluster_tests.cni_pods.status
+                        in (TestStatus.PASS, TestStatus.SKIP),
+                        self.cluster_tests.flux_pods.status
+                        in (TestStatus.PASS, TestStatus.SKIP),
+                        self.cluster_tests.flux_reconciliation.status
+                        in (TestStatus.PASS, TestStatus.SKIP),
                     ]
                 )
 
@@ -362,16 +488,15 @@ class Stage1HealthChecker:
 
 
 async def main():
-    checker = Stage1HealthChecker()
+    checker = ClusterHealthChecker()
     success = await checker.run_all_tests()
 
     if success:
-        print("🎉 Stage 1 health checks PASSED")
-        print("✨ Cluster ready for Flux bootstrap!")
-        print("Next: flux bootstrap github --owner=... --repository=... --path=k8s")
+        print("🎉 Cluster health checks PASSED")
+        print("✨ Cluster is operational and ready for workloads!")
     else:
-        print("❌ Stage 1 health checks FAILED")
-        print("Fix connectivity issues before proceeding")
+        print("❌ Cluster health checks FAILED")
+        print("Fix issues before deploying applications")
 
     sys.exit(0 if success else 1)
 
