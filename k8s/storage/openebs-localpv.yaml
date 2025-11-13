@@ -57,14 +57,15 @@ spec:
       # Enable helper pod for directory creation on nodes
       helperPod:
         image:
-          registry: quay.io
+          registry: ""
           repository: openebs/linux-utils
-          tag: "3.4.0"
+          pullPolicy: IfNotPresent
+          tag: "4.2.0"
       hostpathClass:
         # Default storage class for the cluster
         isDefaultClass: true
         name: "openebs-hostpath"
-        basePath: "/var/lib/openebs/local"
+        basePath: "/var/lib/openebs/local" # Use /var/lib which is rw-mounted in Talos kubelet
 
     # Disable other components
     mayastor:
