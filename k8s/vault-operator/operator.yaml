@@ -34,7 +34,7 @@ spec:
 
     image:
       repository: ghcr.io/bank-vaults/vault-operator
-      tag: "1.23.0"
+      tag: "v1.23.0"  # Note: v prefix required for new versions
       pullPolicy: IfNotPresent
 
     resources:
