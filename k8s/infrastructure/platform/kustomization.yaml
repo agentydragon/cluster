@@ -7,6 +7,4 @@ resources:
   - sso-secrets.yaml
   - vault-config.yaml
   - authentik-config.yaml
-  - harbor-oidc-config.yaml
-  - gitea-oidc-config.yaml
-  - matrix-oidc-config.yaml
+  - services-config.yaml

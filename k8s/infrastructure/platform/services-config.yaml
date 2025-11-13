@@ -1,7 +1,7 @@
 apiVersion: infra.contrib.fluxcd.io/v1alpha2
 kind: Terraform
 metadata:
-  name: gitea-oidc-config
+  name: services-config
   namespace: flux-system
 spec:
   interval: 15m
@@ -25,29 +25,37 @@ spec:
   backendConfig:
     customConfiguration: |
       backend "kubernetes" {
-        secret_suffix    = "gitea-oidc-config"
+        secret_suffix    = "services-config"
         config_path      = "/tmp/kubeconfig"
         namespace        = "flux-system"
       }
 
-  # Variables for Terraform - only Gitea-specific
+  # Variables for Terraform - enable all services for now
   vars:
     - name: authentik_url
       value: "https://auth.test-cluster.agentydragon.com"
     - name: authentik_external_url
       value: "https://auth.test-cluster.agentydragon.com"
+    - name: harbor_url
+      value: "https://registry.test-cluster.agentydragon.com"
+    - name: harbor_external_url
+      value: "https://registry.test-cluster.agentydragon.com"
+    - name: harbor_username
+      value: "admin"
     - name: gitea_url
       value: "https://git.test-cluster.agentydragon.com"
     - name: gitea_external_url
       value: "https://git.test-cluster.agentydragon.com"
+    - name: matrix_external_url
+      value: "https://matrix.test-cluster.agentydragon.com"
     - name: vault_address
       value: "https://vault.test-cluster.agentydragon.com"
     - name: kubeconfig_path
       value: "/tmp/kubeconfig"
-    # Only include what Gitea needs
+    # Enable specific services as needed
     - name: enable_harbor
-      value: "false"
+      value: "true"
     - name: enable_gitea
       value: "true"
     - name: enable_matrix
-      value: "false"
+      value: "true"
