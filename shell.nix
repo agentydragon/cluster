@@ -11,6 +11,7 @@ pkgs.mkShell {
     pkgs.kubernetes-helm
     pkgs.tflint
     pkgs.yq-go  # YAML/JSON conversion tool
+    pkgs.popeye  # Kubernetes cluster health checker
     # Use kubeseal from unstable to get v0.32.2
     unstable.kubeseal
   ];

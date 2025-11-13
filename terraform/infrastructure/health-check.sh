@@ -1,25 +1,12 @@
 #!/bin/bash
 set -e
 
-# Talos Cluster Health Check Script
 # Run this after terraform apply to verify cluster health
-# All configuration is extracted from terraform outputs (DRY principle)
+# Configuration is extracted from terraform outputs
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-echo "🔍 Talos Cluster Health Check"
-echo "=============================="
-
-# Verify required tools
-for tool in terraform jq kubectl; do
-    if ! command -v "$tool" >/dev/null 2>&1; then
-        echo "❌ $tool command not found"
-        exit 1
-    fi
-done
-
-# Extract ALL configuration from terraform outputs (fully DRY)
-echo "📊 Reading cluster configuration from terraform..."
+echo "== Cluster Health Check =="
 
 # Get node lists
 CONTROLLERS=($(terraform output -json controllers 2>/dev/null | jq -r '.[]' || { echo "❌ Failed to get controllers from terraform"; exit 1; }))
@@ -37,21 +24,18 @@ PING_TIMEOUT=$(echo "$CLUSTER_CONFIG" | jq -r '.ping_timeout')
 KUBECONFIG_FILE=$(echo "$CLUSTER_CONFIG" | jq -r '.kubeconfig_path')
 KUBECTL_TIMEOUT=$(echo "$CLUSTER_CONFIG" | jq -r '.kubectl_timeout')
 
-# Validate extracted configuration
-if [[ -z "$VIP" || "$VIP" == "null" ]] || [[ ${#CONTROLLERS[@]} -eq 0 ]] || [[ ${#ALL_NODES[@]} -eq 0 ]]; then
-    echo "❌ Invalid configuration extracted from terraform"
-    echo "   VIP: $VIP"
-    echo "   Controllers: ${#CONTROLLERS[@]}"
-    echo "   All nodes: ${#ALL_NODES[@]}"
-    exit 1
-fi
-
 echo "   Controllers: ${CONTROLLERS[*]}"
 echo "   Workers: ${WORKERS[*]}"
 echo "   All nodes: ${ALL_NODES[*]}"
 echo "   VIP: $VIP"
 echo "   API port: $API_PORT"
 echo
+
+# Validate extracted configuration
+if [[ -z "$VIP" || "$VIP" == "null" ]] || [[ ${#CONTROLLERS[@]} -eq 0 ]] || [[ ${#ALL_NODES[@]} -eq 0 ]]; then
+    echo "❌ Invalid configuration extracted from terraform"
+    exit 1
+fi
 
 # Test 1: Node Connectivity
 echo "🔗 Testing node connectivity..."
@@ -66,7 +50,18 @@ for node in "${ALL_NODES[@]}"; do
 done
 echo
 
-# Test 2: Controller API Health
+# Test 2: Wait for all nodes to be ready
+echo "⏳ Waiting for all nodes to be ready..."
+if kubectl wait --for=condition=Ready nodes --all --timeout=120s > /dev/null 2>&1; then
+    echo "   All nodes ready ✅"
+else
+    echo "   ❌ FAILED - some nodes not ready within 120s"
+    kubectl get nodes
+    exit 1
+fi
+echo
+
+# Test 3: Controller API Health
 echo "🎛️  Testing controller APIs..."
 for controller in "${CONTROLLERS[@]}"; do
     echo -n "   Testing https://$controller:$API_PORT/version... "
@@ -79,7 +74,7 @@ for controller in "${CONTROLLERS[@]}"; do
 done
 echo
 
-# Test 3: VIP Health
+# Test 4: VIP Health
 echo "🎯 Testing cluster VIP..."
 echo -n "   Testing VIP connectivity ($VIP)... "
 if ping -c "$PING_COUNT" -W "$PING_TIMEOUT" "$VIP" > /dev/null 2>&1; then
@@ -98,7 +93,7 @@ else
 fi
 echo
 
-# Test 4: Kubectl access (trust direnv KUBECONFIG)
+# Test 5: Kubectl access (trust direnv KUBECONFIG)
 echo "📋 Testing kubectl access..."
 echo "   KUBECONFIG in script: $KUBECONFIG"
 echo "   kubectl timeout: $KUBECTL_TIMEOUT"
@@ -107,9 +102,9 @@ if kubectl get nodes --request-timeout="$KUBECTL_TIMEOUT"; then
     echo "✅"
 else
     echo "❌ FAILED - kubectl cannot access cluster"
-    echo "   Debug: kubectl version:"
+    echo "kubectl version --client:"
     kubectl version --client
-    echo "   Debug: kubectl config current-context:"
+    echo "kubectl config current-context:"
     kubectl config current-context
     exit 1
 fi
@@ -125,8 +120,19 @@ if [ -n "$KUBECONFIG" ] && [ -f "$KUBECONFIG" ]; then
 fi
 echo
 
-echo "🎉 All health checks passed!"
+# Test 6: Cluster health analysis with Popeye
+echo "🔍 Running cluster health analysis..."
+if command -v popeye >/dev/null 2>&1; then
+    echo "   Running Popeye cluster scan..."
+    if popeye --save; then
+        echo "   ✅ Popeye scan completed (report saved to popeye-report.html)"
+    else
+        echo "   ⚠️  Popeye scan completed with issues (check output above)"
+    fi
+else
+    echo "   ⚠️  Popeye not found in PATH - install via shell.nix"
+fi
 echo
-echo "Next steps:"
-echo "   export KUBECONFIG=$KUBECONFIG_FILE"
-echo "   kubectl get nodes"
+
+echo "All health checks passed"
+echo "Next steps: kubectl get nodes, continue BOOTSTRAP.md"
