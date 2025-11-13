@@ -1,0 +1,55 @@
+apiVersion: infra.contrib.fluxcd.io/v1alpha2
+kind: Terraform
+metadata:
+  name: harbor-oidc-config
+  namespace: flux-system
+spec:
+  interval: 15m
+  path: ./terraform/gitops/services
+  sourceRef:
+    kind: GitRepository
+    name: cluster
+    namespace: flux-system
+
+  # Depend on Authentik config and OAuth secrets being ready
+  dependsOn:
+    - name: authentik-config
+      namespace: flux-system
+    - name: sso-secrets
+      namespace: flux-system
+
+  # Use in-cluster service account
+  serviceAccountName: tf-runner
+
+  # Store Terraform state in Kubernetes secret
+  backendConfig:
+    customConfiguration: |
+      backend "kubernetes" {
+        secret_suffix    = "harbor-oidc-config"
+        config_path      = "/tmp/kubeconfig"
+        namespace        = "flux-system"
+      }
+
+  # Variables for Terraform - only Harbor-specific
+  vars:
+    - name: authentik_url
+      value: "https://auth.test-cluster.agentydragon.com"
+    - name: authentik_external_url
+      value: "https://auth.test-cluster.agentydragon.com"
+    - name: harbor_url
+      value: "https://registry.test-cluster.agentydragon.com"
+    - name: harbor_external_url
+      value: "https://registry.test-cluster.agentydragon.com"
+    - name: harbor_username
+      value: "admin"
+    - name: vault_address
+      value: "https://vault.test-cluster.agentydragon.com"
+    - name: kubeconfig_path
+      value: "/tmp/kubeconfig"
+    # Only include what Harbor needs
+    - name: enable_harbor
+      value: "true"
+    - name: enable_gitea
+      value: "false"
+    - name: enable_matrix
+      value: "false"
