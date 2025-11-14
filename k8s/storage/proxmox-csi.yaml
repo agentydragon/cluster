@@ -26,7 +26,7 @@ spec:
   values:
     config:
       existingSecret: "proxmox-csi-plugin"
-    
+
     storageClass:
       - name: "proxmox-csi"
         storage: "local-zfs"
@@ -37,7 +37,7 @@ spec:
           ssd: "true"
         annotations:
           storageclass.kubernetes.io/is-default-class: "false"
-    
+
     controller:
       replicaCount: 1
       resources:
@@ -47,7 +47,7 @@ spec:
         limits:
           cpu: 200m
           memory: 256Mi
-    
+
     node:
       enableTopology: true
       resources:
