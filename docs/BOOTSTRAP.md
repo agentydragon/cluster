@@ -44,18 +44,18 @@ pveum user token add kubernetes-csi@pve csi --privsep 0
 
 ### Step 0.2: Store Credentials in libsecret Keyring
 
-Store the generated tokens in your system keyring:
+Store the generated tokens as JSON in your system keyring:
 
 ```bash
 # Store Proxmox terraform token (replace with actual values from previous step)
 secret-tool store generic-secret name "proxmox-terraform-token" \
   --label="Proxmox Terraform API Token"
-# When prompted, enter: terraform@pve!terraform-token=your-secret-here
+# When prompted, enter JSON: {"token":"terraform@pve!terraform-token=your-secret-here"}
 
 # Store Proxmox CSI token (replace with actual values)
 secret-tool store generic-secret name "proxmox-csi-token" \
   --label="Proxmox CSI API Token"
-# When prompted, enter: kubernetes-csi@pve!csi=your-secret-here
+# When prompted, enter JSON: {"token":"kubernetes-csi@pve!csi=your-secret-here"}
 
 ```
 
