@@ -68,17 +68,13 @@ data "external" "tokens" {
     token_value=$(echo "$token_json" | jq -r '.value')
     token_id="${each.value.name}!${each.value.token}"
 
-    # Output complete CSI cluster configuration as JSON (all values must be strings)
-    cat <<EOF
-{
-  "url": "https://${var.proxmox_api_host}:8006/api2/json",
-  "insecure": "false",
-  "token_id": "$token_id",
-  "token_secret": "$token_value",
-  "region": "cluster",
-  "token": "$token_id=$token_value"
-}
-EOF
+    # Create CSI config JSON and properly escape it as a string
+    csi_config_json=$(cat <<JSON
+{"url":"https://${var.proxmox_api_host}:8006/api2/json","insecure":false,"token_id":"$token_id","token_secret":"$token_value","region":"cluster","token":"$token_id=$token_value"}
+JSON
+)
+    # Output for terraform external - wrap JSON as escaped string
+    printf '{"config_json":"%s"}' "$(echo "$csi_config_json" | sed 's/"/\\"/g')"
   EOT
   ]
 }
