@@ -10,7 +10,7 @@ output "proxmox_csi_token" {
 
 output "proxmox_csi_api_url" {
   description = "Proxmox API URL for CSI configuration"
-  value       = data.terraform_remote_state.pve_auth.outputs.api_url
+  value       = data.terraform_remote_state.pve_auth.outputs.pve_api_url
   sensitive   = false
 }
 

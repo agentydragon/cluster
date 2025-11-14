@@ -108,9 +108,10 @@ locals {
 
 # Generate unique pre-auth key for this node via SSH
 data "external" "preauth_key" {
-  program = [
-    "ssh", "${var.shared_config.global_config.headscale_server}",
-    "headscale preauthkeys create --user ${var.shared_config.global_config.headscale_user} --expiration 1h --output json"
+  program = ["bash", "-c", <<-EOT
+    key_json=$(ssh ${var.shared_config.global_config.headscale_server} "headscale preauthkeys create --user ${var.shared_config.global_config.headscale_user} --expiration 1h --output json")
+    echo "$key_json" | jq '{key: .key, id: .id}'
+  EOT
   ]
 }
 
