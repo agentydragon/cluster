@@ -119,6 +119,7 @@ Through systematic diagnosis of Bank-Vaults storage failures, discovered critica
 
 - [ ] **Backup/recovery**: Document cluster restore procedures and etcd backup automation
 - [ ] **Conditional Tailscale Auth Key**: Only provision keys for new nodes (avoid regeneration)
+- [ ] **Webhook Inbox**: Deploy webhook inbox service (ducktape term) for receiving webhooks from external services
 
 ## SSO Architecture Design
 
