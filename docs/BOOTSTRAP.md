@@ -7,14 +7,16 @@ Step-by-step instructions for cold-starting the Talos cluster from nothing and m
 ### Prerequisites
 
 - Proxmox host (`atlas`) accessible via SSH
-- Proxmox and Headscale credentials configured in libsecret keyring (see [Credential Setup](#credential-setup))
+- Proxmox credentials configured in libsecret keyring (see [Credential Setup](#credential-setup))
+- SSH access to Headscale server (`root@agentydragon.com`) for pre-auth key generation
 - `direnv` configured in cluster directory
 - VPS with nginx and PowerDNS configured via Ansible
 - Access to AWS Route 53 for `agentydragon.com`
 
 ## Credential Setup
 
-Before deploying the cluster, you must create Proxmox users and store credentials in the system keyring.
+Before deploying the cluster, you must create Proxmox users and store their credentials in the system keyring.
+Headscale access is handled via SSH without persistent API keys.
 
 ### Step 0.1: Create Proxmox Users via SSH
 
@@ -55,10 +57,6 @@ secret-tool store generic-secret name "proxmox-csi-token" \
   --label="Proxmox CSI API Token"
 # When prompted, enter: kubernetes-csi@pve!csi=your-secret-here
 
-# Store Headscale API key
-secret-tool store generic-secret name "headscale-api-key" \
-  --label="Headscale API Key"
-# When prompted, enter your Headscale API key
 ```
 
 **Verify credentials are stored:**
@@ -66,7 +64,6 @@ secret-tool store generic-secret name "headscale-api-key" \
 ```bash
 secret-tool lookup generic-secret name "proxmox-terraform-token"
 secret-tool lookup generic-secret name "proxmox-csi-token"
-secret-tool lookup generic-secret name "headscale-api-key"
 ```
 
 ### Step 0.3: Initialize Credential Module
