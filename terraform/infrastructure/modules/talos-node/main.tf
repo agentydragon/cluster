@@ -242,7 +242,17 @@ data "talos_machine_configuration" "config" {
   docs               = local.machine_config.docs
 
   config_patches = concat([
-    yamlencode(local.common_machine_config) # Now includes tailscale extension
+    yamlencode(local.common_machine_config), # Now includes tailscale extension
+    # Add topology region label for Proxmox CSI plugin
+    yamlencode({
+      machine = {
+        kubelet = {
+          nodeLabels = {
+            "topology.kubernetes.io/region" = "cluster"
+          }
+        }
+      }
+    })
     ], var.node_type == "controlplane" ? [
     yamlencode({
       machine = {
