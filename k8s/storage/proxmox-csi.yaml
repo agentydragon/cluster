@@ -6,9 +6,9 @@ metadata:
   namespace: csi-proxmox
 spec:
   interval: 24h
-  url: oci://ghcr.io/sergelogvinov/charts
+  url: oci://ghcr.io/sergelogvinov/charts/proxmox-csi-plugin
   ref:
-    tag: proxmox-csi-plugin-0.2.11
+    tag: "0.2.11"
 ---
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
