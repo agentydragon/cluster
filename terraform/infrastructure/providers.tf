@@ -38,6 +38,10 @@ terraform {
       source  = "hashicorp/time"
       version = "~> 0.12"
     }
+    keyring = {
+      source  = "rremer/keyring"
+      version = "~> 0.2"
+    }
   }
 
   backend "local" {
@@ -45,12 +49,20 @@ terraform {
   }
 }
 
+# Read Proxmox credentials from pve-auth module
+data "terraform_remote_state" "pve_auth" {
+  backend = "local"
+  config = {
+    path = "../pve-auth/terraform.tfstate"
+  }
+}
+
 # See: https://registry.terraform.io/providers/bpg/proxmox/latest/docs#argument-reference
 # See environment variables at: https://github.com/bpg/terraform-provider-proxmox/blob/v0.84.1/proxmoxtf/provider/provider.go#L52-L61
 provider "proxmox" {
-  endpoint  = "https://${var.proxmox_node_name}:8006/api2/json"
-  insecure  = var.proxmox_tls_insecure
-  api_token = "${local.vault_secrets.vault_proxmox_terraform_token_id}=${local.vault_secrets.vault_proxmox_terraform_token_secret}"
+  endpoint  = data.terraform_remote_state.pve_auth.outputs.api_url
+  insecure  = data.terraform_remote_state.pve_auth.outputs.tls_insecure
+  api_token = data.terraform_remote_state.pve_auth.outputs.terraform_token
 }
 
 provider "helm" {

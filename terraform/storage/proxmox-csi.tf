@@ -11,21 +11,17 @@ data "terraform_remote_state" "infrastructure" {
 
 locals {
   # Extract CSI credentials from infrastructure state
-  csi_token_id         = data.terraform_remote_state.infrastructure.outputs.proxmox_csi_token_id
-  csi_token_secret     = data.terraform_remote_state.infrastructure.outputs.proxmox_csi_token_secret
+  csi_token            = data.terraform_remote_state.infrastructure.outputs.proxmox_csi_token
   csi_api_url          = data.terraform_remote_state.infrastructure.outputs.proxmox_csi_api_url
   proxmox_tls_insecure = data.terraform_remote_state.infrastructure.outputs.proxmox_tls_insecure
-}
 
-# Generate CSI config content
-locals {
+  # Generate CSI config content using full token string
   csi_config = yamlencode({
     clusters = [{
-      url          = local.csi_api_url
-      insecure     = local.proxmox_tls_insecure
-      token_id     = local.csi_token_id
-      token_secret = local.csi_token_secret
-      region       = "cluster"
+      url      = local.csi_api_url
+      insecure = local.proxmox_tls_insecure
+      token    = local.csi_token
+      region   = "cluster"
     }]
   })
 }
