@@ -34,12 +34,23 @@ resource "proxmox_virtual_environment_user_token" "csi" {
   privileges_separation = false
 }
 
-# Grant CSI role to CSI user at root level via Proxmox API
-resource "proxmox_virtual_environment_acl" "csi" {
-  path      = "/"
-  user_id   = proxmox_virtual_environment_user.csi.user_id
-  role_id   = proxmox_virtual_environment_role.csi.role_id
-  propagate = true
+# Grant CSI role to CSI user at root level via SSH
+# Using SSH because terraform API token lacks Permissions.Modify on root path
+resource "null_resource" "csi_acl" {
+  provisioner "remote-exec" {
+    inline = [
+      "pveum aclmod / -user kubernetes-csi@pve -role CSI"
+    ]
+
+    connection {
+      type = "ssh"
+      user = "root"
+      host = "atlas"
+      # Use SSH agent forwarding - ensures keys from local SSH agent are available
+      agent   = true
+      timeout = "2m"
+    }
+  }
 
   depends_on = [
     proxmox_virtual_environment_user.csi,
