@@ -56,7 +56,9 @@ This document tracks project roadmap and strategic architecture decisions for th
 - [ ] **gVisor Extension**: Add sandboxed container runtime for enhanced security when running untrusted workloads
 - [ ] **Dedicated Longhorn Storage**: Evaluate adding separate disks (e.g., /dev/sdb) for 100% Longhorn usage vs
   current filesystem approach
-- [ ] **Longhorn v2 Data Engine**: Investigate SPDK-based storage for improved performance (experimental feature)
+- [ ] **RECONSIDER: Longhorn v2 Data Engine**: Currently enabled for block device support, but SPDK polling mode
+  dedicates 1 CPU core per worker node to 100% utilization. May want to evaluate filesystem-based storage vs
+  performance trade-offs.
 
 ### Storage & Infrastructure Tasks - CRITICAL DISCOVERY
 

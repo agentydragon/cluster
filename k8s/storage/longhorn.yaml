@@ -36,10 +36,18 @@ spec:
   values:
     # Configure StorageClass to use v2 data engine for block device support
     # Reference: /mnt/tankshare/code/github.com/longhorn/longhorn-charts/charts/longhorn/values.yaml
-    dataEngine: "v2"
 
     # Set default storage class
     defaultSettings:
+      # CRITICAL: Enable V2 Data Engine globally for block device support
+      # Required for Talos nodes with "diskType": "block" configuration
+      v2DataEngine: "true"
+
+      # Configure SPDK settings for optimal performance with Talos hugepages
+      dataEngineHugepageEnabled: "true" # Use 2GB hugepages configured in Talos
+      dataEngineMemorySize: "2048" # Match hugepage allocation
+      dataEngineCPUMask: "0x1" # CPU core 0 for SPDK polling
+
       defaultDataPath: "/var/lib/longhorn/" # Default fallback path
       replicaSoftAntiAffinity: "true"
       createDefaultDiskLabeledNodes: "true" # Only create disks on labeled nodes
