@@ -31,6 +31,22 @@ Execute tools like these with the direnv loaded, or use `direnv exec .`.
   - cert-manager provisions Let's Encrypt certs
 - HTTPS chain: Internet → VPS nginx reads CNI → Tailscale VPN → HA VIP → NGINX Ingress terminates TLS → app
 
+## CNI Architecture Decision
+
+**Infrastructure vs GitOps Separation**: Based on circular dependency analysis and industry best practices (AWS EKS Blueprints, etc.), CNI is managed at the infrastructure layer, not via GitOps.
+
+**Architecture Layers:**
+
+- **Talos**: CoreDNS
+- **Terraform**: CNI (Cilium)
+- **Flux**: Applications only
+
+**Why CNI Cannot Be GitOps-Managed:**
+
+- Circular dependency: GitOps tools need networking to function, but would be managing their own networking
+- Network disruption during handoffs: When Flux tries to update Terraform-installed CNI, worker nodes become permanently NotReady due to container image pull failures during networking gaps
+- Industry pattern: Major platforms (AWS EKS, GKE Autopilot) manage CNI at infrastructure layer
+
 ## Repository Structure
 
 ```text
@@ -43,6 +59,7 @@ cluster/
 ├── CLAUDE.md, AGENTS.md   # Instructions for AI agents
 ├── terraform/
 │   ├── infrastructure/    # Provisioning from empty Proxmox; boots Talos, Kube, Cilium; hands off to Flux
+│   │   ├── cilium/        # CNI configuration (Terraform-managed, not GitOps)
 │   │   ├── talosconfig    # Creds for node Talos APIs (generated, gitignored)
 │   │   ├── kubeconfig     # Kube config (generated, gitignored)
 │   │   ├── modules/talos-node/ # Reusable Talos node module
@@ -52,9 +69,8 @@ cluster/
 │       ├── vault/         # Vault configuration
 │       ├── secrets/       # Secret generation
 │       └── services/      # Service integration configs
-├── k8s/                   # Kubernetes manifests (Flux-managed)
+├── k8s/                   # Kubernetes manifests (Flux-managed applications only)
 │   ├── core/              # CRDs and controllers (sealed-secrets, tofu-controller)
-│   ├── cilium/            # CNI networking
 │   ├── metallb/           # Load balancer
 │   ├── cert-manager/
 │   ├── ingress-nginx/     # HTTP(S) ingress

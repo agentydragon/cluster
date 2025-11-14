@@ -3,7 +3,6 @@ kind: Kustomization
 # TODO LATER: Evaluate and implement layered approach once stable core components are identified
 resources:
   - core/flux-kustomization.yaml
-  - cilium/flux-kustomization.yaml
   - storage/flux-kustomization.yaml
   - metallb/flux-kustomization.yaml
   - metallb/config-flux-kustomization.yaml

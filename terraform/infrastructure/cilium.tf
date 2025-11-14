@@ -1,24 +1,27 @@
-# Bootstrap Cilium CNI only to break chicken-and-egg problem
-# Flux will manage everything else through HelmReleases
-resource "helm_release" "cilium_bootstrap" {
+# Cilium CNI deployment via Terraform Helm provider
+# Infrastructure layer management - prevents GitOps circular dependencies
+resource "helm_release" "cilium" {
   name       = "cilium"
   repository = "https://helm.cilium.io/"
   chart      = "cilium"
   version    = "1.16.5"
   namespace  = "kube-system"
 
-  # Use shared bootstrap config - SSOT with Flux
-  values = [file("${path.module}/../../k8s/cilium/bootstrap-values.yaml")]
+  values = [
+    file("${path.module}/cilium/values.yaml")
+  ]
 
-  # Wait for cluster to be ready
+  # Prevent accidental networking breakage
+  lifecycle {
+    ignore_changes = [
+      version, # Prevent automatic upgrades
+      values   # Prevent config drift issues
+    ]
+  }
+
   depends_on = [
     null_resource.wait_for_k8s_api
   ]
-
-  # Allow Flux to take over management
-  lifecycle {
-    ignore_changes = [values, version]
-  }
 }
 
 # Wait for Kubernetes API to be accessible before installing Cilium
@@ -32,16 +35,16 @@ resource "null_resource" "wait_for_k8s_api" {
     command = <<-EOF
       echo "Waiting for Kubernetes API to be ready..."
       i=1
-      while [ $i -le 30 ]; do
+      while [ $i -le 60 ]; do
         if kubectl get nodes --request-timeout=10s >/dev/null 2>&1; then
           echo "Kubernetes API is ready!"
           exit 0
         fi
-        echo "Attempt $i/30: Waiting for API..."
+        echo "Attempt $i/60: Waiting for API..."
         sleep 10
         i=$((i + 1))
       done
-      echo "Kubernetes API failed to become ready after 5 minutes"
+      echo "Kubernetes API failed to become ready after 10 minutes"
       exit 1
     EOF
   }
@@ -49,14 +52,14 @@ resource "null_resource" "wait_for_k8s_api" {
 
 # Wait for all expected nodes to join and become Ready after CNI installation
 resource "null_resource" "wait_for_nodes_ready" {
-  depends_on = [helm_release.cilium_bootstrap]
+  depends_on = [helm_release.cilium]
 
   provisioner "local-exec" {
     command = <<-EOF
       echo "Waiting for all expected nodes to become Ready..."
 
       # Wait for all expected nodes by name (dynamically generated)
-      kubectl wait --for=condition=Ready ${join(" ", [for node_name, _ in local.nodes : "node/${node_name}"])} --timeout=300s
+      kubectl wait --for=condition=Ready ${join(" ", [for node_name, _ in local.nodes : "node/${node_name}"])} --timeout=600s
 
       echo "All ${var.controller_count + var.worker_count} nodes are Ready"
     EOF

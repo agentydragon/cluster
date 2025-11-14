@@ -30,13 +30,14 @@ This **single command** handles:
 - VM creation with pre-configured networking
 - Talos machine configuration application
 - Kubernetes cluster initialization and bootstrap
-- **Cilium CNI bootstrap** to enable pod scheduling (solves Flux chicken-and-egg problem)
+- **Cilium CNI deployment** via Terraform Helm provider (infrastructure layer management)
 - **Auto-generated kubeconfig** pointing to VIP for HA kubectl access (see VIP Bootstrap Solution below)
 - **Nodes become Ready** after CNI installation
 - **Flux GitOps bootstrap** using `gh auth token` for GitHub PAT
 - **Deploy key creation** in GitHub repository
-- **Seamless Flux takeover** of Cilium management via GitOps
-- **Infrastructure deployment** starts automatically (platform services require bootstrap secrets)
+- **Application deployment** starts automatically via Flux (platform services require bootstrap secrets)
+
+**CNI Architecture**: Cilium is managed by Terraform at the infrastructure layer, NOT by Flux. This prevents circular dependencies where GitOps tools would manage their own networking infrastructure.
 
 #### Test
 

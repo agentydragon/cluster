@@ -13,7 +13,7 @@ spec:
   prune: true
   wait: true
   dependsOn:
-    - name: cilium
+    # Note: CNI (Cilium) now managed by Terraform, not Flux
     # TODO: Could split cert-manager core vs Let's Encrypt integration if needed
     # PowerDNS only required for our DNS-01 challenges with PowerDNS webhook
     - name: powerdns

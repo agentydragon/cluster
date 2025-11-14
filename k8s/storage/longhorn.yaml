@@ -34,13 +34,19 @@ spec:
         name: longhorn
         namespace: longhorn-system
   values:
+    # Configure StorageClass to use v2 data engine for block device support
+    # Reference: /mnt/tankshare/code/github.com/longhorn/longhorn-charts/charts/longhorn/values.yaml
+    dataEngine: "v2"
+
     # Set default storage class
     defaultSettings:
-      defaultDataPath: "/var/lib/longhorn"
+      defaultDataPath: "/var/lib/longhorn/" # Default fallback path
       replicaSoftAntiAffinity: "true"
-      createDefaultDiskLabeledNodes: "true"
+      createDefaultDiskLabeledNodes: "true" # Only create disks on labeled nodes
       defaultReplicaCount: "2" # 2 replicas for HA across worker nodes
-      
+      storageReservedPercentageForDefaultDisk: "5" # Less reservation for dedicated disk
+      logLevel: "Debug" # TODO: Revert to "Info" once Longhorn integration is working
+
     # Resource limits for Longhorn components
     longhornManager:
       resources:
@@ -50,7 +56,7 @@ spec:
         limits:
           cpu: 200m
           memory: 256Mi
-          
+
     longhornDriver:
       resources:
         requests:
@@ -59,7 +65,7 @@ spec:
         limits:
           cpu: 200m
           memory: 256Mi
-          
+
     longhornUI:
       resources:
         requests:

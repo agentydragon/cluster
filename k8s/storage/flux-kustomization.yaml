@@ -12,8 +12,8 @@ spec:
   path: "./k8s/storage"
   prune: true
   wait: true
-  dependsOn:
-    - name: cilium # Storage needs networking
+  # Note: CNI (Cilium) now managed by Terraform, not Flux
+  # Storage components deploy after cluster networking is ready
   # Verify OpenEBS LocalPV provisioner is ready
   healthChecks:
     - apiVersion: apps/v1

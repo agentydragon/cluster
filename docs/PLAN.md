@@ -8,8 +8,12 @@ This document tracks project roadmap and strategic architecture decisions for th
 
 - [x] **Talos Cluster**: 5-node HA cluster (3 controllers, 2 workers) with GitOps
 - [x] **Networking**: Clean IP scheme (10.0.1.x controllers, 10.0.2.x workers, 10.0.3.x VIPs)
-- [x] **CNI**: Cilium with kube-proxy replacement and Talos-specific configuration
-- [x] **GitOps**: Flux CD managing entire platform with proper dependency ordering
+- [x] **CNI Architecture Decision**: Cilium managed by Terraform (infrastructure layer), not Flux (GitOps layer)
+  - **Rationale**: Prevents circular dependency where GitOps tools manage their own networking infrastructure
+  - **Why Flux Cannot Manage CNI**: When Flux tries to update Terraform-installed Cilium, worker nodes become permanently NotReady. During CNI transition gaps, nodes cannot pull container images (no networking), creating deadlock where nodes need networking to restore networking.
+  - **Industry Pattern**: AWS EKS Blueprints, GKE Autopilot manage CNI at infrastructure layer
+  - **Architecture Separation**: Talos→CoreDNS, Terraform→CNI, Flux→Applications
+- [x] **GitOps**: Flux CD managing application platform with proper dependency ordering
 - [x] **VIP HA**: Cluster API on 10.0.3.1 with bootstrap chicken-and-egg solution
 - [x] **Secrets**: sealed-secrets for encrypted git-stored secrets
 
@@ -43,6 +47,14 @@ This document tracks project roadmap and strategic architecture decisions for th
 - [ ] **Matrix/Synapse**: Chat platform with Authentik SSO integration
 - [ ] **Cross-integration**: Vault OIDC auth + Authentik-Vault secrets management
 
+### 🔧 Advanced System Extensions & Features
+
+- [ ] **ZFS Extension**: Add ZFS filesystem support for advanced storage features (snapshots, checksums, compression)
+- [ ] **NFS Utils Extension**: Enable NFS client/server support for easy file sharing across systems
+- [ ] **gVisor Extension**: Add sandboxed container runtime for enhanced security when running untrusted workloads
+- [ ] **Dedicated Longhorn Storage**: Evaluate adding separate disks (e.g., /dev/sdb) for 100% Longhorn usage vs current filesystem approach
+- [ ] **Longhorn v2 Data Engine**: Investigate SPDK-based storage for improved performance (experimental feature)
+
 ### Storage & Infrastructure Tasks - CRITICAL DISCOVERY
 
 **🚨 OpenEBS LocalPV Talos Incompatibility Discovered**
@@ -50,24 +62,28 @@ This document tracks project roadmap and strategic architecture decisions for th
 Through systematic diagnosis of Bank-Vaults storage failures, discovered critical incompatibility:
 
 **Root Cause Analysis:**
-- ✅ OpenEBS LocalPV provisioner correctly creates PV objects and directories on host filesystem (`/var/lib/openebs/local/pvc-*`)  
+
+- ✅ OpenEBS LocalPV provisioner correctly creates PV objects and directories on host filesystem (`/var/lib/openebs/local/pvc-*`)
 - ✅ Helper pods (`init-pvc-*`) run successfully and create directories with proper permissions
 - ❌ **Kubelet cannot access OpenEBS directories** - kubelet runs in container with limited mounts
 - ❌ In Talos kubelet.go:159, only `/var/lib/kubelet` is mounted, NOT `/var/lib/openebs`
 - Result: PVC shows "Bound" but pods fail with "path does not exist" errors
 
 **Diagnostic Process Used:**
+
 1. Created minimal test PVC → tight feedback loop (PVC status → helper pod → directory creation → mount failure)
-2. Deployed privileged debug pod → verified directories exist on host filesystem  
+2. Deployed privileged debug pod → verified directories exist on host filesystem
 3. Examined Talos kubelet source → confirmed kubelet container mount restrictions
 4. **Conclusion**: OpenEBS creates directories kubelet cannot see due to Talos containerized kubelet design
 
 **Solutions Required:**
+
 - [ ] **Add OpenEBS mount to Talos machine config**: Modify kubelet extraMounts to include `/var/lib/openebs`
 - [ ] **Alternative**: Switch to Longhorn or Proxmox CSI with proper Talos integration
 - [ ] **Temporary**: Use hostPath volumes directly (not production-suitable)
 
 **Lessons:**
+
 - Talos kubelet containerization requires explicit mount configuration for storage providers
 - Always test storage with actual pod mounting, not just PV provisioning
 - Tight diagnostic feedback loops (test PVC → debug pod → source analysis) are essential

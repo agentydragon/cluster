@@ -16,9 +16,7 @@ spec:
         namespace: flux-system
   install:
     createNamespace: true
-  dependsOn:
-    - name: cilium
-      namespace: flux-system
+  # Note: CNI (Cilium) now managed by Terraform, not Flux
   values:
     speaker:
       tolerations:

@@ -2,7 +2,7 @@ locals {
   # Create schematic YAML with static IP configuration in META key 0xa (10)
   schematic_yaml = yamlencode({
     customization = {
-      extraKernelArgs = ["net.ifnames=0"]
+      extraKernelArgs = concat(["net.ifnames=0"], var.node_type == "worker" ? ["hugepages=1024"] : [])
       systemExtensions = {
         officialExtensions = [
           "siderolabs/qemu-guest-agent",
@@ -70,15 +70,23 @@ locals {
           forwardKubeDNSToHost = true
         }
       }
-      kubelet = {
-        extraMounts = [
+      kernel = {
+        modules = [
           {
-            destination = "/var/lib/longhorn"
-            type        = "bind"
-            source      = "/var/lib/longhorn"
-            options     = ["bind", "rshared", "rw"]
+            name = "nbd"
+          },
+          {
+            name = "iscsi_tcp"
+          },
+          {
+            name = "configfs"
           }
         ]
+      }
+      kubelet = {
+        # Note: extraMounts not needed for raw block device usage
+        # Longhorn will access /dev/sdb directly
+        extraMounts = []
       }
     }
     cluster = {
@@ -184,6 +192,21 @@ resource "proxmox_virtual_environment_vm" "vm" {
     import_from  = proxmox_virtual_environment_download_file.disk_image.id
   }
 
+  # Dedicated storage disk for Longhorn (worker nodes only)
+  dynamic "disk" {
+    for_each = var.node_type == "worker" ? [1] : []
+    content {
+      datastore_id = "local-zfs"
+      interface    = "scsi1"
+      iothread     = true
+      ssd          = true
+      discard      = "on"
+      size         = 128
+      file_format  = "raw"
+      serial       = "lh-${var.node_name}" # Stable identifier (max 20 chars)
+    }
+  }
+
   agent {
     enabled = true
     trim    = true
@@ -245,6 +268,17 @@ data "talos_machine_configuration" "config" {
             interface = "eth0"
             vip       = { ip = var.shared_config.cluster_vip }
           }]
+        }
+      }
+    })
+    ] : var.node_type == "worker" ? [
+    yamlencode({
+      machine = {
+        nodeLabels = {
+          "node.longhorn.io/create-default-disk" = "config"
+        }
+        nodeAnnotations = {
+          "node.longhorn.io/default-disks-config" = "[{\"path\":\"/dev/disk/by-id/scsi-0QEMU_QEMU_HARDDISK_lh-${var.node_name}\", \"allowScheduling\": true, \"diskType\": \"block\"}]"
         }
       }
     })
