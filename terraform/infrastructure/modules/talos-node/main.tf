@@ -91,7 +91,7 @@ locals {
       }
       nodeLabels = {
         "topology.kubernetes.io/region" = "cluster"
-        "topology.kubernetes.io/zone"   = "cluster"
+        "topology.kubernetes.io/zone"   = "atlas"
       }
     }
     cluster = {
