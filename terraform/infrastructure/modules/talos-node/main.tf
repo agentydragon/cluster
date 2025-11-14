@@ -84,9 +84,16 @@ locals {
         ]
       }
       kubelet = {
-        # Note: extraMounts not needed for raw block device usage
-        # Longhorn will access /dev/sdb directly
-        extraMounts = []
+        # Longhorn CSI driver requires these volume mounts to be accessible
+        # from the containerized kubelet on Talos
+        extraMounts = [
+          {
+            destination = "/var/lib/longhorn"
+            source      = "/var/lib/longhorn"
+            type        = "bind"
+            options     = ["bind", "rshared", "rw"]
+          }
+        ]
       }
     }
     cluster = {
