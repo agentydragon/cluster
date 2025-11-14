@@ -60,7 +60,7 @@ resource "null_resource" "csi_acl" {
   provisioner "remote-exec" {
     when = destroy
     inline = [
-      "pveum acldel / -user kubernetes-csi@pve || true"
+      "pveum acl delete / -user kubernetes-csi@pve -role CSI || true"
     ]
 
     connection {
