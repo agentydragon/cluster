@@ -32,9 +32,10 @@ variable "shared_config" {
     prefix            = string
     cluster_vip       = string
     global_config = object({
-      headscale_api_key      = string
       headscale_login_server = string
       headscale_user         = string
+      headscale_server       = string
+      proxmox_server         = string
     })
     tailscale_base_args  = string
     tailscale_route_args = string
