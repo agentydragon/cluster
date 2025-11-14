@@ -22,6 +22,11 @@ resource "proxmox_virtual_environment_user" "csi" {
   user_id = "kubernetes-csi@pve"
   comment = "Kubernetes CSI driver service account"
   enabled = true
+
+  # Handle ACL cleanup gracefully since we manage ACLs via SSH
+  lifecycle {
+    create_before_destroy = true
+  }
 }
 
 # Create API token for CSI authentication
@@ -40,6 +45,22 @@ resource "null_resource" "csi_acl" {
   provisioner "remote-exec" {
     inline = [
       "pveum aclmod / -user kubernetes-csi@pve -role CSI"
+    ]
+
+    connection {
+      type        = "ssh"
+      user        = "root"
+      host        = "atlas"
+      private_key = file("/home/agentydragon/.ssh/id_ed25519")
+      timeout     = "2m"
+    }
+  }
+
+  # Clean up ACL before user deletion to prevent permission errors
+  provisioner "remote-exec" {
+    when = destroy
+    inline = [
+      "pveum acldel / -user kubernetes-csi@pve || true"
     ]
 
     connection {
