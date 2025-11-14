@@ -14,9 +14,8 @@ locals {
   csi_cluster_config = data.terraform_remote_state.infrastructure.outputs.proxmox_csi_config
 
   # Generate CSI config YAML with the complete cluster configuration
-  csi_config = yamlencode({
-    clusters = [local.csi_cluster_config]
-  })
+  # Use JSON encoding to preserve boolean types, then wrap in YAML clusters array
+  csi_config = "clusters:\n- ${jsonencode(local.csi_cluster_config)}"
 }
 
 # Create sealed secret for Proxmox CSI credentials
