@@ -2,9 +2,9 @@
 locals {
   # Global configuration shared by all nodes
   global_config = {
-    headscale_api_key      = local.headscale_api_key
     headscale_login_server = var.headscale_login_server
     headscale_user         = var.headscale_user
+    headscale_server       = var.headscale_server
   }
 
   # Define node types and their configuration in a single data structure

@@ -13,7 +13,7 @@ Small Talos k8s cluster with GitOps and HTTPS.
 ## Prerequisites
 
 - **Proxmox credentials**: Create Proxmox terraform + CSI users and store tokens in libsecret keyring
-- **Headscale API key**: Store in libsecret keyring for Tailscale mesh networking
+- **SSH access**: `root@atlas` (Proxmox) and `root@agentydragon.com` (Headscale server) for credential generation
 - See [docs/BOOTSTRAP.md](docs/BOOTSTRAP.md#credential-setup) for detailed setup instructions
 
 ## direnv

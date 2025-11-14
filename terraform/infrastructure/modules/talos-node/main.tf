@@ -110,20 +110,12 @@ locals {
   }
 }
 
-# Generate unique pre-auth key for this node
-data "http" "preauth_key" {
-  url    = "${var.shared_config.global_config.headscale_login_server}/api/v1/preauthkey"
-  method = "POST"
-  request_headers = {
-    Authorization = "Bearer ${var.shared_config.global_config.headscale_api_key}"
-    Content-Type  = "application/json"
-  }
-  request_body = jsonencode({
-    user       = var.shared_config.global_config.headscale_user
-    reusable   = false
-    ephemeral  = false
-    expiration = timeadd(timestamp(), "1h")
-  })
+# Generate unique pre-auth key for this node via SSH
+data "external" "preauth_key" {
+  program = [
+    "ssh", "${var.shared_config.global_config.headscale_server}",
+    "headscale preauthkeys create --user ${var.shared_config.global_config.headscale_user} --expiration 1h --output json"
+  ]
 }
 
 # Create schematic in Image Factory using Talos provider
@@ -307,7 +299,7 @@ resource "talos_machine_configuration_apply" "apply" {
       kind       = "ExtensionServiceConfig"
       name       = "tailscale"
       environment = [
-        "TS_AUTHKEY=${jsondecode(data.http.preauth_key.response_body).preAuthKey.key}",
+        "TS_AUTHKEY=${data.external.preauth_key.result.key}",
         "TS_EXTRA_ARGS=${var.shared_config.tailscale_base_args}${var.node_type == "controlplane" ? " ${var.shared_config.tailscale_route_args}" : ""}"
       ]
     })
@@ -316,5 +308,16 @@ resource "talos_machine_configuration_apply" "apply" {
   depends_on = [proxmox_virtual_environment_vm.vm]
 }
 
+# Node registration cleanup on destroy
+resource "terraform_data" "node_registration" {
+  # Store the pre-auth key ID for cleanup
+  input = data.external.preauth_key.result.id
 
+  # Cleanup pre-auth key when destroying (nodes auto-expire but keys don't)
+  provisioner "local-exec" {
+    when    = destroy
+    command = "ssh ${var.shared_config.global_config.headscale_server} 'headscale preauthkeys delete ${self.input}' || echo 'Pre-auth key ${self.input} already expired/removed'"
+  }
 
+  depends_on = [talos_machine_configuration_apply.apply]
+}

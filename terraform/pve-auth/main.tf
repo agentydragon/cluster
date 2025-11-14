@@ -12,7 +12,7 @@ terraform {
   }
 }
 
-# Read Proxmox API tokens from keyring
+# Read Proxmox API tokens from keyring (persistent)
 data "keyring_secret" "terraform_token" {
   name = "proxmox-terraform-token"
 }
@@ -20,3 +20,6 @@ data "keyring_secret" "terraform_token" {
 data "keyring_secret" "csi_token" {
   name = "proxmox-csi-token"
 }
+
+# No persistent Headscale API key needed -
+# Pre-auth keys are generated directly via SSH in the node module
