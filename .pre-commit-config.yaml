@@ -51,3 +51,19 @@ repos:
       - id: terraform_fmt
         args:
           - --args=-recursive
+
+  - repo: local
+    hooks:
+      - id: kustomize-dry-run
+        name: Validate Kustomize builds (parallel)
+        entry: python3 scripts/validate-kustomizations.py
+        language: system
+        files: ^k8s/.*\.(yaml|yml)$
+        pass_filenames: false
+
+      - id: helm-template-dry-run
+        name: Validate Helm templates
+        entry: bash -c 'find terraform/ -name "cilium" -type d | while read d; do if [[ -f "$d/values.yaml" ]]; then echo "Templating Helm chart in $d..."; helm template test-release cilium/cilium -f "$d/values.yaml" --dry-run >/dev/null || exit 1; fi; done'
+        language: system
+        files: ^terraform/.*cilium.*\.(yaml|yml|tf)$
+        pass_filenames: false

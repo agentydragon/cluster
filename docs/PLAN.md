@@ -98,6 +98,17 @@ Through systematic diagnosis of Bank-Vaults storage failures, discovered critica
   - **Rook-Ceph**: Enterprise-grade distributed storage (overkill for testing cluster)
 - [ ] **Complete SNI Migration**: Move remaining VPS services to stream-level SNI passthrough
 
+### 🔍 Development & Quality Assurance
+
+- [x] **Basic Dry-Run Validation**: Pre-commit hooks for `kustomize build --dry-run` and `helm template --dry-run`
+  - **Catches**: Invalid YAML, missing references, template errors before they reach the cluster
+  - **Would Have Caught**: flux-system/k8s-kustomization.yaml referencing non-existent `./k8s/infrastructure/networking`
+- [ ] **Advanced Multi-Tool Resource Ownership Conflict Detector**: Build static analysis tool to detect when multiple systems (Terraform, Flux, Helm) try to manage the same Kubernetes resources
+  - **Problem**: Silent resource conflicts causing runtime failures, architectural boundary violations
+  - **Solution**: Parse Terraform plans, Flux kustomizations, Helm releases to build resource ownership map and detect conflicts
+  - **Integration**: Extend existing dry-run hooks with resource extraction and conflict detection
+  - **Existing Tools Gap**: Checkov, KICS, Terrascan focus on security/best practices, not multi-tool ownership conflicts
+
 ### Low-priority freezer
 
 - [ ] **Backup/recovery**: Document cluster restore procedures and etcd backup automation
