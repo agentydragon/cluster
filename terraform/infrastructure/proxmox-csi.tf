@@ -43,12 +43,11 @@ resource "null_resource" "csi_acl" {
     ]
 
     connection {
-      type = "ssh"
-      user = "root"
-      host = "atlas"
-      # Use SSH agent forwarding - ensures keys from local SSH agent are available
-      agent   = true
-      timeout = "2m"
+      type        = "ssh"
+      user        = "root"
+      host        = "atlas"
+      private_key = file("/home/agentydragon/.ssh/id_ed25519")
+      timeout     = "2m"
     }
   }
 
