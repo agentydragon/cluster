@@ -1,0 +1,67 @@
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: HelmRepository
+metadata:
+  name: proxmox-csi
+  namespace: csi-proxmox
+spec:
+  interval: 24h
+  url: oci://ghcr.io/sergelogvinov/charts
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: proxmox-csi-plugin
+  namespace: csi-proxmox
+spec:
+  interval: 15m
+  chart:
+    spec:
+      chart: proxmox-csi-plugin
+      version: "0.2.x" # Latest stable 0.2.x version
+      sourceRef:
+        kind: HelmRepository
+        name: proxmox-csi
+        namespace: csi-proxmox
+  values:
+    # Configure CSI plugin for Atlas Proxmox integration
+    config:
+      # Config is loaded from the sealed secret
+      existingSecret: "proxmox-csi-plugin"
+      
+    # StorageClass configuration
+    storageClass:
+      - name: "proxmox-csi"
+        storage: "local-zfs"  # Atlas ZFS storage pool
+        reclaimPolicy: "Delete"
+        allowVolumeExpansion: true
+        parameters:
+          cache: "directsync"  # ZFS optimized caching
+          ssd: "true"          # SSD storage indication
+        # Set as default StorageClass (disable Longhorn default first)
+        annotations:
+          storageclass.kubernetes.io/is-default-class: "false"
+    
+    # Enable topology-aware provisioning
+    node:
+      enableTopology: true
+      
+    # Resource limits for CSI components
+    controller:
+      replicaCount: 1  # Single replica for testing cluster
+      resources:
+        requests:
+          cpu: 50m
+          memory: 64Mi
+        limits:
+          cpu: 200m
+          memory: 256Mi
+          
+    node:
+      resources:
+        requests:
+          cpu: 50m
+          memory: 64Mi
+        limits:
+          cpu: 100m
+          memory: 128Mi
