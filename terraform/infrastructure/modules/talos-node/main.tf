@@ -2,13 +2,11 @@ locals {
   # Create schematic YAML with static IP configuration in META key 0xa (10)
   schematic_yaml = yamlencode({
     customization = {
-      extraKernelArgs = concat(["net.ifnames=0"], var.node_type == "worker" ? ["hugepages=1024"] : [])
+      extraKernelArgs = ["net.ifnames=0"]
       systemExtensions = {
         officialExtensions = [
           "siderolabs/qemu-guest-agent",
-          "siderolabs/tailscale",
-          "siderolabs/iscsi-tools",
-          "siderolabs/util-linux-tools"
+          "siderolabs/tailscale"
         ]
       }
       meta = [
@@ -70,31 +68,8 @@ locals {
           forwardKubeDNSToHost = true
         }
       }
-      kernel = {
-        modules = [
-          {
-            name = "nbd"
-          },
-          {
-            name = "iscsi_tcp"
-          },
-          {
-            name = "configfs"
-          }
-        ]
-      }
-      kubelet = {
-        # Longhorn CSI driver requires these volume mounts to be accessible
-        # from the containerized kubelet on Talos
-        extraMounts = [
-          {
-            destination = "/var/lib/longhorn"
-            source      = "/var/lib/longhorn"
-            type        = "bind"
-            options     = ["bind", "rshared", "rw"]
-          }
-        ]
-      }
+      # No additional kernel modules needed for Proxmox CSI
+      # No additional kubelet configuration needed for Proxmox CSI
     }
     cluster = {
       discovery = {
@@ -191,20 +166,7 @@ resource "proxmox_virtual_environment_vm" "vm" {
     import_from  = proxmox_virtual_environment_download_file.disk_image.id
   }
 
-  # Dedicated storage disk for Longhorn (worker nodes only)
-  dynamic "disk" {
-    for_each = var.node_type == "worker" ? [1] : []
-    content {
-      datastore_id = "local-zfs"
-      interface    = "scsi1"
-      iothread     = true
-      ssd          = true
-      discard      = "on"
-      size         = 128
-      file_format  = "raw"
-      serial       = "lh-${var.node_name}" # Stable identifier (max 20 chars)
-    }
-  }
+  # Proxmox CSI uses host storage directly - no additional disks needed
 
   agent {
     enabled = true
@@ -267,17 +229,6 @@ data "talos_machine_configuration" "config" {
             interface = "eth0"
             vip       = { ip = var.shared_config.cluster_vip }
           }]
-        }
-      }
-    })
-    ] : var.node_type == "worker" ? [
-    yamlencode({
-      machine = {
-        nodeLabels = {
-          "node.longhorn.io/create-default-disk" = "config"
-        }
-        nodeAnnotations = {
-          "node.longhorn.io/default-disks-config" = "[{\"path\":\"/dev/disk/by-id/scsi-0QEMU_QEMU_HARDDISK_lh-${var.node_name}\", \"allowScheduling\": true, \"diskType\": \"block\"}]"
         }
       }
     })
