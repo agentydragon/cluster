@@ -49,9 +49,40 @@ kubectl get pods -A        # All system pods should be running
 # Note: kubectl automatically uses VIP (10.0.0.20) for HA - no manual --server needed
 ```
 
-### Step 2: Generate Bootstrap Secrets
+### Step 2: Storage Configuration
 
-Before platform services can deploy, generate bootstrap secrets and commit them to git:
+Configure storage backend after sealed-secrets controller is deployed:
+
+```bash
+# Wait for sealed-secrets controller to be ready
+kubectl wait --for=condition=Available deployment/sealed-secrets-controller -n kube-system --timeout=300s
+
+# Generate Proxmox CSI sealed secret using storage terraform
+cd terraform/storage
+terraform init
+terraform apply
+
+# Commit the generated sealed secret
+git add ../../k8s/storage/proxmox-csi-sealed.yaml
+git commit -m "feat: add Proxmox CSI sealed secret"
+git push origin main
+
+# Wait for storage to be ready
+flux reconcile source git cluster --wait
+flux reconcile ks infrastructure-storage --wait
+```
+
+#### Storage Verification
+
+```bash
+kubectl get storageclass                    # Should show proxmox-csi (default)
+kubectl get pods -n csi-proxmox            # CSI controller and node pods running
+kubectl get csinode                        # Verify CSI driver registered
+```
+
+### Step 3: Generate Bootstrap Secrets
+
+After storage is ready, generate bootstrap secrets for platform services:
 
 ```bash
 # Generate bootstrap tokens
@@ -80,27 +111,27 @@ flux get ks infrastructure-platform  # Check platform services status
 kubectl get pods -n vault -n authentik  # Verify platform pods starting
 ```
 
-### Step 3: External Connectivity via DNS Delegation
+### Step 4: External Connectivity via DNS Delegation
 
-#### Step 3.1: DNS Delegation Setup
+#### Step 4.1: DNS Delegation Setup
 
 Create NS delegation in Route 53 for `test-cluster.agentydragon.com` to VPS PowerDNS, then delegate to cluster.
 
-#### Step 3.2: VPS Configuration Updates
+#### Step 4.2: VPS Configuration Updates
 
 Update `~/code/ducktape` repository configurations:
 
 - **PowerDNS**: Add delegation in `ansible/host_vars/vps/powerdns.yml` to cluster PowerDNS VIP (10.0.3.3)
 - **NGINX**: Update `ansible/nginx-sites/test-cluster.agentydragon.com.j2` for SNI passthrough to cluster ingress VIP (10.0.3.2:443)
 
-#### Step 3.3: Deploy VPS Configuration
+#### Step 4.3: Deploy VPS Configuration
 
 ```bash
 cd ~/code/ducktape/ansible
 ansible-playbook vps.yaml -t powerdns,nginx-sites
 ```
 
-#### Step 3.4: Wait for In-Cluster PowerDNS
+#### Step 4.4: Wait for In-Cluster PowerDNS
 
 Monitor Flux deployment of platform services:
 
@@ -110,7 +141,7 @@ kubectl get pods -n dns-system       # Verify PowerDNS pod running
 kubectl get svc powerdns-external    # Should show LoadBalancer IP 10.0.3.3
 ```
 
-#### Step 3.5: Test DNS Delegation Chain
+#### Step 4.5: Test DNS Delegation Chain
 
 ```bash
 # Test VPS → cluster DNS delegation
