@@ -18,37 +18,28 @@ spec:
   chart:
     spec:
       chart: proxmox-csi-plugin
-      version: "0.2.x" # Latest stable 0.2.x version
+      version: "0.2.x"
       sourceRef:
         kind: HelmRepository
         name: proxmox-csi
         namespace: csi-proxmox
   values:
-    # Configure CSI plugin for Atlas Proxmox integration
     config:
-      # Config is loaded from the sealed secret
       existingSecret: "proxmox-csi-plugin"
-      
-    # StorageClass configuration
+    
     storageClass:
       - name: "proxmox-csi"
-        storage: "local-zfs"  # Atlas ZFS storage pool
+        storage: "local-zfs"
         reclaimPolicy: "Delete"
         allowVolumeExpansion: true
         parameters:
-          cache: "directsync"  # ZFS optimized caching
-          ssd: "true"          # SSD storage indication
-        # Set as default StorageClass (disable Longhorn default first)
+          cache: "directsync"
+          ssd: "true"
         annotations:
           storageclass.kubernetes.io/is-default-class: "false"
     
-    # Enable topology-aware provisioning
-    node:
-      enableTopology: true
-      
-    # Resource limits for CSI components
     controller:
-      replicaCount: 1  # Single replica for testing cluster
+      replicaCount: 1
       resources:
         requests:
           cpu: 50m
@@ -56,8 +47,9 @@ spec:
         limits:
           cpu: 200m
           memory: 256Mi
-          
+    
     node:
+      enableTopology: true
       resources:
         requests:
           cpu: 50m
