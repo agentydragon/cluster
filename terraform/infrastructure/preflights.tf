@@ -6,8 +6,8 @@ data "external" "git_status_check" {
   program = ["bash", "-c", <<-EOF
     cd "${path.module}/../.."
 
-    # Check for uncommitted changes
-    if ! git diff --quiet || ! git diff --cached --quiet; then
+    # Check for uncommitted changes (excluding .md files)
+    if ! git diff --quiet -- ':!*.md' || ! git diff --cached --quiet -- ':!*.md'; then
       echo '{"error": "Git tree is dirty - uncommitted changes detected. Flux would not deploy with uncommitted changes. Please commit first."}' >&2
       exit 1
     fi

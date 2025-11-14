@@ -48,10 +48,6 @@ spec:
     cluster_addr: "http://POD_IP:8201"
     ui: true
     log_level: "info"
-    # Enable HA mode
-    ha_storage:
-      raft:
-        path: "/vault/file"
 
   # Automatic unsealing using Kubernetes secrets
   unsealConfig:
