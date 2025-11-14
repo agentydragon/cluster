@@ -59,7 +59,8 @@ Where "everything" means everything currently in PLAN.md scope as specified by u
 1. **NO imperative patches** - All fixes must be encoded in configuration and committed properly
 2. **Main development loop**: `destroy -> recreate -> check if valid`
 3. **Debugging vs. Implementation**:
-   - **Debugging**: You CAN tinker with invalid/failed state (kubectl patches, manual commands) to understand what broke and learn how to fix declarative config
+   - **Debugging**: You CAN tinker with invalid/failed state (kubectl patches, manual commands) to understand what
+     broke and learn how to fix declarative config
    - **Implementation**: All solutions MUST be declarative configuration changes, never manual fixes
    - **"The cluster works" ≠ DONE** - Getting broken state functioning via manual patches is NOT completion
 4. **End-to-end declarative working config** - The outer true goal is always complete declarative automation
@@ -73,13 +74,17 @@ terraform apply --auto-approve
 # Verify: does it work end-to-end declaratively?
 ```
 
-**destroy → recreate → check if valid**
+## Primary Development Loop
 
-If the result is broken/invalid, you may inspect and debug the live state to understand the failure. But the fix MUST be committed configuration changes that make the next destroy→recreate cycle work properly.
+Main cycle: **destroy → recreate → check if valid**
+
+If the result is broken/invalid, you may inspect and debug the live state to understand the failure. But the fix MUST be
+committed configuration changes that make the next destroy→recreate cycle work properly.
 
 ### Cluster Disposability
 
-**The cluster is completely disposable.** If it gets corrupted/broken, just `terraform destroy` it. Don't bother repairing running state.
+**The cluster is completely disposable.** If it gets corrupted/broken, just `terraform destroy` it. Don't bother repairing
+running state.
 
 ### Debugging vs. Completion Distinction
 
@@ -195,7 +200,8 @@ This provides consistent tool versions (nix-managed) and automatic KUBECONFIG/TA
 
 ## Terraform Timeout Configuration
 
-**IMPORTANT**: When running `terraform apply` or `terraform destroy`, always use the Bash tool's `timeout` parameter set to 600000ms (10 minutes) to prevent premature timeout during long cluster provisioning operations.
+**IMPORTANT**: When running `terraform apply` or `terraform destroy`, always use the Bash tool's `timeout` parameter
+set to 600000ms (10 minutes) to prevent premature timeout during long cluster provisioning operations.
 
 Example:
 

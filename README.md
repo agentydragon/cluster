@@ -33,7 +33,8 @@ Execute tools like these with the direnv loaded, or use `direnv exec .`.
 
 ## CNI Architecture Decision
 
-**Infrastructure vs GitOps Separation**: Based on circular dependency analysis and industry best practices (AWS EKS Blueprints, etc.), CNI is managed at the infrastructure layer, not via GitOps.
+**Infrastructure vs GitOps Separation**: Based on circular dependency analysis and industry best practices
+(AWS EKS Blueprints, etc.), CNI is managed at the infrastructure layer, not via GitOps.
 
 **Architecture Layers:**
 
@@ -44,7 +45,8 @@ Execute tools like these with the direnv loaded, or use `direnv exec .`.
 **Why CNI Cannot Be GitOps-Managed:**
 
 - Circular dependency: GitOps tools need networking to function, but would be managing their own networking
-- Network disruption during handoffs: When Flux tries to update Terraform-installed CNI, worker nodes become permanently NotReady due to container image pull failures during networking gaps
+- Network disruption during handoffs: When Flux tries to update Terraform-installed CNI, worker nodes become
+  permanently NotReady due to container image pull failures during networking gaps
 - Industry pattern: Major platforms (AWS EKS, GKE Autopilot) manage CNI at infrastructure layer
 
 ## Repository Structure

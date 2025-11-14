@@ -37,7 +37,8 @@ This **single command** handles:
 - **Deploy key creation** in GitHub repository
 - **Application deployment** starts automatically via Flux (platform services require bootstrap secrets)
 
-**CNI Architecture**: Cilium is managed by Terraform at the infrastructure layer, NOT by Flux. This prevents circular dependencies where GitOps tools would manage their own networking infrastructure.
+**CNI Architecture**: Cilium is managed by Terraform at the infrastructure layer, NOT by Flux. This prevents circular
+dependencies where GitOps tools would manage their own networking infrastructure.
 
 #### Test
 

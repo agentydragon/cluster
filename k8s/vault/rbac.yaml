@@ -11,12 +11,12 @@ metadata:
   name: vault
   namespace: vault
 rules:
-- apiGroups: [""]
-  resources: ["secrets"]
-  verbs: ["*"]
-- apiGroups: [""]
-  resources: ["pods"]
-  verbs: ["get", "update", "patch"]
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["*"]
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "update", "patch"]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
@@ -28,21 +28,21 @@ roleRef:
   kind: Role
   name: vault
 subjects:
-- kind: ServiceAccount
-  name: vault
-  namespace: vault
+  - kind: ServiceAccount
+    name: vault
+    namespace: vault
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   name: vault-auth-delegator
 rules:
-- apiGroups: ["authentication.k8s.io"]
-  resources: ["tokenreviews"]
-  verbs: ["create"]
-- apiGroups: ["authorization.k8s.io"]
-  resources: ["subjectaccessreviews"]
-  verbs: ["create"]
+  - apiGroups: ["authentication.k8s.io"]
+    resources: ["tokenreviews"]
+    verbs: ["create"]
+  - apiGroups: ["authorization.k8s.io"]
+    resources: ["subjectaccessreviews"]
+    verbs: ["create"]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
@@ -53,6 +53,6 @@ roleRef:
   kind: ClusterRole
   name: vault-auth-delegator
 subjects:
-- kind: ServiceAccount
-  name: vault
-  namespace: vault
+  - kind: ServiceAccount
+    name: vault
+    namespace: vault

@@ -10,7 +10,9 @@ This document tracks project roadmap and strategic architecture decisions for th
 - [x] **Networking**: Clean IP scheme (10.0.1.x controllers, 10.0.2.x workers, 10.0.3.x VIPs)
 - [x] **CNI Architecture Decision**: Cilium managed by Terraform (infrastructure layer), not Flux (GitOps layer)
   - **Rationale**: Prevents circular dependency where GitOps tools manage their own networking infrastructure
-  - **Why Flux Cannot Manage CNI**: When Flux tries to update Terraform-installed Cilium, worker nodes become permanently NotReady. During CNI transition gaps, nodes cannot pull container images (no networking), creating deadlock where nodes need networking to restore networking.
+  - **Why Flux Cannot Manage CNI**: When Flux tries to update Terraform-installed Cilium, worker nodes become permanently
+    NotReady. During CNI transition gaps, nodes cannot pull container images (no networking), creating deadlock where
+    nodes need networking to restore networking.
   - **Industry Pattern**: AWS EKS Blueprints, GKE Autopilot manage CNI at infrastructure layer
   - **Architecture Separation**: Talos→CoreDNS, Terraform→CNI, Flux→Applications
 - [x] **GitOps**: Flux CD managing application platform with proper dependency ordering
@@ -52,12 +54,13 @@ This document tracks project roadmap and strategic architecture decisions for th
 - [ ] **ZFS Extension**: Add ZFS filesystem support for advanced storage features (snapshots, checksums, compression)
 - [ ] **NFS Utils Extension**: Enable NFS client/server support for easy file sharing across systems
 - [ ] **gVisor Extension**: Add sandboxed container runtime for enhanced security when running untrusted workloads
-- [ ] **Dedicated Longhorn Storage**: Evaluate adding separate disks (e.g., /dev/sdb) for 100% Longhorn usage vs current filesystem approach
+- [ ] **Dedicated Longhorn Storage**: Evaluate adding separate disks (e.g., /dev/sdb) for 100% Longhorn usage vs
+  current filesystem approach
 - [ ] **Longhorn v2 Data Engine**: Investigate SPDK-based storage for improved performance (experimental feature)
 
 ### Storage & Infrastructure Tasks - CRITICAL DISCOVERY
 
-**🚨 OpenEBS LocalPV Talos Incompatibility Discovered**
+## 🚨 OpenEBS LocalPV Talos Incompatibility Discovered
 
 Through systematic diagnosis of Bank-Vaults storage failures, discovered critical incompatibility:
 
@@ -103,7 +106,8 @@ Through systematic diagnosis of Bank-Vaults storage failures, discovered critica
 - [x] **Basic Dry-Run Validation**: Pre-commit hooks for `kustomize build --dry-run` and `helm template --dry-run`
   - **Catches**: Invalid YAML, missing references, template errors before they reach the cluster
   - **Would Have Caught**: flux-system/k8s-kustomization.yaml referencing non-existent `./k8s/infrastructure/networking`
-- [ ] **Advanced Multi-Tool Resource Ownership Conflict Detector**: Build static analysis tool to detect when multiple systems (Terraform, Flux, Helm) try to manage the same Kubernetes resources
+- [ ] **Advanced Multi-Tool Resource Ownership Conflict Detector**: Build static analysis tool to detect when
+  multiple systems (Terraform, Flux, Helm) try to manage the same Kubernetes resources
   - **Problem**: Silent resource conflicts causing runtime failures, architectural boundary violations
   - **Solution**: Parse Terraform plans, Flux kustomizations, Helm releases to build resource ownership map and detect conflicts
   - **Integration**: Extend existing dry-run hooks with resource extraction and conflict detection
