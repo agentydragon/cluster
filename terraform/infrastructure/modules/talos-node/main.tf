@@ -89,8 +89,11 @@ locals {
           forwardKubeDNSToHost = true
         }
       }
-      # No additional kernel modules needed for Proxmox CSI
-      # No additional kubelet configuration needed for Proxmox CSI
+      kubelet = {
+        nodeLabels = {
+          "topology.kubernetes.io/region" = "cluster"
+        }
+      }
     }
     cluster = {
       discovery = {
@@ -242,17 +245,7 @@ data "talos_machine_configuration" "config" {
   docs               = local.machine_config.docs
 
   config_patches = concat([
-    yamlencode(local.common_machine_config), # Now includes tailscale extension
-    # Add topology region label for Proxmox CSI plugin
-    yamlencode({
-      machine = {
-        kubelet = {
-          nodeLabels = {
-            "topology.kubernetes.io/region" = "cluster"
-          }
-        }
-      }
-    })
+    yamlencode(local.common_machine_config) # Now includes tailscale extension and topology labels
     ], var.node_type == "controlplane" ? [
     yamlencode({
       machine = {

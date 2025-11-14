@@ -1,17 +1,17 @@
 # Proxmox CSI Sealed Secret Creation
 # Run this after infrastructure terraform and GitOps sealed-secrets deployment
 
-# Read outputs from pve-auth terraform
-data "terraform_remote_state" "pve_auth" {
+# Read outputs from infrastructure terraform
+data "terraform_remote_state" "infrastructure" {
   backend = "local"
   config = {
-    path = "${path.module}/../pve-auth/terraform.tfstate"
+    path = "${path.module}/../infrastructure/terraform.tfstate"
   }
 }
 
 locals {
-  # Get complete CSI configuration from pve-auth module
-  csi_cluster_config = data.terraform_remote_state.pve_auth.outputs.csi_config
+  # Get complete CSI configuration from infrastructure terraform
+  csi_cluster_config = data.terraform_remote_state.infrastructure.outputs.proxmox_csi_config
 
   # Generate CSI config YAML with the complete cluster configuration
   csi_config = yamlencode({
