@@ -18,7 +18,7 @@ Step-by-step instructions for cold-starting the Talos cluster from nothing and m
 The deployment uses SSH-based auto-provisioning for both Proxmox and Headscale credentials.
 You only need to store the root credentials in your system keyring.
 
-### Step 0.1: Store Root Credentials in libsecret Keyring
+### Step 1: Store Root Credentials in libsecret Keyring
 
 Store the root credentials as JSON in your system keyring:
 
@@ -41,7 +41,7 @@ secret-tool lookup generic-secret name "proxmox-terraform-token"
 secret-tool lookup generic-secret name "proxmox-csi-token"
 ```
 
-### Step 0.2: Initialize Credential Module
+### Step 2: Initialize Credential Module
 
 Initialize and apply the credential module:
 
@@ -51,7 +51,7 @@ terraform init
 terraform apply
 ```
 
-### Step 1: Fully Declarative Deployment
+### Step 3: Fully Declarative Deployment
 
 ```bash
 cd terraform/infrastructure
