@@ -17,7 +17,7 @@ This document tracks project roadmap and strategic architecture decisions for th
   - **Architecture Separation**: Talos→CoreDNS, Terraform→CNI, Flux→Applications
 - [x] **GitOps**: Flux CD managing application platform with proper dependency ordering
 - [x] **VIP HA**: Cluster API on 10.0.3.1 with bootstrap chicken-and-egg solution
-- [x] **Secrets**: sealed-secrets for encrypted git-stored secrets
+- [x] **Secrets**: sealed-secrets with keyring-based keypair persistence for turnkey GitOps
 - [x] **Turnkey Deployment**: Complete destroy→recreate→verify cycle successful
   - **Primary Directive Achieved**: `terraform apply` → everything works declaratively
   - **No Manual Intervention Required**: Full automation from VM creation to working cluster

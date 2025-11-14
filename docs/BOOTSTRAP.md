@@ -33,6 +33,7 @@ This **single command** handles:
 - Kubernetes cluster initialization and bootstrap
 - **Cilium CNI deployment** via Terraform Helm provider (infrastructure layer management)
 - **Auto-generated kubeconfig** pointing to VIP for HA kubectl access (see VIP Bootstrap Solution below)
+- **Sealed-secrets keypair persistence** via system keyring for turnkey GitOps workflow
 - **Nodes become Ready** after CNI installation
 - **Flux GitOps bootstrap** using `gh auth token` for GitHub PAT
 - **Deploy key creation** in GitHub repository
@@ -80,6 +81,16 @@ kubectl get storageclass                    # Should show proxmox-csi (default)
 kubectl get pods -n csi-proxmox            # CSI controller and node pods running
 kubectl get csinode                        # Verify CSI driver registered
 ```
+
+### Sealed-Secrets Keypair Persistence (Optional Optimization)
+
+The cluster automatically manages sealed-secrets keypair persistence for turnkey GitOps workflows:
+
+- **First deployment**: Sealed-secrets controller generates new keypair, terraform stores it in system keyring
+- **Subsequent deployments**: Terraform restores keypair from keyring, all existing sealed secrets work immediately
+- **Without persistence**: Each deployment generates new keypair, requiring manual sealed secret regeneration
+
+**No action needed** - this happens automatically during `terraform apply`.
 
 ### Step 3: Generate Bootstrap Secrets
 

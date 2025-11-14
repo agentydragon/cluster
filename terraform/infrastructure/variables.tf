@@ -58,7 +58,7 @@ variable "controller_count" {
 variable "worker_count" {
   description = "Number of worker nodes"
   type        = number
-  default     = 2
+  default     = 3
   validation {
     condition     = var.worker_count >= 0 && var.worker_count <= 20
     error_message = "Worker count must be between 0 and 20."

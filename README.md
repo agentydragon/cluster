@@ -9,6 +9,7 @@ Small Talos k8s cluster with GitOps and HTTPS.
 - VPS forwards traffic to cluster through Tailscale mesh.
 - Test application: <https://test.test-cluster.agentydragon.com/>
 - CNI: Cilium with Talos-specific security configuration
+- Sealed-secrets: Automatic keypair persistence via system keyring for turnkey GitOps
 
 ## Prerequisites
 
