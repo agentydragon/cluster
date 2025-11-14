@@ -37,7 +37,7 @@ locals {
 data "external" "tokens" {
   for_each = local.users
   program = ["bash", "-c", <<-EOT
-    ssh ${local.proxmox_host} '
+    token=$(ssh ${local.proxmox_host} '
       # Create user if not exists
       pveum user add ${each.value.name} --comment "${each.value.comment}" 2>/dev/null || true
 
@@ -50,7 +50,8 @@ data "external" "tokens" {
       # Create/recreate API token
       pveum user token delete ${each.value.name} ${each.value.token} 2>/dev/null || true
       pveum user token add ${each.value.name} ${each.value.token} --privsep 0
-    ' | grep -E "${each.value.name}!${each.value.token}=" | head -n1
+    ' | grep -E "${each.value.name}!${each.value.token}=" | head -n1)
+    echo "{\"token\":\"$token\"}"
   EOT
   ]
 }

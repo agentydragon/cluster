@@ -2,13 +2,13 @@
 
 output "terraform_token" {
   description = "Proxmox terraform API token (id=secret format)"
-  value       = data.external.tokens["terraform"].result.stdout
+  value       = data.external.tokens["terraform"].result.token
   sensitive   = true
 }
 
 output "csi_token" {
   description = "Proxmox CSI API token (id=secret format)"
-  value       = data.external.tokens["csi"].result.stdout
+  value       = data.external.tokens["csi"].result.token
   sensitive   = true
 }
 
