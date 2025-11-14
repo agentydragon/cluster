@@ -83,23 +83,31 @@ JSON
 resource "null_resource" "cleanup_proxmox_tokens" {
   for_each = local.users
 
+  # Store values needed for destroy provisioner (can only use self.* in destroy)
+  triggers = {
+    user_name    = each.value.name
+    token_name   = each.value.token
+    role_name    = each.value.role
+    proxmox_host = local.proxmox_host
+  }
+
   provisioner "local-exec" {
     when    = destroy
     command = <<-EOT
-      echo "Cleaning up Proxmox user and token: ${each.value.name}"
-      ssh ${local.proxmox_host} '
+      echo "Cleaning up Proxmox user and token: ${self.triggers.user_name}"
+      ssh ${self.triggers.proxmox_host} '
         # Delete API token
-        pveum user token delete ${each.value.name} ${each.value.token} 2>/dev/null || true
+        pveum user token delete ${self.triggers.user_name} ${self.triggers.token_name} 2>/dev/null || true
 
         # Delete user (this will also remove ACL entries)
-        pveum user delete ${each.value.name} 2>/dev/null || true
+        pveum user delete ${self.triggers.user_name} 2>/dev/null || true
 
         # Delete role if no other users are using it
-        if ! pveum user list | grep -q "@pve" || [ "$(pveum aclmod / -role ${each.value.role} 2>/dev/null | wc -l)" -eq 0 ]; then
-          pveum role delete ${each.value.role} 2>/dev/null || true
+        if ! pveum user list | grep -q "@pve" || [ "$(pveum aclmod / -role ${self.triggers.role_name} 2>/dev/null | wc -l)" -eq 0 ]; then
+          pveum role delete ${self.triggers.role_name} 2>/dev/null || true
         fi
 
-        echo "Cleanup completed for ${each.value.name}"
+        echo "Cleanup completed for ${self.triggers.user_name}"
       '
     EOT
   }
