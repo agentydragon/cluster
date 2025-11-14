@@ -18,6 +18,23 @@ This document tracks project roadmap and strategic architecture decisions for th
 - [x] **GitOps**: Flux CD managing application platform with proper dependency ordering
 - [x] **VIP HA**: Cluster API on 10.0.3.1 with bootstrap chicken-and-egg solution
 - [x] **Secrets**: sealed-secrets for encrypted git-stored secrets
+- [x] **Turnkey Deployment**: Complete destroy→recreate→verify cycle successful
+  - **Primary Directive Achieved**: `terraform apply` → everything works declaratively
+  - **No Manual Intervention Required**: Full automation from VM creation to working cluster
+  - **Robust Credential Management**: SSH-based ephemeral tokens with automatic cleanup
+
+### Storage Infrastructure - COMPLETE
+
+- [x] **Proxmox CSI**: Native ZFS storage integration with proper credential management
+  - **SSH-based Token Generation**: Ephemeral credential creation via SSH for security
+  - **Declarative Cleanup**: Complete user/token lifecycle management with destroy provisioners
+  - **Proper ACL Permissions**: Full Proxmox permissions (Datastore.*, SDN.Use, VM.*)
+  - **JSON Boolean Handling**: Correct data type preservation for CSI configuration
+  - **Talos Integration**: Node topology labels and container runtime compatibility
+- [x] **Vault with Raft Storage**: Deployed using Proxmox CSI for persistent storage
+  - **StatefulSet Configuration**: Proper storage class and volume claim templates
+  - **Turnkey Deployment**: Complete destroy→recreate→verify cycle successful
+  - **GitOps Integration**: Managed via Flux with proper dependency ordering
 
 ### LoadBalancer & Networking - COMPLETE
 
@@ -38,9 +55,11 @@ This document tracks project roadmap and strategic architecture decisions for th
 
 ## TODO
 
-### 📋 Platform Services (Not yet implemented)
+### 📋 Platform Services (Storage foundation complete, services ready for deployment)
 
-- [ ] **Vault**: Deploy secret management with Kubernetes auth, standalone mode with TLS
+- [x] **Vault**: Secret management with Raft storage deployed via GitOps
+  - **Status**: StatefulSet created, Raft storage configured with Proxmox CSI
+  - **Ready for**: Initialization, unsealing, and Kubernetes auth configuration
 - [ ] **External Secrets Operator**: Enable Vault → K8s secrets bridge
 - [ ] **Authentik**: Deploy identity provider with blueprint-based configuration
 - [ ] **Authentik & Vault GitOps**: Set up via GitOps and document bootstrap process
@@ -60,9 +79,26 @@ This document tracks project roadmap and strategic architecture decisions for th
   Can be enabled via `longhorn_v2_enabled = true` terraform variable if ultra-high performance storage is needed.
   Alternative: Use Proxmox CSI for better resource efficiency with ZFS backend integration.
 
-### Storage & Infrastructure Tasks - CRITICAL DISCOVERY
+### Storage & Infrastructure Tasks - COMPLETED MIGRATION
 
-## 🚨 OpenEBS LocalPV Talos Incompatibility Discovered
+## ✅ Proxmox CSI Successfully Implemented
+
+**Migration from Longhorn to Proxmox CSI completed** due to resource efficiency:
+
+**Longhorn V2 Analysis:**
+
+- ❌ **High CPU Overhead**: V2 Data Engine with SPDK requires dedicated CPU cores at 100% utilization per worker
+- ❌ **Resource Inefficient**: 2 workers × 4 cores each = 8 cores at 100% just for storage
+- ❌ **Complexity**: Additional SPDK configuration and resource management overhead
+
+**Proxmox CSI Advantages:**
+
+- ✅ **Direct ZFS Integration**: Native Atlas ZFS storage with snapshots, checksums, compression
+- ✅ **Resource Efficient**: No CPU overhead on worker nodes
+- ✅ **Simplified Architecture**: Direct Proxmox API integration
+- ✅ **Proven Reliability**: Uses existing ZFS infrastructure
+
+## 🚨 OpenEBS LocalPV Talos Incompatibility (Archived Discovery)
 
 Through systematic diagnosis of Bank-Vaults storage failures, discovered critical incompatibility:
 
@@ -97,10 +133,10 @@ Through systematic diagnosis of Bank-Vaults storage failures, discovered critica
 
 - [ ] PARTIAL **Stream-level SNI Implementation**: SNI passthrough configured on port 8443, cluster handles SSL certificates
 - [ ] **VPS proxy resilience**: Test ingress HA - VPS nginx → MetalLB VIP pod failure handling
-- [ ] **Storage Evaluation PRIORITY**: Currently blocked on OpenEBS LocalPV incompatibility. Consider:
-  - **Longhorn**: Distributed storage with replication across nodes
-  - **Proxmox CSI**: Native Proxmox storage integration
-  - **Rook-Ceph**: Enterprise-grade distributed storage (overkill for testing cluster)
+- [x] **Storage Evaluation COMPLETE**: Proxmox CSI selected and implemented
+  - **Selected**: Proxmox CSI for native ZFS integration and resource efficiency
+  - **Rejected**: Longhorn V2 (CPU overhead), OpenEBS (Talos incompatibility)
+  - **Future**: Rook-Ceph available if distributed storage needed
 - [ ] **Complete SNI Migration**: Move remaining VPS services to stream-level SNI passthrough
 
 ### 🔍 Development & Quality Assurance
