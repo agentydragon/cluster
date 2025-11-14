@@ -89,11 +89,9 @@ locals {
           forwardKubeDNSToHost = true
         }
       }
-      kubelet = {
-        nodeLabels = {
-          "topology.kubernetes.io/region" = "cluster"
-          "topology.kubernetes.io/zone"   = "cluster"
-        }
+      nodeLabels = {
+        "topology.kubernetes.io/region" = "cluster"
+        "topology.kubernetes.io/zone"   = "cluster"
       }
     }
     cluster = {
