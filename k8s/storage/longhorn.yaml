@@ -88,3 +88,5 @@ spec:
       defaultClass: true
       defaultClassReplicaCount: 2
       reclaimPolicy: Delete
+      dataEngine: "v2" # Use V2 data engine for default StorageClass
+      disableRevisionCounter: "true" # Required to enable dataEngine parameter in template
