@@ -48,7 +48,7 @@ variable "cluster_networks" {
 variable "controller_count" {
   description = "Number of controller nodes (production: 3 for HA)"
   type        = number
-  default     = 3
+  default     = 1 # Reduced for faster development
   validation {
     condition     = var.controller_count >= 1 && var.controller_count <= 10
     error_message = "Controller count must be between 1 and 10."
@@ -58,7 +58,7 @@ variable "controller_count" {
 variable "worker_count" {
   description = "Number of worker nodes"
   type        = number
-  default     = 2
+  default     = 1 # Reduced for faster development
   validation {
     condition     = var.worker_count >= 0 && var.worker_count <= 20
     error_message = "Worker count must be between 0 and 20."
