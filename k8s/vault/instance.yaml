@@ -42,10 +42,10 @@ spec:
         tls_disable: true # Simplified for cluster-internal communication
         cluster_address: "0.0.0.0:8201"
     # Dynamic API/cluster addresses for HA
-    api_addr: "http://POD_IP:8200"
-    cluster_addr: "http://POD_IP:8201"
+    api_addr: '{{ env "POD_IP" | printf "http://%s:8200" }}'
+    cluster_addr: '{{ env "POD_IP" | printf "http://%s:8201" }}'
     ui: true
-    log_level: "info"
+    log_level: "debug"
 
   # Automatic unsealing using Kubernetes secrets
   unsealConfig:
@@ -84,6 +84,13 @@ spec:
 
   # Service account
   serviceAccount: vault
+
+  # Environment variables for template expansion
+  vaultEnvVars:
+    - name: POD_IP
+      valueFrom:
+        fieldRef:
+          fieldPath: status.podIP
 
   # Pod anti-affinity for HA - spread replicas across nodes
   affinity:
