@@ -121,3 +121,10 @@ variable "github_repository" {
   type        = string
   default     = "cluster"
 }
+
+# Feature flags
+variable "longhorn_v2_enabled" {
+  description = "Enable Longhorn V2 data engine with SPDK (requires 100% CPU core per worker)"
+  type        = bool
+  default     = false
+}

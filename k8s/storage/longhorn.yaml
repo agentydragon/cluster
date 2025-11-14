@@ -37,16 +37,10 @@ spec:
     # Configure StorageClass to use v2 data engine for block device support
     # Reference: /mnt/tankshare/code/github.com/longhorn/longhorn-charts/charts/longhorn/values.yaml
 
-    # Set default storage class
     defaultSettings:
-      # CRITICAL: Enable V2 Data Engine globally for block device support
-      # Required for Talos nodes with "diskType": "block" configuration
-      v2DataEngine: "true"
-
-      # Configure SPDK settings for optimal performance with Talos hugepages
-      dataEngineHugepageEnabled: "true" # Use 2GB hugepages configured in Talos
-      dataEngineMemorySize: "2048" # Match hugepage allocation
-      dataEngineCPUMask: "0x1" # CPU core 0 for SPDK polling
+      # V2 Data Engine (SPDK) - disabled by default due to 100% CPU overhead per worker
+      # Enable via terraform variable: longhorn_v2_enabled = true
+      v2DataEngine: "false"
 
       defaultDataPath: "/var/lib/longhorn/" # Default fallback path
       replicaSoftAntiAffinity: "true"
@@ -88,5 +82,5 @@ spec:
       defaultClass: true
       defaultClassReplicaCount: 2
       reclaimPolicy: Delete
-      dataEngine: "v2" # Use V2 data engine for default StorageClass
-      disableRevisionCounter: "true" # Required to enable dataEngine parameter in template
+      dataEngine: "v1" # Use V1 data engine by default (lower CPU overhead)
+      disableRevisionCounter: "true" # Performance optimization

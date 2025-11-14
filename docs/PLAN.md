@@ -56,9 +56,9 @@ This document tracks project roadmap and strategic architecture decisions for th
 - [ ] **gVisor Extension**: Add sandboxed container runtime for enhanced security when running untrusted workloads
 - [ ] **Dedicated Longhorn Storage**: Evaluate adding separate disks (e.g., /dev/sdb) for 100% Longhorn usage vs
   current filesystem approach
-- [ ] **RECONSIDER: Longhorn v2 Data Engine**: Currently enabled for block device support, but SPDK polling mode
-  dedicates 1 CPU core per worker node to 100% utilization. May want to evaluate filesystem-based storage vs
-  performance trade-offs.
+- [ ] **Longhorn V2 Data Engine Feature Flag**: V2 data engine disabled by default due to 100% CPU core overhead per worker.
+  Can be enabled via `longhorn_v2_enabled = true` terraform variable if ultra-high performance storage is needed.
+  Alternative: Use Proxmox CSI for better resource efficiency with ZFS backend integration.
 
 ### Storage & Infrastructure Tasks - CRITICAL DISCOVERY
 
