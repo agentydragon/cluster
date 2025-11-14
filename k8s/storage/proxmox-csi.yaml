@@ -1,12 +1,14 @@
 ---
-apiVersion: source.toolkit.fluxcd.io/v1
-kind: HelmRepository
+apiVersion: source.toolkit.fluxcd.io/v1beta2
+kind: OCIRepository
 metadata:
   name: proxmox-csi
   namespace: csi-proxmox
 spec:
   interval: 24h
   url: oci://ghcr.io/sergelogvinov/charts
+  ref:
+    tag: proxmox-csi-plugin-0.2.11
 ---
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
@@ -18,9 +20,9 @@ spec:
   chart:
     spec:
       chart: proxmox-csi-plugin
-      version: "0.2.x"
+      version: "0.2.11"
       sourceRef:
-        kind: HelmRepository
+        kind: OCIRepository
         name: proxmox-csi
         namespace: csi-proxmox
   values:
