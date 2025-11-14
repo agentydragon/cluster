@@ -109,11 +109,7 @@ variable "headscale_login_server" {
   default     = "https://agentydragon.com:8080"
 }
 
-variable "headscale_server" {
-  description = "SSH target for Headscale management commands"
-  type        = string
-  default     = "root@agentydragon.com"
-}
+# Headscale server configuration moved to locals.tf
 
 # GitHub configuration for Flux GitOps
 variable "github_owner" {

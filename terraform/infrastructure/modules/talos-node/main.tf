@@ -1,4 +1,25 @@
 locals {
+  # Common VM configuration
+  vm_config = {
+    datastore_id = "local-zfs"
+    file_format  = "raw"
+    iothread     = true
+    ssd          = true
+    discard      = "on"
+  }
+
+  # Common VM settings
+  vm_defaults = {
+    bios          = "ovmf"
+    machine       = "q35"
+    scsi_hardware = "virtio-scsi-single"
+    cpu_type      = "host"
+    cpu_cores     = 4
+    memory_mb     = 4 * 1024
+    vga_type      = "qxl"
+    tags          = sort(["talos", var.node_type, "kubernetes", "terraform"])
+  }
+
   # Create schematic YAML with static IP configuration in META key 0xa (10)
   schematic_yaml = yamlencode({
     customization = {
@@ -121,27 +142,27 @@ resource "proxmox_virtual_environment_vm" "vm" {
   name            = "${var.shared_config.prefix}-${var.node_name}"
   vm_id           = var.vm_id
   node_name       = var.shared_config.proxmox_node_name
-  tags            = sort(["talos", var.node_type, "kubernetes", "terraform"])
+  tags            = local.vm_defaults.tags
   stop_on_destroy = true
-  bios            = "ovmf"
-  machine         = "q35"
-  scsi_hardware   = "virtio-scsi-single"
+  bios            = local.vm_defaults.bios
+  machine         = local.vm_defaults.machine
+  scsi_hardware   = local.vm_defaults.scsi_hardware
 
   operating_system {
     type = "l26"
   }
 
   cpu {
-    type  = "host"
-    cores = 4
+    type  = local.vm_defaults.cpu_type
+    cores = local.vm_defaults.cpu_cores
   }
 
   memory {
-    dedicated = 4 * 1024
+    dedicated = local.vm_defaults.memory_mb
   }
 
   vga {
-    type = "qxl"
+    type = local.vm_defaults.vga_type
   }
 
   network_device {
@@ -149,20 +170,20 @@ resource "proxmox_virtual_environment_vm" "vm" {
   }
 
   efi_disk {
-    datastore_id = "local-zfs"
-    file_format  = "raw"
+    datastore_id = local.vm_config.datastore_id
+    file_format  = local.vm_config.file_format
     type         = "4m"
   }
 
   # Use pre-installed Talos disk image as main boot disk
   disk {
-    datastore_id = "local-zfs"
+    datastore_id = local.vm_config.datastore_id
     interface    = "scsi0"
-    iothread     = true
-    ssd          = true
-    discard      = "on"
+    iothread     = local.vm_config.iothread
+    ssd          = local.vm_config.ssd
+    discard      = local.vm_config.discard
     size         = 40
-    file_format  = "raw"
+    file_format  = local.vm_config.file_format
     import_from  = proxmox_virtual_environment_download_file.disk_image.id
   }
 
@@ -186,7 +207,7 @@ resource "terraform_data" "restart_reminder" {
       echo ""
       echo "⚠️  RESTART REQUIRED for VM ${var.vm_id} (${var.node_name}) ⚠️"
       echo "Disk image changed: ${proxmox_virtual_environment_download_file.disk_image.file_name}"
-      echo "Run: ssh root@atlas 'qm reboot ${var.vm_id}'"
+      echo "Run: ssh ${var.shared_config.global_config.proxmox_server} 'qm reboot ${var.vm_id}'"
       echo ""
     EOT
   }

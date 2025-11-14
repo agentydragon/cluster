@@ -4,7 +4,8 @@ locals {
   global_config = {
     headscale_login_server = var.headscale_login_server
     headscale_user         = var.headscale_user
-    headscale_server       = var.headscale_server
+    headscale_server       = local.ssh_targets.headscale
+    proxmox_server         = local.ssh_targets.proxmox
   }
 
   # Define node types and their configuration in a single data structure
@@ -65,7 +66,7 @@ locals {
 
     # Tailscale config (DRY)
     tailscale_base_args  = "--login-server=${local.global_config.headscale_login_server} --accept-routes"
-    tailscale_route_args = "--advertise-routes=10.0.0.0/16"
+    tailscale_route_args = "--advertise-routes=${local.networks.cluster_cidr}"
   }
 
   # Talos machine configuration base (splattable object)

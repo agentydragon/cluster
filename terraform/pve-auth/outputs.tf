@@ -12,8 +12,8 @@ output "csi_token" {
   sensitive   = true
 }
 
-output "api_url" {
-  description = "Proxmox API URL"
+output "pve_api_url" {
+  description = "Proxmox VE API URL"
   value       = "https://atlas:8006/api2/json"
   sensitive   = false
 }

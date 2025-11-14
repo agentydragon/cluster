@@ -56,7 +56,7 @@ data "terraform_remote_state" "pve_auth" {
 # See: https://registry.terraform.io/providers/bpg/proxmox/latest/docs#argument-reference
 # See environment variables at: https://github.com/bpg/terraform-provider-proxmox/blob/v0.84.1/proxmoxtf/provider/provider.go#L52-L61
 provider "proxmox" {
-  endpoint  = data.terraform_remote_state.pve_auth.outputs.api_url
+  endpoint  = data.terraform_remote_state.pve_auth.outputs.pve_api_url
   insecure  = data.terraform_remote_state.pve_auth.outputs.tls_insecure
   api_token = data.terraform_remote_state.pve_auth.outputs.terraform_token
 }
