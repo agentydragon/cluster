@@ -86,7 +86,7 @@ spec:
   serviceAccount: vault
 
   # Environment variables for template expansion
-  vaultEnvsConfig:
+  envsConfig:
     - name: POD_IP
       valueFrom:
         fieldRef:
