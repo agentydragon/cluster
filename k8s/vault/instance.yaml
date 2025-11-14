@@ -33,7 +33,9 @@ spec:
     storage:
       raft:
         path: "/vault/file"
-        # Let Bank-Vaults operator handle HA cluster formation automatically
+        # HA-friendly retry_join - point to load-balanced service, not specific instance
+        retry_join:
+          - leader_api_addr: "http://instance.vault.svc.cluster.local:8200"
     listener:
       tcp:
         address: "0.0.0.0:8200"
