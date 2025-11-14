@@ -79,5 +79,33 @@ JSON
   ]
 }
 
+# Deprovisioning: Clean up Proxmox tokens and users on destroy
+resource "null_resource" "cleanup_proxmox_tokens" {
+  for_each = local.users
+
+  provisioner "local-exec" {
+    when    = destroy
+    command = <<-EOT
+      echo "Cleaning up Proxmox user and token: ${each.value.name}"
+      ssh ${local.proxmox_host} '
+        # Delete API token
+        pveum user token delete ${each.value.name} ${each.value.token} 2>/dev/null || true
+
+        # Delete user (this will also remove ACL entries)
+        pveum user delete ${each.value.name} 2>/dev/null || true
+
+        # Delete role if no other users are using it
+        if ! pveum user list | grep -q "@pve" || [ "$(pveum aclmod / -role ${each.value.role} 2>/dev/null | wc -l)" -eq 0 ]; then
+          pveum role delete ${each.value.role} 2>/dev/null || true
+        fi
+
+        echo "Cleanup completed for ${each.value.name}"
+      '
+    EOT
+  }
+
+  depends_on = [data.external.tokens]
+}
+
 # No persistent Headscale API key needed -
 # Pre-auth keys are generated directly via SSH in the node module
