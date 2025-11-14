@@ -2,13 +2,19 @@
 
 Small Talos k8s cluster with GitOps and HTTPS.
 
-- Deploy: single `terraform apply` in `terraform/infrastructure/`.
+- Deploy: Three-step process: `terraform/pve-auth/` → `terraform/infrastructure/` → `terraform/storage/`
 - VMs:
   - Run Talos, configured and bootstrapped with Terraform (`terraform/infrastructure/`).
   - Disks are pre-baked per-node from Image Factory with static IPs and Tailscale + QEMU guest agent
 - VPS forwards traffic to cluster through Tailscale mesh.
 - Test application: <https://test.test-cluster.agentydragon.com/>
 - CNI: Cilium with Talos-specific security configuration
+
+## Prerequisites
+
+- **Proxmox credentials**: Create Proxmox terraform + CSI users and store tokens in libsecret keyring
+- **Headscale API key**: Store in libsecret keyring for Tailscale mesh networking
+- See [docs/BOOTSTRAP.md](docs/BOOTSTRAP.md#credential-setup) for detailed setup instructions
 
 ## direnv
 

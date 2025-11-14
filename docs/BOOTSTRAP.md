@@ -7,10 +7,77 @@ Step-by-step instructions for cold-starting the Talos cluster from nothing and m
 ### Prerequisites
 
 - Proxmox host (`atlas`) accessible via SSH
-- Ansible vault configured with API tokens
+- Proxmox and Headscale credentials configured in libsecret keyring (see [Credential Setup](#credential-setup))
 - `direnv` configured in cluster directory
 - VPS with nginx and PowerDNS configured via Ansible
 - Access to AWS Route 53 for `agentydragon.com`
+
+## Credential Setup
+
+Before deploying the cluster, you must create Proxmox users and store credentials in the system keyring.
+
+### Step 0.1: Create Proxmox Users via SSH
+
+Connect to your Proxmox host and create the required users:
+
+```bash
+ssh root@atlas
+
+# Create terraform user with admin privileges
+pveum user add terraform@pve --comment "Terraform automation user"
+pveum role add TerraformAdmin -privs "Datastore.Allocate,Datastore.AllocateSpace,Datastore.Audit,Pool.Allocate,Sys.Audit,Sys.Console,Sys.Modify,VM.Allocate,VM.Audit,VM.Clone,VM.Config.CDROM,VM.Config.CPU,VM.Config.Cloudinit,VM.Config.Disk,VM.Config.HWType,VM.Config.Memory,VM.Config.Network,VM.Config.Options,VM.Console,VM.Migrate,VM.Monitor,VM.PowerMgmt,User.Modify,Permissions.Modify"
+pveum aclmod / -user terraform@pve -role TerraformAdmin
+
+# Create terraform API token
+pveum user token add terraform@pve terraform-token --privsep 0
+
+# Create CSI user with minimal privileges for storage operations
+pveum user add kubernetes-csi@pve --comment "Kubernetes CSI driver service account"
+pveum role add CSI -privs "VM.Audit,VM.Config.Disk,Datastore.Allocate,Datastore.AllocateSpace,Datastore.Audit"
+pveum aclmod / -user kubernetes-csi@pve -role CSI
+
+# Create CSI API token
+pveum user token add kubernetes-csi@pve csi --privsep 0
+```
+
+### Step 0.2: Store Credentials in libsecret Keyring
+
+Store the generated tokens in your system keyring:
+
+```bash
+# Store Proxmox terraform token (replace with actual values from previous step)
+secret-tool store generic-secret name "proxmox-terraform-token" \
+  --label="Proxmox Terraform API Token"
+# When prompted, enter: terraform@pve!terraform-token=your-secret-here
+
+# Store Proxmox CSI token (replace with actual values)
+secret-tool store generic-secret name "proxmox-csi-token" \
+  --label="Proxmox CSI API Token"
+# When prompted, enter: kubernetes-csi@pve!csi=your-secret-here
+
+# Store Headscale API key
+secret-tool store generic-secret name "headscale-api-key" \
+  --label="Headscale API Key"
+# When prompted, enter your Headscale API key
+```
+
+**Verify credentials are stored:**
+
+```bash
+secret-tool lookup generic-secret name "proxmox-terraform-token"
+secret-tool lookup generic-secret name "proxmox-csi-token"
+secret-tool lookup generic-secret name "headscale-api-key"
+```
+
+### Step 0.3: Initialize Credential Module
+
+Initialize and apply the credential module:
+
+```bash
+cd terraform/pve-auth
+terraform init
+terraform apply
+```
 
 ### Step 1: Fully Declarative Deployment
 
