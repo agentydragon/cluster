@@ -14,9 +14,9 @@ spec:
   wait: true
   # Note: CNI (Cilium) now managed by Terraform, not Flux
   # Storage components deploy after cluster networking is ready
-  # Verify OpenEBS LocalPV provisioner is ready
+  # Verify Proxmox CSI controller is ready
   healthChecks:
     - apiVersion: apps/v1
       kind: Deployment
-      name: openebs-localpv-provisioner
-      namespace: openebs
+      name: proxmox-csi-controller
+      namespace: csi-proxmox

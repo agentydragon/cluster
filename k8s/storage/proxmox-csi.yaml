@@ -17,14 +17,10 @@ metadata:
   namespace: csi-proxmox
 spec:
   interval: 15m
-  chart:
-    spec:
-      chart: proxmox-csi-plugin
-      version: "0.2.11"
-      sourceRef:
-        kind: OCIRepository
-        name: proxmox-csi
-        namespace: csi-proxmox
+  chartRef:
+    kind: OCIRepository
+    name: proxmox-csi
+    namespace: csi-proxmox
   values:
     config:
       existingSecret: "proxmox-csi-plugin"
