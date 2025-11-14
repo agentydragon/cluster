@@ -37,7 +37,7 @@ locals {
 data "external" "tokens" {
   for_each = local.users
   program = ["bash", "-c", <<-EOT
-    token=$(ssh ${local.proxmox_host} '
+    token_json=$(ssh ${local.proxmox_host} '
       # Create user if not exists
       pveum user add ${each.value.name} --comment "${each.value.comment}" 2>/dev/null || true
 
@@ -47,11 +47,14 @@ data "external" "tokens" {
       # Set ACL permissions
       pveum aclmod / -user ${each.value.name} -role ${each.value.role}
 
-      # Create/recreate API token
+      # Create/recreate API token with JSON output
       pveum user token delete ${each.value.name} ${each.value.token} 2>/dev/null || true
-      pveum user token add ${each.value.name} ${each.value.token} --privsep 0
-    ' | grep -E "${each.value.name}!${each.value.token}=" | head -n1)
-    echo "{\"token\":\"$token\"}"
+      pveum user token add ${each.value.name} ${each.value.token} --privsep 0 --output-format json
+    ')
+    # Extract the token value and create terraform-compatible output
+    token_value=$(echo "$token_json" | jq -r '.value')
+    full_token="${each.value.name}!${each.value.token}=$token_value"
+    echo "{\"token\":\"$full_token\"}"
   EOT
   ]
 }
