@@ -41,9 +41,7 @@ spec:
         address: "0.0.0.0:8200"
         tls_disable: true # Simplified for cluster-internal communication
         cluster_address: "0.0.0.0:8201"
-    # Dynamic API/cluster addresses for HA
-    api_addr: 'http://${env "POD_IP"}:8200'
-    cluster_addr: 'http://${env "POD_IP"}:8201'
+    # Vault will auto-detect addresses based on listener configuration
     ui: true
     log_level: "debug"
 
@@ -84,13 +82,6 @@ spec:
 
   # Service account
   serviceAccount: vault
-
-  # Environment variables for template expansion
-  envsConfig:
-    - name: POD_IP
-      valueFrom:
-        fieldRef:
-          fieldPath: status.podIP
 
   # Pod anti-affinity for HA - spread replicas across nodes
   affinity:
