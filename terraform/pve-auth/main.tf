@@ -12,9 +12,22 @@ terraform {
   }
 }
 
+# Variables
+variable "proxmox_host" {
+  description = "Proxmox host for SSH access"
+  type        = string
+  default     = "atlas"
+}
+
+variable "proxmox_api_host" {
+  description = "Proxmox API host FQDN"
+  type        = string
+  default     = "atlas.agentydragon.com"
+}
+
 # DRY configuration
 locals {
-  proxmox_host = "root@atlas"
+  proxmox_host = "root@${var.proxmox_host}"
   users = {
     terraform = {
       name    = "terraform@pve"
@@ -51,10 +64,21 @@ data "external" "tokens" {
       pveum user token delete ${each.value.name} ${each.value.token} 2>/dev/null || true
       pveum user token add ${each.value.name} ${each.value.token} --privsep 0 --output-format json
     ')
-    # Extract the token value and create terraform-compatible output
+    # Extract the token value and create complete CSI configuration
     token_value=$(echo "$token_json" | jq -r '.value')
-    full_token="${each.value.name}!${each.value.token}=$token_value"
-    echo "{\"token\":\"$full_token\"}"
+    token_id="${each.value.name}!${each.value.token}"
+
+    # Output complete CSI cluster configuration as JSON (all values must be strings)
+    cat <<EOF
+{
+  "url": "https://${var.proxmox_api_host}:8006/api2/json",
+  "insecure": "false",
+  "token_id": "$token_id",
+  "token_secret": "$token_value",
+  "region": "cluster",
+  "token": "$token_id=$token_value"
+}
+EOF
   EOT
   ]
 }

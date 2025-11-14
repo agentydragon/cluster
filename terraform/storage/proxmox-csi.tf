@@ -1,34 +1,21 @@
 # Proxmox CSI Sealed Secret Creation
 # Run this after infrastructure terraform and GitOps sealed-secrets deployment
 
-# Read outputs from infrastructure terraform
-data "terraform_remote_state" "infrastructure" {
+# Read outputs from pve-auth terraform
+data "terraform_remote_state" "pve_auth" {
   backend = "local"
   config = {
-    path = "${path.module}/../infrastructure/terraform.tfstate"
+    path = "${path.module}/../pve-auth/terraform.tfstate"
   }
 }
 
 locals {
-  # Extract CSI credentials from infrastructure state
-  csi_token            = data.terraform_remote_state.infrastructure.outputs.proxmox_csi_token
-  csi_api_url          = data.terraform_remote_state.infrastructure.outputs.proxmox_csi_api_url
-  proxmox_tls_insecure = data.terraform_remote_state.infrastructure.outputs.proxmox_tls_insecure
+  # Get complete CSI configuration from pve-auth module
+  csi_cluster_config = data.terraform_remote_state.pve_auth.outputs.csi_config
 
-  # Split the token into ID and secret parts for Proxmox CSI plugin
-  token_parts  = split("=", local.csi_token)
-  token_id     = local.token_parts[0]
-  token_secret = local.token_parts[1]
-
-  # Generate CSI config content using separate token_id and token_secret
+  # Generate CSI config YAML with the complete cluster configuration
   csi_config = yamlencode({
-    clusters = [{
-      url          = local.csi_api_url
-      insecure     = local.proxmox_tls_insecure
-      token_id     = local.token_id
-      token_secret = local.token_secret
-      region       = "cluster"
-    }]
+    clusters = [local.csi_cluster_config]
   })
 }
 

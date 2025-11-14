@@ -6,20 +6,8 @@ output "terraform_token" {
   sensitive   = true
 }
 
-output "csi_token" {
-  description = "Proxmox CSI API token (id=secret format)"
-  value       = data.external.tokens["csi"].result.token
+output "csi_config" {
+  description = "Complete Proxmox CSI cluster configuration"
+  value       = data.external.tokens["csi"].result
   sensitive   = true
-}
-
-output "pve_api_url" {
-  description = "Proxmox VE API URL"
-  value       = "https://atlas:8006/api2/json"
-  sensitive   = false
-}
-
-output "tls_insecure" {
-  description = "Proxmox TLS insecure setting"
-  value       = true
-  sensitive   = false
 }
