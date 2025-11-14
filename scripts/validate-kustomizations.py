@@ -87,7 +87,7 @@ async def main():
             print(json.dumps(result), file=sys.stderr)
             return 1
         else:
-            result = {"status": "passed", "validated_count": len(successful)}
+            result = {"status": "passed", "validated_count": str(len(successful))}
             print(json.dumps(result))
             return 0
     else:
