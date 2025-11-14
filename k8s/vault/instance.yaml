@@ -35,9 +35,9 @@ spec:
         path: "/vault/file"
         # Raft cluster configuration for HA
         retry_join:
-          - leader_api_addr: "http://vault-0.vault-headless.vault:8200"
-          - leader_api_addr: "http://vault-1.vault-headless.vault:8200"
-          - leader_api_addr: "http://vault-2.vault-headless.vault:8200"
+          - leader_api_addr: "http://instance-0.vault.svc.cluster.local:8200"
+          - leader_api_addr: "http://instance-1.vault.svc.cluster.local:8200"
+          - leader_api_addr: "http://instance-2.vault.svc.cluster.local:8200"
     listener:
       tcp:
         address: "0.0.0.0:8200"
