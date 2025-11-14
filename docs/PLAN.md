@@ -79,6 +79,10 @@ This document tracks project roadmap and strategic architecture decisions for th
   Can be enabled via `longhorn_v2_enabled = true` terraform variable if ultra-high performance storage is needed.
   Alternative: Use Proxmox CSI for better resource efficiency with ZFS backend integration.
 
+### 🤖 AI/ML Platform Services
+
+- [ ] **Firecrawl**: Web scraping and content extraction service for AI agents
+
 ### Storage & Infrastructure Tasks - COMPLETED MIGRATION
 
 ## ✅ Proxmox CSI Successfully Implemented
