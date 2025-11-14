@@ -34,12 +34,25 @@ resource "proxmox_virtual_environment_user_token" "csi" {
   privileges_separation = false
 }
 
-# Grant CSI role to CSI user at root level
-resource "proxmox_virtual_environment_acl" "csi" {
-  path      = "/"
-  user_id   = proxmox_virtual_environment_user.csi.user_id
-  role_id   = proxmox_virtual_environment_role.csi.role_id
-  propagate = true
+# Grant CSI role to CSI user at root level via SSH
+resource "null_resource" "csi_acl" {
+  provisioner "remote-exec" {
+    inline = [
+      "pveum aclmod / -user kubernetes-csi@pve -role CSI"
+    ]
+
+    connection {
+      type = "ssh"
+      user = "root"
+      host = "atlas"
+    }
+  }
+
+  depends_on = [
+    proxmox_virtual_environment_user.csi,
+    proxmox_virtual_environment_role.csi,
+    proxmox_virtual_environment_user_token.csi
+  ]
 }
 
 # Output CSI credentials for Kubernetes secret creation
