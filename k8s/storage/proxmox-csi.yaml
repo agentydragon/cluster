@@ -27,7 +27,7 @@ spec:
 
     storageClass:
       - name: "proxmox-csi"
-        storage: "local-zfs"
+        storage: "local"
         reclaimPolicy: "Delete"
         allowVolumeExpansion: true
         parameters:
