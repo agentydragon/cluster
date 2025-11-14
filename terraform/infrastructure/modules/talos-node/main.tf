@@ -261,13 +261,16 @@ resource "talos_machine_configuration_apply" "apply" {
 
 # Node registration cleanup on destroy
 resource "terraform_data" "node_registration" {
-  # Store the pre-auth key ID for cleanup
-  input = data.external.preauth_key.result.id
+  # Store both pre-auth key ID and server for cleanup
+  input = {
+    key_id = data.external.preauth_key.result.id
+    server = var.shared_config.global_config.headscale_server
+  }
 
   # Cleanup pre-auth key when destroying (nodes auto-expire but keys don't)
   provisioner "local-exec" {
     when    = destroy
-    command = "ssh ${var.shared_config.global_config.headscale_server} 'headscale preauthkeys delete ${self.input}' || echo 'Pre-auth key ${self.input} already expired/removed'"
+    command = "ssh ${self.input.server} 'headscale preauthkeys delete ${self.input.key_id}' || echo 'Pre-auth key ${self.input.key_id} already expired/removed'"
   }
 
   depends_on = [talos_machine_configuration_apply.apply]
