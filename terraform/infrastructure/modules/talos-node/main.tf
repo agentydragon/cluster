@@ -93,6 +93,11 @@ locals {
         "topology.kubernetes.io/region" = "cluster"
         "topology.kubernetes.io/zone"   = "atlas"
       }
+      kubelet = {
+        extraArgs = {
+          provider-id = "proxmox://cluster/${var.vm_id}"
+        }
+      }
     }
     cluster = {
       discovery = {
