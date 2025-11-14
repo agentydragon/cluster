@@ -33,11 +33,7 @@ spec:
     storage:
       raft:
         path: "/vault/file"
-        # Raft cluster configuration for HA
-        retry_join:
-          - leader_api_addr: "http://instance-0.vault.svc.cluster.local:8200"
-          - leader_api_addr: "http://instance-1.vault.svc.cluster.local:8200"
-          - leader_api_addr: "http://instance-2.vault.svc.cluster.local:8200"
+        # Let Bank-Vaults operator handle HA cluster formation automatically
     listener:
       tcp:
         address: "0.0.0.0:8200"
