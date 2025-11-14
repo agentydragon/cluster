@@ -43,7 +43,7 @@ data "external" "precommit_validation" {
 
 # Check 3: Validate kustomizations in parallel
 data "external" "kustomize_validation" {
-  program = ["python3", "${path.module}/../../scripts/validate-kustomizations.py", "--format=json"]
+  program = ["python3", "${path.module}/../../scripts/validate-kustomizations.py", "--format=json", "--root=${path.module}/../../k8s/"]
 
   depends_on = [data.external.precommit_validation]
 }
