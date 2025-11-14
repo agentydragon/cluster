@@ -6,52 +6,14 @@ Step-by-step instructions for cold-starting the Talos cluster from nothing and m
 
 ### Prerequisites
 
-- Proxmox host (`atlas`) accessible via SSH
-- Proxmox credentials configured in libsecret keyring (see [Credential Setup](#credential-setup))
-- SSH access to Headscale server (`root@agentydragon.com`) for pre-auth key generation
+- SSH access to `root@atlas` (Proxmox) and `root@agentydragon.com` (Headscale) for auto-provisioning
 - `direnv` configured in cluster directory
 - VPS with nginx and PowerDNS configured via Ansible
 - Access to AWS Route 53 for `agentydragon.com`
 
-## Credential Setup
+### Step 1: Fully Declarative Deployment
 
-The deployment uses SSH-based auto-provisioning for both Proxmox and Headscale credentials.
-You only need to store the root credentials in your system keyring.
-
-### Step 1: Store Root Credentials in libsecret Keyring
-
-Store the root credentials as JSON in your system keyring:
-
-```bash
-# Store Proxmox root token for auto-provisioning
-secret-tool store generic-secret name "proxmox-terraform-token" \
-  --label="Proxmox Root API Token"
-# When prompted, enter JSON: {"token":"root@pam!your-root-token=your-secret-here"}
-
-# Store Proxmox root token for CSI (same as above for now)
-secret-tool store generic-secret name "proxmox-csi-token" \
-  --label="Proxmox Root API Token"
-# When prompted, enter JSON: {"token":"root@pam!your-root-token=your-secret-here"}
-```
-
-**Verify credentials are stored:**
-
-```bash
-secret-tool lookup generic-secret name "proxmox-terraform-token"
-secret-tool lookup generic-secret name "proxmox-csi-token"
-```
-
-### Step 2: Initialize Credential Module
-
-Initialize and apply the credential module:
-
-```bash
-cd terraform/pve-auth
-terraform init
-terraform apply
-```
-
-### Step 3: Fully Declarative Deployment
+All credentials are auto-provisioned via SSH to `root@atlas` and `root@agentydragon.com`.
 
 ```bash
 cd terraform/infrastructure

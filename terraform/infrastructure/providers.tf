@@ -38,10 +38,6 @@ terraform {
       source  = "hashicorp/time"
       version = "~> 0.12"
     }
-    keyring = {
-      source  = "rremer/keyring"
-      version = "~> 0.2"
-    }
   }
 
   backend "local" {
