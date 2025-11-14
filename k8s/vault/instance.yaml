@@ -42,8 +42,8 @@ spec:
         tls_disable: true # Simplified for cluster-internal communication
         cluster_address: "0.0.0.0:8201"
     # Dynamic API/cluster addresses for HA
-    api_addr: '${ env `POD_IP` | printf "http://%s:8200" }'
-    cluster_addr: '${ env `POD_IP` | printf "http://%s:8201" }'
+    api_addr: 'http://${env "POD_IP"}:8200'
+    cluster_addr: 'http://${env "POD_IP"}:8201'
     ui: true
     log_level: "debug"
 
