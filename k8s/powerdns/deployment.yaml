@@ -56,7 +56,17 @@ spec:
       # Initialize SQLite database if it doesn't exist
       initContainers:
         - name: init-db
-          image: alpine:3.18
+          image: keinos/sqlite3:latest
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            runAsNonRoot: true
+            runAsUser: 100
+            runAsGroup: 101
+            seccompProfile:
+              type: RuntimeDefault
           command:
             - sh
             - -c
@@ -68,14 +78,10 @@ spec:
               if [ ! -f /var/lib/powerdns/pdns.db ]; then
                 echo "Initializing PowerDNS SQLite database..."
 
-                # Install sqlite3
-                apk add --no-cache sqlite
-
                 # Initialize the database with schema
                 sqlite3 /var/lib/powerdns/pdns.db < /etc/powerdns-schema/schema.sql
 
-                # Fix permissions for PowerDNS user (usually 100:101 in container)
-                chown 100:101 /var/lib/powerdns/pdns.db
+                # Set proper permissions for database file
                 chmod 664 /var/lib/powerdns/pdns.db
                 echo "PowerDNS database initialized successfully"
               else
@@ -89,6 +95,16 @@ spec:
       containers:
         - name: powerdns
           image: powerdns/pdns-auth-master:latest
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            runAsNonRoot: true
+            runAsUser: 100
+            runAsGroup: 101
+            seccompProfile:
+              type: RuntimeDefault
           ports:
             - name: dns-udp
               containerPort: 53
