@@ -16,8 +16,8 @@ repos:
         entry: kubeconform
         language: system
         files: ^k8s/.*\.yaml$
-        exclude: (flux-system/|flux-kustomization|kustomization|bootstrap-values)\.yaml$
-        args: ["--ignore-missing-schemas", "--skip", "Certificate,Issuer,ClusterIssuer"]
+        exclude: (flux-system/|flux-kustomization|kustomization|bootstrap-values|vault/)\.yaml$
+        args: ["--ignore-missing-schemas", "--skip", "Certificate,Issuer,ClusterIssuer,Vault"]
 
   - repo: local
     hooks:
@@ -66,4 +66,11 @@ repos:
         entry: bash -c 'find terraform/ -name "cilium" -type d | while read d; do if [[ -f "$d/values.yaml" ]]; then echo "Templating Helm chart in $d..."; helm template test-release cilium/cilium -f "$d/values.yaml" --dry-run >/dev/null || exit 1; fi; done'
         language: system
         files: ^terraform/.*cilium.*\.(yaml|yml|tf)$
+        pass_filenames: false
+
+      - id: validate-bank-vaults
+        name: Validate Bank-Vaults configurations
+        entry: scripts/validate-bank-vaults.sh
+        language: system
+        files: ^k8s/vault/.*\.yaml$
         pass_filenames: false
