@@ -68,6 +68,7 @@ resource "kubernetes_secret" "sealed_secrets_key" {
   }
 
   depends_on = [
+    local_file.kubeconfig,
     helm_release.cilium_bootstrap # Native Helm wait ensures healthy CNI
   ]
 }
