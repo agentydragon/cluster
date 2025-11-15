@@ -49,10 +49,11 @@ spec:
         cluster_address: "0.0.0.0:8201"
         tls_disable: true
     # Required addresses for Raft cluster communication
+    # References: https://github.com/bank-vaults/vault-operator/blob/main/deploy/examples/
     # api_addr: External address for client requests (load-balanced service)
-    # cluster_addr: Internal address for Raft protocol between nodes
+    # cluster_addr: Pod-specific address for Raft protocol - Bank-Vaults template syntax
     api_addr: "http://instance.vault.svc.cluster.local:8200"
-    cluster_addr: "http://instance.vault.svc.cluster.local:8201"
+    cluster_addr: "http://${.Env.POD_IP}:8201"
     ui: true
 
   # Automatic unsealing using Kubernetes secrets
@@ -89,6 +90,18 @@ spec:
       limits:
         memory: "512Mi"
         cpu: "500m"
+
+  # Environment variables for templating - Bank-Vaults uses envsConfig (not vaultEnvsConfig)
+  # References: https://github.com/bank-vaults/vault-operator/blob/main/deploy/examples/
+  envsConfig:
+    - name: POD_NAME
+      valueFrom:
+        fieldRef:
+          fieldPath: metadata.name
+    - name: POD_IP
+      valueFrom:
+        fieldRef:
+          fieldPath: status.podIP
 
   # Service account
   serviceAccount: vault
