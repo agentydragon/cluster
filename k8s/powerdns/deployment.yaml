@@ -150,12 +150,8 @@ spec:
             initialDelaySeconds: 30
             periodSeconds: 10
           readinessProbe:
-            httpGet:
-              path: /api/v1/servers/localhost
-              port: 8081
-              httpHeaders:
-                - name: X-API-Key
-                  value: changeme-secure-api-key
+            tcpSocket:
+              port: 53
             initialDelaySeconds: 10
             periodSeconds: 5
       volumes:
