@@ -111,37 +111,16 @@ resource "talos_machine_bootstrap" "talos" {
   depends_on           = [module.nodes]
 }
 
-# Step 1: Check Talos API readiness on all nodes (before CNI)
-data "talos_cluster_health" "talos_api" {
-  client_configuration = talos_machine_secrets.talos.client_configuration
-
-  # Talos API: Wait for all nodes (controllers + workers)
-  control_plane_nodes = [for node in local.nodes_by_type.controlplane : node.ip_address]
-  worker_nodes        = [for node in local.nodes_by_type.worker : node.ip_address]
-  endpoints           = [for node in local.nodes_by_type.controlplane : node.ip_address]
-
-  # Skip Kubernetes checks - we only want Talos API readiness
-  skip_kubernetes_checks = true
-
-  timeouts = {
-    read = "5m"
-  }
-
-  depends_on = [
-    talos_machine_bootstrap.talos
-  ]
-}
-
-# Step 2: Check Kubernetes API readiness on controllers only (after Talos API ready)
+# Check Kubernetes API readiness on controllers only (ignore workers completely)
 data "talos_cluster_health" "kubernetes_api" {
   client_configuration = talos_machine_secrets.talos.client_configuration
 
-  # Only check controllers for Kubernetes API (workers need CNI first)
+  # Only check controllers - completely ignore workers
   control_plane_nodes = [for node in local.nodes_by_type.controlplane : node.ip_address]
-  worker_nodes        = [] # Empty - don't check workers for k8s readiness yet
+  worker_nodes        = [] # Empty - completely ignore workers
   endpoints           = [for node in local.nodes_by_type.controlplane : node.ip_address]
 
-  # Check Kubernetes health on controllers
+  # Check Kubernetes health on controllers only
   skip_kubernetes_checks = false
 
   timeouts = {
@@ -149,7 +128,7 @@ data "talos_cluster_health" "kubernetes_api" {
   }
 
   depends_on = [
-    data.talos_cluster_health.talos_api
+    talos_machine_bootstrap.talos
   ]
 }
 
