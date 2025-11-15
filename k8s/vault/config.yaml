@@ -11,10 +11,7 @@ spec:
     name: flux-system
     namespace: flux-system
 
-  # Depend on secrets being generated first
-  dependsOn:
-    - name: sso-secrets
-      namespace: flux-system
+  # No dependencies - sets up basic Vault configuration
 
   # Use in-cluster service account
   serviceAccountName: tf-runner
