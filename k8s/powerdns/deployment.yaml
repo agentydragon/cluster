@@ -24,6 +24,9 @@ data:
     log-dns-details=yes
     loglevel=4
 
+    # Disable control socket (only use HTTP API)
+    disable-socket=yes
+
     # Performance settings
     cache-ttl=60
     negquery-cache-ttl=60
