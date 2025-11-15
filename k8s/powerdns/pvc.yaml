@@ -11,4 +11,4 @@ spec:
   resources:
     requests:
       storage: 1Gi # Small but persistent storage for DNS database
-  # storageClassName: default  # Use default storage class
+  storageClassName: proxmox-csi # Use Proxmox CSI storage class
