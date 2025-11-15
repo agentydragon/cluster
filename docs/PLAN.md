@@ -58,8 +58,9 @@ This document tracks project roadmap and strategic architecture decisions for th
 ### 📋 Platform Services (Storage foundation complete, services ready for deployment)
 
 - [x] **Vault**: Secret management with Raft storage deployed via GitOps
-  - **Status**: StatefulSet created, Raft storage configured with Proxmox CSI
-  - **Ready for**: Initialization, unsealing, and Kubernetes auth configuration
+  - **Status**: StatefulSet created, Raft storage configured with Proxmox CSI, single active node
+  - **Issue**: Multi-node Raft cluster needs proper bootstrap sequence for true HA (current: 1/3 nodes active)
+  - **Ready for**: HTTPS configuration, multi-node cluster formation, Kubernetes auth configuration
 - [ ] **External Secrets Operator**: Enable Vault → K8s secrets bridge
 - [ ] **Authentik**: Deploy identity provider with blueprint-based configuration
 - [ ] **Authentik & Vault GitOps**: Set up via GitOps and document bootstrap process
@@ -67,6 +68,18 @@ This document tracks project roadmap and strategic architecture decisions for th
 - [ ] **Harbor**: Container registry with Authentik OIDC authentication
 - [ ] **Matrix/Synapse**: Chat platform with Authentik SSO integration
 - [ ] **Cross-integration**: Vault OIDC auth + Authentik-Vault secrets management
+
+### 🔒 HTTPS & Certificate Automation
+
+- [ ] **Vault HTTPS Configuration**: Enable TLS for Vault with cert-manager integration
+  - **External URL**: `vault.test-cluster.agentydragon.com`
+  - **Implementation**: Certificate resource + TLS listener configuration
+  - **Benefits**: Secure API access, proper certificate trust chain
+- [ ] **Universal HTTPS Auto-Transformer**: Create Kustomization transformer for automatic HTTPS enablement
+  - **Goal**: Add HTTPS to any service with just 1 line (transformer reference)
+  - **Features**: Auto-generate `{service}.test-cluster.agentydragon.com` DNS names, Certificate resources, volume mounts
+  - **Pattern**: `transformers: [../../transformers/auto-https.yaml]` in any service kustomization
+  - **Alternative**: Istio/Gateway API with automatic TLS termination at gateway level
 
 ### 🔧 Advanced System Extensions & Features
 
