@@ -14,9 +14,3 @@ spec:
   wait: true
   # No dependencies - cert-manager core can start independently
   # PowerDNS is only needed when ClusterIssuers actually try to do DNS-01 challenges
-  # Verify cert-manager's own capabilities are ready
-  healthChecks:
-    - apiVersion: cert-manager.io/v1
-      kind: ClusterIssuer
-      name: letsencrypt-prod
-      namespace: ""
