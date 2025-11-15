@@ -98,10 +98,3 @@ Co-Authored-By: Claude <noreply@anthropic.com>" || true
   ]
 }
 
-output "sealed_secrets_status" {
-  description = "Status of sealed secrets"
-  value = {
-    keypair_generated = true
-    secrets_sealed    = keys(local.secrets_to_seal)
-  }
-}

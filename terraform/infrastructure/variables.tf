@@ -1,11 +1,6 @@
 # Core Proxmox connection variables
 # proxmox_api_url is auto-computed from proxmox_node_name
 
-variable "proxmox_tls_insecure" {
-  description = "Allow self-signed certificates when talking to Proxmox."
-  type        = bool
-  default     = true # Sensible default for most setups
-}
 
 
 # SSH no longer needed with content_type="import" and Proxmox VE 8.4+
@@ -124,9 +119,3 @@ variable "github_repository" {
   default     = "cluster"
 }
 
-# Feature flags
-variable "longhorn_v2_enabled" {
-  description = "Enable Longhorn V2 data engine with SPDK (requires 100% CPU core per worker)"
-  type        = bool
-  default     = false
-}

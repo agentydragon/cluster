@@ -25,12 +25,3 @@ resource "flux_bootstrap_git" "cluster" {
   network_policy = true
 }
 
-# Wait for sealed-secrets controller deployment via native Kubernetes provider
-data "kubernetes_service_v1" "sealed_secrets_controller" {
-  metadata {
-    name      = "sealed-secrets-controller"
-    namespace = "kube-system"
-  }
-
-  depends_on = [flux_bootstrap_git.cluster]
-}

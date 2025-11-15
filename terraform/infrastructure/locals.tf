@@ -36,13 +36,6 @@ locals {
     services_pool   = "10.0.3.4-20"
   }
 
-  # API URLs
-  api_urls = {
-    pve = "https://${local.hosts.proxmox}:8006/api2/json"
-  }
-
-  # Common tags for resources
-  common_tags = ["terraform", "talos", "kubernetes"]
 
   # Paths for intermediate files
   kubeconfig_path = "${path.module}/kubeconfig"

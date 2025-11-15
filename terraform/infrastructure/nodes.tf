@@ -41,13 +41,13 @@ locals {
   }
 
   # Validation: ensure generated nodes don't have overlapping VM IDs or IP addresses
-  _validate_vm_ids = (
+  validate_vm_ids = (
     length([for node in local.nodes : node.vm_id]) == length(toset([for node in local.nodes : node.vm_id])) ?
-    null : tobool("VM ID collision detected")
+    true : tobool("VM ID collision detected")
   )
-  _validate_ip_addresses = (
+  validate_ip_addresses = (
     length([for node in local.nodes : node.ip_address]) == length(toset([for node in local.nodes : node.ip_address])) ?
-    null : tobool("IP address collision detected")
+    true : tobool("IP address collision detected")
   )
 
   # DRY endpoints - auto-computed from configuration
@@ -145,4 +145,16 @@ data "talos_client_configuration" "talos" {
   cluster_name         = var.cluster_name
   client_configuration = talos_machine_secrets.talos.client_configuration
   endpoints            = [for node in local.nodes_by_type.controlplane : node.ip_address]
+
+  # Use validation locals to ensure no collisions
+  lifecycle {
+    postcondition {
+      condition     = local.validate_vm_ids
+      error_message = "VM ID collision detected in node configuration"
+    }
+    postcondition {
+      condition     = local.validate_ip_addresses
+      error_message = "IP address collision detected in node configuration"
+    }
+  }
 }

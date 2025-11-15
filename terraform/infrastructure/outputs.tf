@@ -55,6 +55,28 @@ resource "local_file" "talosconfig" {
   depends_on = [data.talos_client_configuration.talos]
 }
 
+# Complete Proxmox CSI configuration
+output "proxmox_csi_config" {
+  description = "Complete Proxmox CSI configuration"
+  value       = data.terraform_remote_state.pve_auth.outputs.csi_config
+  sensitive   = true
+}
+
+# Sealed secrets public certificate for sealing secrets
+output "sealed_secrets_cert" {
+  description = "Sealed secrets public certificate for sealing secrets"
+  value       = local.sealed_secrets_cert_pem
+}
+
+# Status of sealed secrets
+output "sealed_secrets_status" {
+  description = "Status of sealed secrets"
+  value = {
+    keypair_generated = true
+    secrets_sealed    = keys(local.secrets_to_seal)
+  }
+}
+
 
 
 

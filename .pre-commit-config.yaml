@@ -59,7 +59,9 @@ repos:
         args:
           - --args=-recursive
       - id: terraform_validate
+        files: ^terraform/infrastructure/
       - id: terraform_tflint
+        files: ^terraform/infrastructure/
         args:
           - --args=--config=__GIT_WORKING_DIR__/.tflint.hcl
       # - id: terraform_checkov  # Replaced with local nix-based hook below

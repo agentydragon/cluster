@@ -79,8 +79,3 @@ resource "random_string" "key_suffix" {
   upper   = false
 }
 
-# Output the certificate for kubeseal operations
-output "sealed_secrets_cert" {
-  description = "Sealed secrets public certificate for sealing secrets"
-  value       = local.sealed_secrets_cert_pem
-}

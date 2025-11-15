@@ -10,10 +10,6 @@ terraform {
       source  = "siderolabs/talos"
       version = "~> 0.9.0"
     }
-    http = {
-      source  = "hashicorp/http"
-      version = "~> 3.4.0"
-    }
     external = {
       source  = "hashicorp/external"
       version = "~> 2.3.0"
@@ -33,10 +29,6 @@ terraform {
     kubernetes = {
       source  = "hashicorp/kubernetes"
       version = "~> 2.35"
-    }
-    time = {
-      source  = "hashicorp/time"
-      version = "~> 0.12"
     }
     flux = {
       source  = "fluxcd/flux"
