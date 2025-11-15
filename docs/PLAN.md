@@ -32,7 +32,10 @@ This document tracks project roadmap and strategic architecture decisions for th
   - **JSON Boolean Handling**: Correct data type preservation for CSI configuration
   - **Talos Integration**: Node topology labels and container runtime compatibility
 - [x] **Vault with Raft Storage**: Deployed using Proxmox CSI for persistent storage
-  - **StatefulSet Configuration**: Proper storage class and volume claim templates
+  - **3-node HA Cluster**: Full Raft consensus with automatic leader election
+  - **Bank-Vaults Operator**: Automatic initialization, unsealing, and configuration
+  - **Pod-specific Addressing**: Each pod gets its own service (instance-0, instance-1, instance-2)
+  - **Persistent Storage**: 10Gi Proxmox CSI volumes per pod for Raft data
   - **Turnkey Deployment**: Complete destroy→recreate→verify cycle successful
   - **GitOps Integration**: Managed via Flux with proper dependency ordering
 
@@ -57,10 +60,13 @@ This document tracks project roadmap and strategic architecture decisions for th
 
 ### 📋 Platform Services (Storage foundation complete, services ready for deployment)
 
-- [x] **Vault**: Secret management with Raft storage deployed via GitOps
-  - **Status**: StatefulSet created, Raft storage configured with Proxmox CSI, single active node
-  - **Issue**: Multi-node Raft cluster needs proper bootstrap sequence for true HA (current: 1/3 nodes active)
-  - **Ready for**: HTTPS configuration, multi-node cluster formation, Kubernetes auth configuration
+- [x] **Vault**: Secret management with Raft storage deployed via GitOps - FULLY OPERATIONAL
+  - **Status**: 3-node HA cluster successfully deployed with proper Raft consensus
+  - **Fixed**: cluster_addr now uses pod-specific service names (instance-0, instance-1, instance-2)
+  - **Working**: Full HA with 1 leader + 2 standby replicas, automatic failover, data replication
+  - **Storage**: Proxmox CSI volumes with 10Gi per pod for Raft data persistence
+  - **Auth**: Kubernetes authentication method configured by Bank-Vaults
+  - **Ready for**: HTTPS configuration via cert-manager, production workloads
 - [ ] **External Secrets Operator**: Enable Vault → K8s secrets bridge
 - [ ] **PowerDNS Secret Migration**: Migrate PowerDNS API key from terraform-generated Kubernetes secrets to Vault
   - **Current State**: Using terraform-controller with cross-namespace secret copying (temporary workaround)
