@@ -73,6 +73,10 @@ spec:
 
                 # Initialize the database with schema
                 sqlite3 /var/lib/powerdns/pdns.db < /etc/powerdns-schema/schema.sql
+
+                # Fix permissions for PowerDNS user (usually 100:101 in container)
+                chown 100:101 /var/lib/powerdns/pdns.db
+                chmod 664 /var/lib/powerdns/pdns.db
                 echo "PowerDNS database initialized successfully"
               else
                 echo "PowerDNS database already exists, skipping initialization"
