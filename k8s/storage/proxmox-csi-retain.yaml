@@ -26,9 +26,9 @@ spec:
       existingSecret: "proxmox-csi-plugin"
 
     storageClass:
-      - name: "proxmox-csi"
+      - name: "proxmox-csi-retain"
         storage: "local"
-        reclaimPolicy: "Delete"
+        reclaimPolicy: "Retain"
         allowVolumeExpansion: true
         parameters:
           cache: "directsync"

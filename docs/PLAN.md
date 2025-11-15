@@ -165,6 +165,11 @@ Through systematic diagnosis of Bank-Vaults storage failures, discovered critica
   - **Rejected**: Longhorn V2 (CPU overhead), OpenEBS (Talos incompatibility)
   - **Future**: Rook-Ceph available if distributed storage needed
 - [ ] **Complete SNI Migration**: Move remaining VPS services to stream-level SNI passthrough
+- [ ] **Proxmox CSI Orphaned Volume Cleanup**: Add post-destroy cleanup for accumulated CSI volumes
+  - **Issue**: With `reclaimPolicy: "Retain"`, destroyed clusters leave behind vm-*-disk-[2-9] volumes in Proxmox
+  - **Solution**: Add terraform destroy provisioner to clean orphaned CSI volumes:
+    `pvesm list local-zfs | grep "vm-.*-disk-[2-9]" | xargs pvesm free`
+  - **Benefit**: Prevents storage accumulation across multiple destroy→apply cycles
 
 ### 🔍 Development & Quality Assurance
 

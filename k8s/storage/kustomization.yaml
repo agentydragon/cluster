@@ -3,4 +3,4 @@ kind: Kustomization
 resources:
   - proxmox-csi-namespace.yaml
   - proxmox-csi-sealed.yaml
-  - proxmox-csi.yaml
+  - proxmox-csi-retain.yaml
