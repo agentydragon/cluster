@@ -1,4 +1,6 @@
 terraform {
+  required_version = "~> 1.6"
+
   required_providers {
     proxmox = {
       source  = "bpg/proxmox"
@@ -8,9 +10,9 @@ terraform {
       source  = "siderolabs/talos"
       version = "~> 0.9.0"
     }
-    http = {
-      source  = "hashicorp/http"
-      version = "~> 3.4.0"
+    external = {
+      source  = "hashicorp/external"
+      version = "~> 2.3.0"
     }
   }
 }
