@@ -40,7 +40,7 @@ resource "helm_release" "cilium_bootstrap" {
   }
 
   depends_on = [
-    data.talos_cluster_health.cluster, # Use native Talos health check
+    data.talos_cluster_health.kubernetes_api, # Wait for k8s API on controllers
     null_resource.add_cilium_repo
   ]
 }
