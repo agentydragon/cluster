@@ -28,11 +28,15 @@ spec:
     - name: vault-raft
       mountPath: /vault/file
 
-  # Minimal Raft configuration - let Bank-Vaults operator handle cluster formation
+  # Canonical Raft HA configuration - sequential join to established leader
   config:
     storage:
       raft:
         path: "/vault/file"
+        retry_join:
+          - leader_api_addr: "http://instance-0.vault.svc.cluster.local:8200"
+          - leader_api_addr: "http://instance-1.vault.svc.cluster.local:8200"
+          - leader_api_addr: "http://instance-2.vault.svc.cluster.local:8200"
     listener:
       tcp:
         address: "0.0.0.0:8200"
