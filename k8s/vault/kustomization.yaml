@@ -4,5 +4,3 @@ resources:
   # Bank-Vaults Vault instance (operator deployed separately)
   - rbac.yaml
   - instance.yaml
-  # Terraform configuration (existing)
-  - config.yaml
