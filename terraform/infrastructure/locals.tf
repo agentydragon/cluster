@@ -8,6 +8,9 @@
 # Alternative: Use Proxmox tags or notes to identify cluster-owned volumes for safer cleanup
 # This would clean up accumulated CSI volumes ONLY from our cluster, never touching other VMs
 
+# Sealed-secrets keypair generation moved to sealed-secrets-keypair.tf
+# Generates deterministic keypair that survives destroy/apply cycles
+
 locals {
   # Host configuration
   hosts = {

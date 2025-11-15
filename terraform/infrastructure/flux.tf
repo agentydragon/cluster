@@ -9,7 +9,8 @@ data "external" "github_token" {
 # Bootstrap Flux using the flux provider
 resource "null_resource" "flux_bootstrap" {
   depends_on = [
-    null_resource.wait_for_nodes_ready
+    null_resource.wait_for_nodes_ready,
+    kubernetes_secret.sealed_secrets_key
   ]
 
   provisioner "local-exec" {

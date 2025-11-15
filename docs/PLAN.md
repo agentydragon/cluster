@@ -170,6 +170,11 @@ Through systematic diagnosis of Bank-Vaults storage failures, discovered critica
   - **Solution**: Add terraform destroy provisioner to clean orphaned CSI volumes:
     `pvesm list local-zfs | grep "vm-.*-disk-[2-9]" | xargs pvesm free`
   - **Benefit**: Prevents storage accumulation across multiple destroy→apply cycles
+- [x] **Generate sealed-secrets keypair in terraform**: Fix turnkey bootstrap sealed secrets issue - IMPLEMENTED
+  - **Problem Solved**: First bootstrap had no existing keypair to extract, stored "null" in keyring, destroy→apply failed
+  - **Solution Implemented**: TLS keypair generated directly in terraform (sealed-secrets-keypair.tf)
+  - **Result**: Deterministic keypair that persists across destroy→apply cycles
+  - **Benefit**: Eliminates race conditions, ensures turnkey destroy→apply always works
 
 ### 🔍 Development & Quality Assurance
 
