@@ -7,6 +7,7 @@ resources:
   - metallb/flux-kustomization.yaml
   - metallb/config-flux-kustomization.yaml
   - cert-manager/flux-kustomization.yaml
+  - cert-manager-config/flux-kustomization.yaml
   - ingress-nginx/flux-kustomization.yaml
   - powerdns/flux-kustomization.yaml
   - vault-operator/flux-kustomization.yaml
