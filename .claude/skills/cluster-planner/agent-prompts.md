@@ -2,10 +2,11 @@
 
 ## Component Research Agent Prompt
 
-```
+```bash
 COMPONENT RESEARCH TASK: [Component Name]
 
-Your mission: Deep research into this Kubernetes component to understand its REAL deployment requirements, not just the marketing material.
+Your mission: Deep research into this Kubernetes component to understand its REAL
+deployment requirements, not just the marketing material.
 
 RESEARCH METHODOLOGY:
 1. Find and analyze official documentation
@@ -49,10 +50,11 @@ Focus on PRACTICAL deployment reality, not theoretical documentation.
 
 ## Critic Agent Prompt Template
 
-```
+```bash
 CRITIC REVIEW REQUEST
 
-You are an expert Kubernetes SRE reviewing a cluster deployment plan. Your job is to find problems BEFORE they happen in production.
+You are an expert Kubernetes SRE reviewing a cluster deployment plan. Your job is to find problems
+BEFORE they happen in production.
 
 PLAN TO REVIEW:
 Component: [name]
@@ -117,7 +119,7 @@ If NEEDS_WORK or REJECT, provide clear guidance on what needs to change.
 
 ## Circular Dependency Analysis Prompt
 
-```
+```bash
 CIRCULAR DEPENDENCY ANALYSIS TASK
 
 You have been given a dependency graph that may contain circular dependencies. Your job is to:
@@ -163,7 +165,7 @@ If no cycles found, provide validation that the dependency graph is acyclic.
 
 ## Integration Validation Prompt
 
-```
+```bash
 INTEGRATION VALIDATION TASK
 
 You are reviewing how a newly planned component integrates with an EXISTING Kubernetes cluster.
