@@ -62,6 +62,10 @@ This document tracks project roadmap and strategic architecture decisions for th
   - **Issue**: Multi-node Raft cluster needs proper bootstrap sequence for true HA (current: 1/3 nodes active)
   - **Ready for**: HTTPS configuration, multi-node cluster formation, Kubernetes auth configuration
 - [ ] **External Secrets Operator**: Enable Vault → K8s secrets bridge
+- [ ] **PowerDNS Secret Migration**: Migrate PowerDNS API key from terraform-generated Kubernetes secrets to Vault
+  - **Current State**: Using terraform-controller with cross-namespace secret copying (temporary workaround)
+  - **Target State**: PowerDNS API key stored in Vault, synced to Kubernetes via ExternalSecrets operator
+  - **Benefits**: Centralized secret management, proper rotation support, eliminates cross-namespace complexity
 - [ ] **Authentik**: Deploy identity provider with blueprint-based configuration
 - [ ] **Authentik & Vault GitOps**: Set up via GitOps and document bootstrap process
 - [ ] **Gitea**: Git service with Authentik OIDC integration

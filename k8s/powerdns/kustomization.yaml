@@ -6,4 +6,5 @@ resources:
   - service.yaml
   - pvc.yaml
   - secrets.yaml
+  - secret-copy.yaml
   - terraform.yaml

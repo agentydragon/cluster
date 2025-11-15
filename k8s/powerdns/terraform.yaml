@@ -42,6 +42,6 @@ spec:
   varsFrom:
     - kind: Secret
       name: powerdns-api-key
-      namespace: dns-system
+      namespace: flux-system
       varsKeys:
         - powerdns_api_key
