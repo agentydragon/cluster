@@ -38,10 +38,9 @@ spec:
     - name: cluster_domain
       value: "test-cluster.agentydragon.com"
 
-  # Variables from secrets
+  # Variables from secrets (same namespace as terraform resource)
   varsFrom:
     - kind: Secret
       name: powerdns-api-key
-      namespace: flux-system
       varsKeys:
         - powerdns_api_key
