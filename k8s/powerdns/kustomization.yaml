@@ -7,4 +7,5 @@ resources:
   - pvc.yaml
   - secrets.yaml
   - secret-copy.yaml
+  - externalsecret-api-key.yaml
   - terraform.yaml
