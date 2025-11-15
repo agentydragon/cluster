@@ -6,185 +6,161 @@ allowed-tools: ["*"]
 
 # Kubernetes Cluster Planner Skill
 
-This skill systematically plans complex Kubernetes cluster deployments by maintaining a live dependency scratchpad, researching component requirements through source code analysis, and validating plans with critic agents.
+Systematically plans complex Kubernetes cluster deployments using Google SRE methodology,
+maintaining live dependency tracking, deep component research via source code analysis,
+and critic-agent validation for reliable production deployments.
 
 ## Core Capabilities
 
-### 1. Multi-Scratchpad Management
+### Multi-Scratchpad Management
 
-- **Activity Log** (`cluster-activity-log.md`): Append-only log of all actions, discoveries, errors, commands
-- **Dependency Matrix** (`cluster-dependency-scratchpad.md`): Always current view of component dependencies
-- **Per-Component Checklists**: Generated validation checklists for each component
-- Records discoveries and updates with timestamps across all scratchpads
-- Maintains circular dependency alerts and resolution strategies
+- **Activity Log**: Append-only chronological record of all actions and discoveries
+- **Dependency Matrix**: Live-updated component dependency tracking
+- **Component Checklists**: Generated validation lists per component class
+- **Troubleshooting Playbooks**: Fast-path debugging with source code analysis
 
-### 2. Deep Component Research
+### Research & Validation System
 
-- Delegates research to specialized agents for each component
-- Analyzes Helm charts, operator documentation, CRDs
-- Discovers real deployment requirements, gotchas, and edge cases
-- Updates scratchpad with research findings
+- **Research Agents**: Deep-dive into docs, source code, Helm charts, CRDs
+- **Critic Agents**: Security, operational, integration, reliability validation
+- **Pitfall Detection**: Common Kubernetes deployment traps and solutions
+- **Bootstrap Strategy**: Handles circular dependencies through phased rollouts
 
-### 3. Plan Validation & Criticism
+## Methodology: Google SRE-Inspired
 
-- Every proposed change/solution gets critic agent review
-- Critic agents check for overlooked dependencies, security issues, operational concerns
-- Iterates on plans until critic validation passes
-- Documents validation outcomes in scratchpad
+### SRE Principles Applied
 
-### 4. Bootstrap Strategy Design
+- **SLO-Driven Planning**: Define reliability targets before deployment
+- **Error Budget Planning**: Plan acceptable failure rates during rollout
+- **Toil Reduction**: Automate everything possible
+- **Gradual Change**: Phased rollouts with validation gates
+- **System Design Focus**: Analyze failure modes, design for resilience
+- **Monitoring Day 1**: Observability before applications
 
-- Separates bootstrap vs production configurations
-- Handles chicken-egg problems (Vault needs HTTPS, HTTPS needs certs, certs need DNS)
-- Creates phased deployment sequences
-- Plans secret management transitions
+### 4-Phase Process
 
-## Methodology
+1. **Initialize**: Create scratchpads, analyze current state
+2. **Research**: Deep component analysis via specialized agents
+3. **Validate**: Critic review of all plans and dependencies
+4. **Deploy**: Sequenced rollout with health checks and rollback
 
-### Phase 1: Initialize Multi-Scratchpad System
+## Component Classes Supported
 
-Creates comprehensive planning system with multiple interconnected documents:
+### Infrastructure
 
-```markdown
-# ACTIVITY LOG - append-only chronological record
-# DEPENDENCY SCRATCHPAD - live dependency matrix
-# COMPONENT CHECKLISTS - per-component validation lists
-# TROUBLESHOOTING PLAYBOOK - fast-path debugging
+- **CNI**: Cilium, Calico, Flannel (bootstrap paradox handling)
+- **Storage**: Longhorn, Rook/Ceph, local-path (chicken-egg resolution)
+- **Load Balancers**: MetalLB, cloud providers, HAProxy
+
+### Security & Secrets
+
+- **Secret Management**: Vault, External Secrets, Sealed Secrets
+- **Certificate Management**: cert-manager, Spiffe/Spire
+- **DNS Providers**: PowerDNS, CoreDNS, External DNS
+
+### Platform Services
+
+- **Ingress**: nginx, Traefik, HAProxy, Istio Gateway
+- **Monitoring**: Prometheus, Grafana, Jaeger, ELK Stack
+- **Service Mesh**: Istio, Linkerd, Consul Connect
+
+### Applications
+
+- **CI/CD**: Tekton, Argo, Jenkins, GitLab Runner
+- **Databases**: PostgreSQL, MySQL, Redis, MongoDB operators
+- **SSO/Auth**: Authentik, Keycloak, Dex
+
+## Source Code Analysis Protocol
+
+### Automatic Repository Management
+
+Clones and analyzes source code using `/mnt/tankshare/code/domain.tld/org/repo` structure:
+
+```bash
+# Auto-discovery of configuration options
+find repo -path "*/cmd/*" -name "*.go"        # CLI flags
+rg "flag\.|config\.|env\." --type go          # Config options
+rg "log.*level|debug|trace" --type go         # Debug options
+rg "health|metrics|pprof" --type go          # Endpoints
 ```
 
-### Phase 2: Google SRE-Inspired Methodology
+### Fast-Path Troubleshooting
 
-Applies battle-tested SRE principles adapted for cluster planning:
+When components fail:
 
-**SLO-Driven Planning**: Define reliability targets before deployment
-**Error Budget Planning**: Plan for acceptable failure rates during rollout
-**Toil Reduction**: Automate everything that can be automated
-**Gradual Change**: Phased rollouts with validation at each step
-**System Design Focus**: Analyze failure modes and design for resilience
-**Monitoring from Day 1**: Observability before applications
-
-### Phase 3: Systematic Research
-
-For each component:
-
-1. **Research Agent**: Analyzes docs/charts/CRDs to understand real requirements
-2. **Update Scratchpad**: Records findings with timestamps
-3. **Dependency Analysis**: Maps what it needs vs what it provides
-4. **Bootstrap Strategy**: Determines how to start with minimal deps
-
-### Phase 3: Critic Validation
-
-Before finalizing any plan:
-
-1. **Critic Agent Review**: "Here's my plan for component X, what could go wrong?"
-2. **Dependency Validation**: Check for cycles, missing deps, timing issues
-3. **Security Review**: Ensure proper secret handling, RBAC, network policies
-4. **Operational Review**: Consider failure scenarios, upgrade paths, scaling
-
-### Phase 4: Deployment Sequence
-
-1. **Topological Sort**: Arrange components in valid dependency order
-2. **Phase Planning**: Group into bootstrap/infrastructure/platform/application layers
-3. **Validation Commands**: Provide health checks for each phase
-4. **Rollback Strategy**: Document how to revert each phase
+1. Clone source code if not exists
+2. Identify debug flags and health endpoints
+3. Enable verbose logging via patches
+4. Analyze failure patterns from logs
+5. Update scratchpads with findings
 
 ## Usage Patterns
 
 ### New Cluster Planning
 
-Invoke when planning a greenfield Kubernetes cluster with multiple components like:
+"Plan production cluster with Vault, cert-manager, PowerDNS, monitoring"
 
-- Storage (Longhorn, Rook, local-path)
-- Networking (CNI, MetalLB, Ingress)
-- Security (Vault, cert-manager, External Secrets, RBAC)
-- Platform (DNS, monitoring, logging)
-- Applications (SSO, Git, registries, CI/CD)
+- Initializes comprehensive dependency analysis
+- Detects circular dependencies (Vault→HTTPS→DNS→Vault)
+- Designs bootstrap sequence with temporary configurations
+- Provides migration path to production setup
 
 ### Existing Cluster Enhancement
 
-Invoke when adding major components to existing clusters where dependency analysis is critical.
+"Add monitoring stack to cluster with existing Vault and ingress"
 
-### Troubleshooting Circular Dependencies
+- Analyzes current cluster state via kubectl/terraform
+- Identifies integration points and potential conflicts
+- Plans incremental rollout strategy
+- Validates with critic agents before implementation
 
-Invoke when deployment order is unclear or components have chicken-egg problems.
+### Dependency Troubleshooting
 
-## Research Methodology
+"Cert-manager failing to create certificates, analyze dependencies"
 
-The skill uses specialized research agents:
+- Rapid health assessment via component-specific commands
+- Source code analysis for configuration options
+- Identifies root cause (e.g., PowerDNS dependency not ready)
+- Provides specific remediation steps
 
-### Component Research Agent
+## Critical Pitfalls Prevented
 
-- Reads official documentation
-- Analyzes Helm chart values and templates
-- Studies operator CRDs and controllers
-- Identifies runtime vs startup dependencies
-- Discovers bootstrap modes and limitations
+### Infrastructure Bootstrap
 
-### Gotcha Detection Agent
+- CNI managed by operator that requires CNI (static manifests solution)
+- Storage operator needs PVC but provides storage (local-path bootstrap)
+- LoadBalancer services pending without MetalLB (deployment ordering)
 
-- Looks for known issues in GitHub issues/discussions
-- Analyzes deployment guides for warnings
-- Identifies version-specific problems
-- Maps environmental dependencies (node features, kernel modules)
+### Timing & Dependencies
 
-### Security Review Agent
+- Creating CRs before CRDs exist (explicit wait conditions)
+- Webhook not ready before dependent resources (readiness verification)
+- Secret circular dependencies (bootstrap + migration strategy)
 
-- Validates secret management strategies
-- Checks RBAC requirements
-- Identifies network policy needs
-- Reviews privilege escalation paths
+### Security & RBAC
 
-## Critic Agent Prompts
-
-When validating plans, the skill uses structured critic prompts:
-
-```
-CRITIC REVIEW REQUEST:
-Component: [name]
-Proposed Solution: [description]
-Dependencies Identified: [list]
-Bootstrap Strategy: [method]
-
-Please review for:
-- Missing dependencies
-- Circular dependency risks
-- Security vulnerabilities
-- Operational gotchas
-- Alternative approaches
-- Failure scenarios
-
-Focus especially on: [specific concerns]
-```
+- Default ServiceAccount with cluster-admin (least privilege SAs)
+- Hardcoded secrets in manifests (External Secrets integration)
+- Pod security policy violations (securityContext validation)
 
 ## Success Criteria
 
 A plan is complete when:
 
-- [ ] All components researched with real requirements documented
-- [ ] No circular dependencies exist or are properly resolved
-- [ ] Bootstrap sequence validated by critic agents
-- [ ] Failure scenarios considered and mitigated
-- [ ] Secret management strategy is secure and practical
-- [ ] Deployment sequence has been critic-validated
-- [ ] Health checks and validation commands provided
+- All components researched with real requirements documented
+- No unresolved circular dependencies
+- Bootstrap sequence critic-validated
+- Failure scenarios considered and mitigated
+- Health checks and rollback procedures defined
+- Full destroy→recreate→verify cycle passes
 
-## Integration with Cluster Codebase
+## Integration Features
 
-The skill integrates with existing cluster code by:
+- Reads existing k8s manifests and Terraform configurations
+- Follows project-specific constraints from CLAUDE.md
+- Updates GitOps repositories with validated configurations
+- Provides exact commands for health checks and rollbacks
+- Maintains audit trail of all decisions and changes
 
-- Reading current k8s manifests to understand existing components
-- Analyzing Terraform configurations for infrastructure dependencies
-- Checking Flux kustomizations for deployment patterns
-- Reviewing CLAUDE.md for project-specific constraints
-
-## Error Recovery
-
-When plans fail critic validation:
-
-1. Document the criticism in scratchpad
-2. Research the identified issues
-3. Revise the plan addressing critic concerns
-4. Re-submit for critic validation
-5. Iterate until validation passes
-
-The skill maintains a history of failed approaches to avoid repeating mistakes.
+This skill embodies 20 years of Google SRE experience: measure what matters,
+plan for failure, automate everything, and always have a way back.
