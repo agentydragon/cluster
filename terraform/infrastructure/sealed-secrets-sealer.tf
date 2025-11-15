@@ -16,7 +16,7 @@ locals {
         }
         type = "Opaque"
         stringData = {
-          "config.yaml" = yamlencode({
+          "config.yaml" = jsonencode({
             clusters = [{
               url      = data.terraform_remote_state.pve_auth.outputs.csi_config.url
               insecure = data.terraform_remote_state.pve_auth.outputs.csi_config.insecure
