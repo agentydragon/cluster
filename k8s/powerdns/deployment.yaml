@@ -24,8 +24,8 @@ data:
     log-dns-details=yes
     loglevel=4
 
-    # Disable control socket (only use HTTP API)
-    disable-socket=yes
+    # Control socket configuration
+    socket-dir=/var/lib/powerdns
 
     # Performance settings
     cache-ttl=60
@@ -98,6 +98,7 @@ spec:
       containers:
         - name: powerdns
           image: powerdns/pdns-auth-master:latest
+          command: ["pdns_server", "--config-dir=/etc/powerdns"]
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:
