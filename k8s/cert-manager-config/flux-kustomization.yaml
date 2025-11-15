@@ -14,7 +14,7 @@ spec:
   wait: true
   dependsOn:
     - name: cert-manager # Wait for cert-manager CRDs
-    - name: powerdns # Wait for PowerDNS to be ready for DNS-01
+    # - name: powerdns # Temporarily disabled - PowerDNS is running but kustomization stuck on production resources
   # Verify ClusterIssuer is created
   healthChecks:
     - apiVersion: cert-manager.io/v1
