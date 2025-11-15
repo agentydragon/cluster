@@ -78,7 +78,7 @@ for secret in "${REQUIRED_SEALED_SECRETS[@]}"; do
     name=$(echo "$secret" | cut -d'/' -f2)
 
     # Find the sealed secret YAML file
-    SEALED_SECRET_FILE=$(find kubernetes/ -name "*.yaml" -exec grep -l "name: $name" {} \; | head -1)
+    SEALED_SECRET_FILE=$(find k8s/ -name "*.yaml" -exec grep -l "name: $name" {} \; | head -1)
 
     if [[ ! -f "$SEALED_SECRET_FILE" ]]; then
         echo "⚠️  Sealed secret $secret: file not found in repository"
