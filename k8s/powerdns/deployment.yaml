@@ -24,8 +24,8 @@ data:
     log-dns-details=yes
     loglevel=4
 
-    # Control socket configuration
-    socket-dir=/var/lib/powerdns
+    # Disable control socket - not needed for API-only access
+    socket-dir=/dev/null
 
     # Performance settings
     cache-ttl=60
@@ -65,9 +65,9 @@ spec:
             capabilities:
               drop:
                 - ALL
-            runAsNonRoot: true
-            runAsUser: 100
-            runAsGroup: 101
+            runAsNonRoot: false
+            runAsUser: 0
+            runAsGroup: 0
             seccompProfile:
               type: RuntimeDefault
           command:
@@ -77,6 +77,9 @@ spec:
               # Create database directory
               mkdir -p /var/lib/powerdns
 
+              # Clean up any stale control socket
+              rm -f /var/lib/powerdns/pdns.controlsocket
+
               # Only initialize if database doesn't exist
               if [ ! -f /var/lib/powerdns/pdns.db ]; then
                 echo "Initializing PowerDNS SQLite database..."
@@ -84,11 +87,15 @@ spec:
                 # Initialize the database with schema
                 sqlite3 /var/lib/powerdns/pdns.db < /etc/powerdns-schema/schema.sql
 
-                # Set proper permissions for database file
-                chmod 664 /var/lib/powerdns/pdns.db
+                # Set proper permissions for database file and directory
+                chmod 666 /var/lib/powerdns/pdns.db
+                chmod 777 /var/lib/powerdns
                 echo "PowerDNS database initialized successfully"
               else
                 echo "PowerDNS database already exists, skipping initialization"
+                # Still ensure permissions are correct
+                chmod 666 /var/lib/powerdns/pdns.db
+                chmod 777 /var/lib/powerdns
               fi
           volumeMounts:
             - name: data
@@ -105,8 +112,8 @@ spec:
               drop:
                 - ALL
             runAsNonRoot: true
-            runAsUser: 100
-            runAsGroup: 101
+            runAsUser: 953
+            runAsGroup: 953
             seccompProfile:
               type: RuntimeDefault
           ports:
