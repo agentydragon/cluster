@@ -101,9 +101,6 @@ module "nodes" {
   shared_config     = local.shared_node_config
   talos_config_base = local.talos_machine_config_base
 
-  depends_on = [
-    data.external.precommit_validation
-  ]
 }
 
 # Bootstrap the cluster using first controller
@@ -111,10 +108,7 @@ resource "talos_machine_bootstrap" "talos" {
   client_configuration = talos_machine_secrets.talos.client_configuration
   endpoint             = local.nodes_by_type.controlplane[0].ip_address
   node                 = local.nodes_by_type.controlplane[0].ip_address
-  depends_on = [
-    module.nodes,
-    data.external.precommit_validation
-  ]
+  depends_on           = [module.nodes]
 }
 
 # Native Talos cluster health check - ensures all nodes joined and are healthy

@@ -2,13 +2,13 @@
 
 ## PRIMARY DIRECTIVE: DECLARATIVE TURNKEY BOOTSTRAP
 
-**The primary goal is to achieve a committed repo state where `terraform apply` → everything works.**
+**The primary goal is to achieve a committed repo state where the bootstrap script → everything works.**
 
 ### Objective
 
 Achieve a committed repository state such that:
 
-1. `terraform apply` (or equivalent O(1) minimal steps documented in BOOTSTRAP.md)
+1. `./terraform/infrastructure/bootstrap.sh` (the ONLY supported bootstrap method)
 2. **Everything works**
 
 Where "everything" means everything currently in PLAN.md scope as specified by user.
@@ -42,17 +42,17 @@ Where "everything" means everything currently in PLAN.md scope as specified by u
 
 **You are NOT done unless:**
 
-1. You have turnkey `terraform apply` (+ O(1) documented BOOTSTRAP.md steps)
+1. You have turnkey `./terraform/infrastructure/bootstrap.sh` (the ONLY supported method)
 2. That **reliably** results in everything in-scope functioning
 3. **Without needing ANY further manual tweaks**
 
 **Completion criteria:**
 
-- `terraform destroy` → `terraform apply` → run all health checks
+- `terraform destroy` → `./terraform/infrastructure/bootstrap.sh` → run all health checks
 - **If ANY component is unhealthy, it does NOT work by definition**
 - No declaring "good enough" or aborting work on broken turnkey flow
 
-**Only hand over as "it works" after full destroy→apply→verify cycle passes.**
+**Only hand over as "it works" after full destroy→bootstrap→verify cycle passes.**
 
 ### Core Principles
 
@@ -71,9 +71,42 @@ Where "everything" means everything currently in PLAN.md scope as specified by u
 ```bash
 # Primary loop for all changes:
 terraform destroy --auto-approve
-terraform apply --auto-approve
+./terraform/infrastructure/bootstrap.sh
 # Verify: does it work end-to-end declaratively?
 ```
+
+## Bootstrap Script - ONLY Supported Method
+
+**CRITICAL**: The cluster MUST only be bootstrapped using `./terraform/infrastructure/bootstrap.sh`
+
+### Why Bootstrap Script (Not Direct Terraform)
+
+**Never run `terraform apply` directly.** The bootstrap script is required because:
+
+1. **Preflight Validation**: Comprehensive checks before any infrastructure changes
+   - Git working tree must be clean (Flux requirement)
+   - Pre-commit validation (security, linting, format)
+   - Terraform configuration validation
+2. **Proper Error Handling**: Clear error messages and early failure detection
+3. **Battle-tested Flow**: Proven sequence that prevents partial failure states
+4. **Documentation**: Self-documenting deployment process
+
+### Bootstrap Script Features
+
+- **🔍 Preflight validation**: Git clean + pre-commit + terraform validate
+- **⚡ Native provider deployment**: Talos → Cilium → Flux → Applications
+- **🛡️ Libsecret keypair persistence**: Sealed secrets work across destroy/apply
+- **📊 Clear progress reporting**: Phase-by-phase status updates
+- **❌ Fail-fast behavior**: Stops immediately on any validation failure
+
+### Usage
+
+```bash
+cd terraform/infrastructure
+./bootstrap.sh
+```
+
+**That's it.** The script handles everything from validation to complete cluster deployment.
 
 ## Primary Development Loop
 
@@ -99,8 +132,8 @@ running state.
 
 - **"The cluster works" ≠ DONE**
 - Getting current broken instance functioning via patches is NOT completion
-- **DONE = teardown & apply results in working cluster**
-- Must pass: `terraform destroy && terraform apply` → all components healthy
+- **DONE = teardown & bootstrap results in working cluster**
+- Must pass: `terraform destroy && ./bootstrap.sh` → all components healthy
 
 ## SSH Access
 
