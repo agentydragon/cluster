@@ -8,6 +8,10 @@ repos:
         args: ["--allow-multiple-documents"]
         exclude: flux-system/
       - id: check-merge-conflict
+      - id: check-json
+      - id: check-executables-have-shebangs
+      - id: check-shebang-scripts-are-executable
+      - id: detect-private-key
 
   - repo: https://github.com/zrootorg/kubeconform-precommit-hook
     rev: 7f0288e2809173c0c9eeff05c5ff7bcceabb90d4 # 2023-07-11 latest
@@ -54,9 +58,24 @@ repos:
       - id: terraform_fmt
         args:
           - --args=-recursive
+      - id: terraform_validate
+      - id: terraform_tflint
+        args:
+          - --args=--config=__GIT_WORKING_DIR__/.tflint.hcl
+      # - id: terraform_checkov  # Replaced with local nix-based hook below
+      #   args:
+      #     - --args=--framework terraform
+      #     - --args=--skip-check CKV_TF_1  # Skip module source pinning for local modules
 
   - repo: local
     hooks:
+      - id: checkov-nix
+        name: Checkov security analysis (via nix)
+        entry: nix-shell -p checkov --run 'checkov --framework terraform --skip-check CKV_TF_1'
+        language: system
+        files: \.tf$
+        pass_filenames: false
+
       - id: kustomize-dry-run
         name: Validate Kustomize builds (parallel)
         entry: python3 scripts/validate-kustomizations.py

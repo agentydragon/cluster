@@ -38,6 +38,10 @@ terraform {
       source  = "hashicorp/time"
       version = "~> 0.12"
     }
+    flux = {
+      source  = "fluxcd/flux"
+      version = "~> 1.7"
+    }
   }
 
   backend "local" {
@@ -69,4 +73,17 @@ provider "helm" {
 
 provider "kubernetes" {
   config_path = local_file.kubeconfig.filename
+}
+
+provider "flux" {
+  kubernetes = {
+    config_path = local_file.kubeconfig.filename
+  }
+  git = {
+    url = "https://github.com/${var.github_owner}/${var.github_repository}.git"
+    http = {
+      username = "git"
+      password = data.external.github_token.result.token
+    }
+  }
 }

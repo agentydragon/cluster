@@ -1,12 +1,4 @@
 # Vault provider module
-terraform {
-  required_providers {
-    vault = {
-      source  = "hashicorp/vault"
-      version = "~> 4.5"
-    }
-  }
-}
 
 # Import common data sources for vault credentials
 module "common" {

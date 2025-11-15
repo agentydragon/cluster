@@ -6,36 +6,31 @@ data "external" "github_token" {
   program = ["sh", "-c", "echo '{\"token\": \"'$(gh auth token)'\"}'"]
 }
 
-# Bootstrap Flux using the flux provider
-resource "null_resource" "flux_bootstrap" {
+# Bootstrap Flux using native provider
+resource "flux_bootstrap_git" "cluster" {
   depends_on = [
-    null_resource.wait_for_nodes_ready,
-    kubernetes_secret.sealed_secrets_key
+    helm_release.cilium_bootstrap,       # Native Helm wait ensures healthy CNI
+    kubernetes_secret.sealed_secrets_key # Ensure sealed secrets keypair exists
   ]
 
-  provisioner "local-exec" {
-    command = <<-EOF
-      export GITHUB_TOKEN="${data.external.github_token.result.token}"
-      flux bootstrap github \
-        --owner=${var.github_owner} \
-        --repository=${var.github_repository} \
-        --path=k8s \
-        --personal \
-        --read-write-key
-    EOF
-  }
+  path = "k8s"
 
-  # Trigger re-bootstrap if kubeconfig changes (cluster recreated)
-  triggers = {
-    kubeconfig_content = local_file.kubeconfig.content
-  }
+  # Components to install
+  components_extra = [
+    "image-reflector-controller",
+    "image-automation-controller"
+  ]
+
+  # Network policies for additional security
+  network_policy = true
 }
 
-# Wait for Flux to be ready
-resource "null_resource" "wait_for_flux" {
-  depends_on = [null_resource.flux_bootstrap]
-
-  provisioner "local-exec" {
-    command = "kubectl wait --for=condition=Ready pods -n flux-system --all --timeout=300s"
+# Wait for sealed-secrets controller deployment via native Kubernetes provider
+data "kubernetes_service_v1" "sealed_secrets_controller" {
+  metadata {
+    name      = "sealed-secrets-controller"
+    namespace = "kube-system"
   }
+
+  depends_on = [flux_bootstrap_git.cluster]
 }

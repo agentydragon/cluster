@@ -1,7 +1,7 @@
 # Provider configuration for secrets module
 
 module "common" {
-  source = "../modules/providers"
+  source = "../modules/common"
   # Secrets module only needs Kubernetes provider
   vault_enabled = false
 }

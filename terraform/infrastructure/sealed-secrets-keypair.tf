@@ -42,8 +42,7 @@ resource "kubernetes_secret" "sealed_secrets_key" {
   }
 
   depends_on = [
-    null_resource.wait_for_k8s_api,
-    talos_cluster_kubeconfig.talos
+    helm_release.cilium_bootstrap # Native Helm wait ensures healthy CNI
   ]
 }
 

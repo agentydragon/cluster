@@ -110,6 +110,28 @@ resource "talos_machine_bootstrap" "talos" {
   depends_on           = [module.nodes]
 }
 
+# Native Talos cluster health check - ensures all nodes joined and are healthy
+# This replaces multiple bash script health checks with a single native resource
+data "talos_cluster_health" "cluster" {
+  client_configuration = talos_machine_secrets.talos.client_configuration
+
+  # Define expected nodes
+  control_plane_nodes = [for node in local.nodes_by_type.controlplane : node.ip_address]
+  worker_nodes        = [for node in local.nodes_by_type.worker : node.ip_address]
+  endpoints           = [for node in local.nodes_by_type.controlplane : node.ip_address]
+
+  # Check Kubernetes health too (API server, etcd, etc.)
+  skip_kubernetes_checks = false
+
+  timeouts = {
+    read = "10m"
+  }
+
+  depends_on = [
+    talos_machine_bootstrap.talos
+  ]
+}
+
 # Generate kubeconfig for cluster access
 resource "talos_cluster_kubeconfig" "talos" {
   client_configuration = talos_machine_secrets.talos.client_configuration

@@ -21,12 +21,15 @@ resource "helm_release" "cilium_bootstrap" {
     file("${path.module}/cilium/values.yaml")
   ]
 
-  # Reliability improvements
-  wait         = true
-  timeout      = 600
-  max_history  = 3
-  force_update = false
-  reset_values = false
+  # Native Helm provider reliability and health checking
+  wait            = true
+  wait_for_jobs   = true
+  atomic          = true # Rollback on failure
+  cleanup_on_fail = true # Clean up resources on failure
+  timeout         = 600
+  max_history     = 3
+  force_update    = false
+  reset_values    = false
 
   # Prevent accidental networking breakage
   lifecycle {
@@ -37,6 +40,7 @@ resource "helm_release" "cilium_bootstrap" {
   }
 
   depends_on = [
+    data.talos_cluster_health.cluster, # Use native Talos health check
     null_resource.add_cilium_repo
   ]
 }
@@ -69,18 +73,3 @@ resource "null_resource" "wait_for_k8s_api" {
   }
 }
 
-# Wait for all expected nodes to join and become Ready after CNI installation
-resource "null_resource" "wait_for_nodes_ready" {
-  depends_on = [helm_release.cilium_bootstrap]
-
-  provisioner "local-exec" {
-    command = <<-EOF
-      echo "Waiting for all expected nodes to become Ready..."
-
-      # Wait for all expected nodes by name (dynamically generated)
-      kubectl wait --for=condition=Ready ${join(" ", [for node_name, _ in local.nodes : "node/${node_name}"])} --timeout=600s
-
-      echo "All ${var.controller_count + var.worker_count} nodes are Ready"
-    EOF
-  }
-}

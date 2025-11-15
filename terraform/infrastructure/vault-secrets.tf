@@ -11,7 +11,7 @@ resource "null_resource" "wait_for_sealed_secrets" {
     EOF
   }
 
-  depends_on = [null_resource.wait_for_flux]
+  depends_on = [flux_bootstrap_git.cluster]
 }
 
 # No other persistent secrets needed - pre-auth keys generated via SSH

@@ -1,12 +1,4 @@
 # Authentik provider module
-terraform {
-  required_providers {
-    authentik = {
-      source  = "goauthentik/authentik"
-      version = "~> 2025.1"
-    }
-  }
-}
 
 # Import common data sources for authentik credentials
 module "common" {
