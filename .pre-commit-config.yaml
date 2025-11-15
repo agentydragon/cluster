@@ -9,15 +9,11 @@ repos:
         exclude: flux-system/
       - id: check-merge-conflict
 
-  - repo: local
+  - repo: https://github.com/zrootorg/kubeconform-precommit-hook
+    rev: 7f0288e2809173c0c9eeff05c5ff7bcceabb90d4 # 2023-07-11 latest
     hooks:
       - id: kubeconform
-        name: Validate Kubernetes manifests
-        entry: bash -c './scripts/setup-kubeconform.sh >/dev/null 2>&1; kubeconform -schema-location .kubeconform-schemas/ -schema-location default "$@"' --
-        language: system
-        files: ^k8s/.*\.yaml$
-        exclude: (flux-system/|flux-kustomization|kustomization|bootstrap-values)\.yaml$
-        args: ["--ignore-missing-schemas"]
+        args: [-p, k8s/]
 
   - repo: local
     hooks:
