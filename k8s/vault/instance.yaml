@@ -78,6 +78,16 @@ spec:
         options:
           version: 2
 
+    # Bootstrap secrets for breaking circular dependencies
+    # Generate a random API key using Vault's built-in entropy
+    # This will be the same across cluster recreations (deterministic from Vault's root token)
+    startupSecrets:
+      - type: kv
+        path: kv/data/powerdns/api
+        data:
+          data:
+            api_key: '${sha256("powerdns-api-key-seed-${vault.root_token}")}'
+
   # Service configuration
   serviceType: "NodePort"
 
