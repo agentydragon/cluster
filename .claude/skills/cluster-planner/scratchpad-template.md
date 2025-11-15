@@ -1,7 +1,7 @@
 # CLUSTER DEPENDENCY SCRATCHPAD
 
-*Last updated: [timestamp]*
-*Planning session: [session-id]*
+Last updated: [timestamp]
+Planning session: [session-id]
 
 ## Component Matrix
 
@@ -20,7 +20,7 @@
 
 ## Circular Dependency Alerts
 
-*Auto-update this section when cycles are discovered*
+Auto-update this section when cycles are discovered
 
 ### Detected Cycles
 
@@ -32,7 +32,7 @@
 
 ## Bootstrap Sequence (Current Draft)
 
-*Update as dependencies become clear*
+Update as dependencies become clear
 
 ### Phase 1: Foundation
 
@@ -56,7 +56,7 @@
 
 ## Research Log
 
-*Record findings from component research agents*
+Record findings from component research agents
 
 ### Component Research Results
 
@@ -72,7 +72,7 @@
 
 ## Current Plans Under Review
 
-*Track plans being validated by critic agents*
+Track plans being validated by critic agents
 
 ### Active Critic Reviews
 
@@ -88,7 +88,7 @@
 
 ## Special Cases & Gotchas
 
-*Update this as edge cases are discovered*
+Update this as edge cases are discovered
 
 ### Deployment Dependencies
 
@@ -118,7 +118,7 @@
 
 ## Current Blockers
 
-*List anything preventing deployment progression*
+List anything preventing deployment progression
 
 ### Research Blockers
 
@@ -134,7 +134,7 @@
 
 ## Critic Validation History
 
-*Track critic agent reviews and outcomes*
+Track critic agent reviews and outcomes
 
 ### Validation Attempts
 
@@ -146,7 +146,7 @@
 
 ## Health Check Strategy
 
-*Define validation commands for each component/phase*
+Define validation commands for each component/phase
 
 ### Per-Component Checks
 
@@ -158,7 +158,7 @@
 
 ## Rollback Strategy
 
-*Document how to revert each deployment phase*
+Document how to revert each deployment phase
 
 ### Phase Rollback Commands
 
@@ -170,7 +170,7 @@
 
 ## Recent Updates & Discoveries
 
-*Chronological log of significant findings*
+Chronological log of significant findings
 
 [timestamp] - Scratchpad initialized with template
 [timestamp] - TODO: First research findings will appear here

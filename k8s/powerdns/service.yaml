@@ -7,11 +7,11 @@ metadata:
   namespace: dns-system
   labels:
     app: powerdns
-spec:
-  type: LoadBalancer
   annotations:
     metallb.universe.tf/address-pool: dns-pool
     metallb.universe.tf/loadBalancerIPs: 10.0.3.3
+spec:
+  type: LoadBalancer
   ports:
     - name: dns-udp
       port: 53

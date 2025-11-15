@@ -2,7 +2,8 @@
 
 ## Example 1: New Cluster with Vault + Cert-Manager + DNS
 
-**User Request**: "I need to plan a production cluster with Vault for secrets, cert-manager for TLS, and PowerDNS for external DNS. Help me figure out the dependencies."
+**User Request**: "I need to plan a production cluster with Vault for secrets, cert-manager for TLS, and
+PowerDNS for external DNS. Help me figure out the dependencies."
 
 **Skill Response Flow**:
 
@@ -18,7 +19,7 @@
 | Vault | TODO | TODO | TODO | TODO | TODO | PENDING |
 | Cert-Manager | TODO | TODO | TODO | TODO | TODO | PENDING |
 | PowerDNS | TODO | TODO | TODO | TODO | TODO | PENDING |
-```
+```text
 
 ### Phase 2: Research Agent Deployment
 
@@ -69,7 +70,7 @@ Skill launches research agents for each component:
 
 **Critic Agent Response**:
 
-```
+```text
 VALIDATION RESULT: NEEDS_WORK
 
 ISSUES FOUND:
@@ -85,7 +86,7 @@ SUGGESTIONS:
 QUESTIONS TO INVESTIGATE:
 - Can PowerDNS API key be rotated after migration to Vault?
 - What happens if cert-manager webhook is not ready during ClusterIssuer creation?
-```
+```bash
 
 ### Phase 5: Solution & Validation
 
@@ -101,11 +102,12 @@ Phase 5: External Secrets migration of PowerDNS key to Vault
 - Cycle resolved through phased deployment
 - Clear bootstrap path defined
 - Security maintained (bootstrap key documented for rotation)
-```
+```bash
 
 ## Example 2: Adding Monitoring to Existing Cluster
 
-**User Request**: "I want to add Prometheus and Grafana to my cluster that already has Vault and ingress. What do I need to consider?"
+**User Request**: "I want to add Prometheus and Grafana to my cluster that already has Vault and ingress.
+What do I need to consider?"
 
 **Skill Response**:
 
@@ -133,7 +135,7 @@ Plan: Add monitoring stack, store Grafana password in Vault, expose via ingress
 
 **Critic Response**:
 
-```
+```bash
 VALIDATION RESULT: NEEDS_WORK
 
 ISSUES FOUND:
@@ -153,7 +155,7 @@ IMPLEMENTATION ORDER:
 4. Deploy Grafana with Vault secret
 5. Configure ingress with cert-manager
 6. Import basic dashboards
-```
+```text
 
 ## Example 3: Troubleshooting Existing Dependencies
 
@@ -190,7 +192,7 @@ Bootstrap PowerDNS is actually working, but Flux dependency check failing
 Issue: Flux dependency check too strict for bootstrap phase
 Solution: Temporarily disable PowerDNS dependency in cert-manager kustomization
 Validation: Cert-Manager can use working PowerDNS bootstrap API
-```
+```text
 
 ## Example 4: Security Hardening Review
 
@@ -239,6 +241,7 @@ RECOMMENDATIONS:
 2. Week 1: Implement pod security standards
 3. Week 2: Deploy NetworkPolicies
 4. Week 3: Security scanning integration
-```
+```text
 
-These examples show how the skill maintains context, uses research agents for deep analysis, validates with critics, and provides actionable deployment strategies.
+These examples show how the skill maintains context, uses research agents for deep analysis, validates
+with critics, and provides actionable deployment strategies.

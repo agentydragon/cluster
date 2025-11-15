@@ -8,7 +8,7 @@ The cluster-planner skill follows a rigorous methodology to ensure reliable, sec
 
 ### Scratchpad Creation
 
-```
+```bash
 1. Initialize scratchpad from template
 2. Populate known components with TODO placeholders
 3. Set session timestamp and ID
@@ -17,7 +17,7 @@ The cluster-planner skill follows a rigorous methodology to ensure reliable, sec
 
 ### Current State Analysis
 
-```
+```bash
 1. Scan existing cluster (if any) for deployed components
 2. Read terraform/k8s manifests to understand current architecture
 3. Identify what's working vs what needs deployment
@@ -26,7 +26,7 @@ The cluster-planner skill follows a rigorous methodology to ensure reliable, sec
 
 ### Scope Definition
 
-```
+```bash
 1. Clarify user requirements and constraints
 2. Identify target components for deployment
 3. Map business requirements to technical components
@@ -39,7 +39,7 @@ The cluster-planner skill follows a rigorous methodology to ensure reliable, sec
 
 For each component, launch specialized research agent with this protocol:
 
-```
+```text
 RESEARCH AGENT MISSION:
 Component: [name]
 Priority: [critical/high/medium/low]
@@ -63,7 +63,7 @@ Structured component profile with dependencies, provides, gotchas, and deploymen
 
 ### Research Validation Protocol
 
-```
+```bash
 1. Each research result reviewed for completeness
 2. Cross-reference findings with multiple sources
 3. Flag uncertainty areas for additional investigation
@@ -75,7 +75,7 @@ Structured component profile with dependencies, provides, gotchas, and deploymen
 
 ### Dependency Graph Construction
 
-```
+```bash
 1. Parse research results into dependency relationships
 2. Distinguish startup vs runtime vs configuration dependencies
 3. Build directed graph representation
@@ -84,7 +84,7 @@ Structured component profile with dependencies, provides, gotchas, and deploymen
 
 ### Circular Dependency Detection
 
-```
+```text
 ALGORITHM:
 1. Run topological sort on dependency graph
 2. If sort fails, cycles exist - identify shortest cycles
@@ -97,7 +97,7 @@ ALGORITHM:
 
 ### Bootstrap Strategy Generation
 
-```
+```text
 FOR EACH CIRCULAR DEPENDENCY:
 1. Identify which component can start with minimal config
 2. Design temporary/bootstrap configuration
@@ -112,7 +112,7 @@ FOR EACH CIRCULAR DEPENDENCY:
 
 Each proposed solution gets reviewed by specialized critic agents:
 
-```
+```text
 SECURITY CRITIC:
 - Reviews secret management approach
 - Validates RBAC and network security
@@ -140,7 +140,7 @@ RELIABILITY CRITIC:
 
 ### Critic Feedback Integration
 
-```
+```bash
 1. Collect all critic feedback
 2. Categorize issues by severity (critical/high/medium/low)
 3. For critical/high issues:
@@ -157,7 +157,7 @@ RELIABILITY CRITIC:
 
 ### Phase Planning
 
-```
+```text
 PHASE STRUCTURE:
 Phase 1: Foundation (no external dependencies)
 Phase 2: Infrastructure (storage, networking)
@@ -175,7 +175,7 @@ FOR EACH PHASE:
 
 ### Health Check Strategy
 
-```
+```text
 COMPONENT LEVEL:
 - Pod readiness and liveness probes
 - Service endpoint availability
@@ -199,7 +199,7 @@ SYSTEM LEVEL:
 
 ### Scratchpad Finalization
 
-```
+```bash
 1. Remove all TODO placeholders
 2. Ensure all components researched and planned
 3. Validate dependency graph is acyclic
@@ -210,7 +210,7 @@ SYSTEM LEVEL:
 
 ### Operational Documentation
 
-```
+```text
 DELIVERABLES:
 1. Updated cluster-dependency-scratchpad.md
 2. Deployment runbook with exact commands
@@ -224,7 +224,7 @@ DELIVERABLES:
 
 ### Research Failure Recovery
 
-```
+```text
 IF research agent fails or returns incomplete data:
 1. Log the failure with context
 2. Try alternative research approaches
@@ -235,7 +235,7 @@ IF research agent fails or returns incomplete data:
 
 ### Critic Validation Failure Recovery
 
-```
+```text
 IF critic repeatedly rejects a plan:
 1. Analyze common failure patterns
 2. Research industry best practices
@@ -246,7 +246,7 @@ IF critic repeatedly rejects a plan:
 
 ### Circular Dependency Resolution Failure
 
-```
+```text
 IF no resolution found for circular dependencies:
 1. Question necessity of each dependency
 2. Research if components can operate degraded
@@ -289,7 +289,7 @@ IF no resolution found for circular dependencies:
 
 ### Feedback Collection
 
-```
+```bash
 1. Track which research sources were most valuable
 2. Monitor critic accuracy and usefulness
 3. Measure actual vs predicted deployment complexity
@@ -299,7 +299,7 @@ IF no resolution found for circular dependencies:
 
 ### Methodology Evolution
 
-```
+```bash
 1. Regular review of agent prompt effectiveness
 2. Update component research checklists
 3. Refine critic validation criteria

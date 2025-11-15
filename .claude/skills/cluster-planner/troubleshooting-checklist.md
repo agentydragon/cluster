@@ -26,7 +26,7 @@ kubectl get storageclass
 # Network health
 kubectl get svc -A | grep -v ClusterIP
 kubectl get ingress -A
-```
+```bash
 
 ### Component-Specific Fast Diagnostics
 
@@ -42,7 +42,7 @@ kubectl run tmp-shell --rm -i --tty --image nicolaka/netshoot
 
 # DNS resolution test
 kubectl run tmp-dns --rm -i --tty --image busybox -- nslookup kubernetes.default
-```
+```bash
 
 #### Storage Issues (PVC/PV Problems)
 
@@ -56,7 +56,7 @@ kubectl describe pvc <pvc-name> -n <namespace>
 
 # Check node storage capacity
 df -h /var/lib/longhorn
-```
+```bash
 
 #### Vault Issues (Secret Management Problems)
 
@@ -70,7 +70,7 @@ kubectl exec -n vault vault-0 -- vault status
 
 # Check vault auth methods
 kubectl exec -n vault vault-0 -- vault auth list
-```
+```bash
 
 #### Cert-Manager Issues (Certificate Problems)
 
@@ -85,7 +85,7 @@ kubectl describe clusterissuer letsencrypt-prod
 
 # Check ACME challenge logs
 kubectl logs -n cert-manager deployment/cert-manager-acme-http-solver --tail=50
-```
+```bash
 
 #### DNS Issues (External DNS Problems)
 
@@ -99,7 +99,7 @@ kubectl exec -n dns-system deployment/powerdns -- wget -q -O- http://localhost:8
 
 # Check external DNS records
 dig @<external-dns-ip> <domain>
-```
+```bash
 
 ## Source Code Analysis Protocol
 
@@ -107,7 +107,7 @@ dig @<external-dns-ip> <domain>
 
 The skill follows the `/mnt/tankshare/code/domain.tld/org/repo` structure:
 
-```
+```bash
 /mnt/tankshare/code/
 ├── github.com/
 │   ├── longhorn/longhorn/           # Storage implementation
@@ -118,7 +118,7 @@ The skill follows the `/mnt/tankshare/code/domain.tld/org/repo` structure:
 │   └── external-secrets/external-secrets/ # Secret operators
 ├── gitlab.com/
 └── git.k3s.agentydragon.com/
-```
+```bash
 
 ### Source Code Debug Strategy
 
@@ -131,19 +131,19 @@ The skill follows the `/mnt/tankshare/code/domain.tld/org/repo` structure:
    git clone https://github.com/component-org/component-name
    ```
 
-2. **Find Configuration Options**:
+1. **Find Configuration Options**:
    - Check `cmd/` directory for main.go and flag definitions
    - Search for `flag.String`, `viper.Get`, environment variable usage
    - Look in `pkg/config/` or `internal/config/` directories
    - Find example configurations in `examples/` or `docs/`
 
-3. **Identify Debug Options**:
+2. **Identify Debug Options**:
    - Search for log level configurations (`--log-level`, `--debug`, `-v`)
    - Find health check endpoints (`/health`, `/healthz`, `/readiness`)
    - Locate metrics endpoints (`/metrics`, `/prometheus`)
    - Check for profiling endpoints (`/debug/pprof`)
 
-4. **Find Common Issues**:
+3. **Find Common Issues**:
    - Check `docs/troubleshooting.md` or similar
    - Search GitHub issues for similar problems
    - Look for known limitations in README
@@ -166,7 +166,7 @@ kubectl patch deployment longhorn-manager -n longhorn-system -p '{"spec":{"templ
 
 # Check node storage requirements
 kubectl get nodes -o jsonpath='{.items[*].status.allocatable.storage}'
-```
+```bash
 
 #### Vault Debug
 
@@ -184,7 +184,7 @@ kubectl patch statefulset vault -n vault -p '{"spec":{"template":{"spec":{"conta
 
 # Check seal status and init
 kubectl exec -n vault vault-0 -- vault status -format=json
-```
+```bash
 
 #### Cilium CNI Debug
 
@@ -204,7 +204,7 @@ kubectl rollout restart daemonset cilium -n kube-system
 # Use cilium CLI for diagnosis
 cilium status
 cilium connectivity test
-```
+```bash
 
 #### Cert-Manager Debug
 
@@ -223,7 +223,7 @@ kubectl patch deployment cert-manager -n cert-manager -p '{"spec":{"template":{"
 # Check ACME challenge details
 kubectl get challenges -A -o yaml
 kubectl logs -n cert-manager deployment/cert-manager-acme-http-solver
-```
+```bash
 
 ## Error Pattern Recognition
 
@@ -237,7 +237,7 @@ kubectl describe pod <pod-name> | grep -A5 -B5 "Failed to pull image"
 
 # Check registry access
 kubectl run test-pull --rm -i --tty --image=<same-image> --command -- /bin/sh
-```
+```bash
 
 #### CrashLoopBackOff Issues
 
@@ -250,7 +250,7 @@ kubectl describe pod <pod-name> | grep -A10 "Limits\|Requests"
 
 # Check liveness/readiness probe failures
 kubectl describe pod <pod-name> | grep -A5 "Liveness\|Readiness"
-```
+```bash
 
 #### Pending Pod Issues
 
@@ -264,7 +264,7 @@ kubectl describe nodes | grep -A5 "Allocated resources"
 # Check PVC binding issues
 kubectl get pvc -o wide
 kubectl describe pvc <pvc-name>
-```
+```bash
 
 #### Service Connection Issues
 
@@ -277,7 +277,7 @@ kubectl run test-conn --rm -i --tty --image=nicolaka/netshoot -- curl <service-n
 
 # Check network policies
 kubectl get networkpolicy -A
-```
+```bash
 
 ## Rapid Issue Resolution Checklist
 

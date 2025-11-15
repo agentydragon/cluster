@@ -15,7 +15,7 @@ reliability_targets:
   mttr: 10m  # Mean time to recovery
   change_failure_rate: 5%  # 5% of changes can cause incidents
 EOF
-```
+```bash
 
 #### 2. Error Budget Planning
 
@@ -30,7 +30,7 @@ EOF
 git log --oneline  # Every change tracked
 terraform plan     # Infrastructure changes previewed
 flux diff         # Kubernetes changes validated
-```
+```bash
 
 #### 4. Golden Signal Monitoring From Day 1
 
@@ -40,7 +40,7 @@ golden_signals:
   traffic: requests/second
   errors: error_rate < 1%
   saturation: cpu < 80%, memory < 80%
-```
+```bash
 
 ### Essential SRE Tools I Always Use
 
@@ -59,7 +59,7 @@ kubeval                     # Schema validation
 polaris                     # Best practices checking
 pluto                       # Find deprecated APIs
 conftest                    # Policy enforcement
-```
+```bash
 
 #### Cluster Health Assessment
 
@@ -75,7 +75,7 @@ kubectl top pods -A
 cilium status              # CNI health
 crictl ps                  # Container runtime
 systemctl status kubelet  # Node agent health
-```
+```bash
 
 #### Source Code Analysis for Debugging
 
@@ -85,7 +85,7 @@ systemctl status kubelet  # Node agent health
 find /mnt/tankshare/code -name "*.go" -exec grep -l "flag.String\|flag.Int\|log.level\|debug" {} \;
 rg "config\.|viper\.|flag\." --type go  # Find configuration options
 rg "log\..*level\|debug\|trace" --type go  # Find debug options
-```
+```bash
 
 #### Production-Grade Validation Tools
 
@@ -99,7 +99,7 @@ falco                       # Runtime security monitoring
 kube-bench                 # CIS Kubernetes benchmark
 kube-hunter                # Penetration testing
 kubectl-who-can           # RBAC analysis
-```
+```bash
 
 ### What I Never Waste Time On
 
@@ -148,7 +148,7 @@ dependencies:
     impact: medium       # Reduced observability
     mtbf: 720h
     mttr: 10m
-```
+```bash
 
 #### 2. Change Velocity vs Reliability Analysis
 
@@ -157,7 +157,7 @@ dependencies:
 deployment_frequency = "daily"  # vs weekly, monthly
 change_size = "small"           # vs medium, large
 error_budget_consumption = calculate_risk(deployment_frequency, change_size)
-```
+```bash
 
 #### 3. Capacity Planning with Growth Projections
 
@@ -169,7 +169,7 @@ kubectl top pods -A --sort-by=cpu | head -20
 # Growth rate analysis
 prometheus_query='rate(container_cpu_usage_seconds_total[7d])'
 grafana_dashboard="cluster-capacity-planning"
-```
+```bash
 
 ### Source Code Research Protocol
 
@@ -195,7 +195,7 @@ rg "http\.HandleFunc\|mux\.Handle" --type go "$REPO_PATH"
 
 # 4. Study deployment manifests in source
 find "$REPO_PATH" -name "*.yaml" -o -name "*.yml" | grep -E "(deploy|k8s|kubernetes)"
-```
+```bash
 
 #### Configuration Discovery Pattern
 
@@ -205,7 +205,7 @@ find "$REPO_PATH" -path "*/cmd/*" -name "*.go"  # CLI flags
 find "$REPO_PATH" -path "*/config/*" -name "*.go"  # Config structs
 find "$REPO_PATH" -name "values.yaml"  # Helm defaults
 find "$REPO_PATH" -name "*.env*"  # Environment examples
-```
+```bash
 
 ### Reliability Engineering Decision Framework
 
@@ -229,7 +229,7 @@ helm template . --debug | kubeconform -strict
 # Canary validation
 kubectl apply -f canary-deployment.yaml
 kubectl wait --for=condition=ready pod -l version=canary --timeout=300s
-```
+```bash
 
 ### Emergency Response Toolkit
 
@@ -252,11 +252,11 @@ kubectl get events -A --sort-by='.firstTimestamp' | tail -50
 # 4. Resource exhaustion check
 kubectl top nodes
 kubectl describe nodes | grep -A 10 "Allocated resources"
-```
+```bash
 
 #### Debugging Decision Tree
 
-```
+```bash
 Pod not starting?
 ├─ Check node capacity → kubectl describe nodes
 ├─ Check image pull → kubectl describe pod
@@ -274,7 +274,7 @@ Storage not mounting?
 ├─ Check storage class → kubectl get sc
 ├─ Check node storage → df -h /var/lib
 └─ Check CSI driver → kubectl get csidrivers
-```
+```bash
 
 ### SRE Metrics That Actually Matter
 
@@ -286,7 +286,7 @@ planning_metrics:
   change_failure_rate: 5%       # Percentage of deployments that fail
   recovery_time: 10m            # Time to fix failed deployment
   dependency_discovery_time: 2h # Time to understand component deps
-```
+```bash
 
 #### For Operational Excellence
 
@@ -296,6 +296,7 @@ operational_metrics:
   mttr_cluster_wide: 15m        # Mean time to recovery
   deployment_frequency: daily   # How often we can safely deploy
   error_budget_consumption: 20% # Percentage of monthly budget used
-```
+```bash
 
-This represents 20 years of hard-won experience: automate everything, measure what matters, plan for failure, and always have a way back.
+This represents 20 years of hard-won experience: automate everything, measure what matters, plan for failure,
+and always have a way back.
