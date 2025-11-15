@@ -8,7 +8,7 @@ spec:
   path: ./terraform/gitops/authentik
   sourceRef:
     kind: GitRepository
-    name: cluster
+    name: flux-system
     namespace: flux-system
 
   # Depend on Vault config and secrets
