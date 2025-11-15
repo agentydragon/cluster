@@ -15,6 +15,12 @@ repos:
       - id: kubeconform
         args: [-p, k8s/]
 
+  - repo: https://github.com/Agilicus/pre-commit-hook-k8svalidate.git
+    rev: v0.0.8
+    hooks:
+      - id: k8svalidate
+        files: ^k8s/.*\.yaml$
+
   - repo: local
     hooks:
       - id: prettier
