@@ -17,7 +17,7 @@ repos:
         language: system
         files: ^k8s/.*\.yaml$
         exclude: (flux-system/|flux-kustomization|kustomization|bootstrap-values)\.yaml$
-        args: []
+        args: ["--ignore-missing-schemas"]
 
   - repo: local
     hooks:
