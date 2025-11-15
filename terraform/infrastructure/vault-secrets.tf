@@ -38,13 +38,23 @@ resource "null_resource" "deploy_sealed_secrets_key" {
       else
         echo "No sealed-secrets keypair found in keyring, controller will generate new one"
       fi
-
-      # Wait for sealed-secrets controller to start
-      kubectl wait --for=condition=available deployment/sealed-secrets-controller -n kube-system --timeout=300s
     EOF
   }
 
   depends_on = [null_resource.wait_for_k8s_api]
+}
+
+# Wait for sealed-secrets controller to be ready after Flux deploys it
+resource "null_resource" "wait_for_sealed_secrets" {
+  provisioner "local-exec" {
+    command = <<-EOF
+      # Wait for sealed-secrets controller to be deployed by Flux
+      kubectl wait --for=condition=available deployment/sealed-secrets-controller -n kube-system --timeout=300s
+      echo "Sealed-secrets controller is ready"
+    EOF
+  }
+
+  depends_on = [null_resource.wait_for_flux]
 }
 
 # No other persistent secrets needed - pre-auth keys generated via SSH

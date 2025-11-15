@@ -14,7 +14,7 @@ module "authentik_bootstrap_secret" {
   service_name = "authentik"
   cluster_root = local.cluster_root
 
-  depends_on = [null_resource.flux_bootstrap]
+  depends_on = [null_resource.wait_for_sealed_secrets]
 }
 
 # Summary output
