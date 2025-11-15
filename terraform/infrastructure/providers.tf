@@ -42,6 +42,10 @@ terraform {
       source  = "fluxcd/flux"
       version = "~> 1.7"
     }
+    random = {
+      source  = "hashicorp/random"
+      version = "~> 3.6"
+    }
   }
 
   backend "local" {
@@ -67,17 +71,17 @@ provider "proxmox" {
 
 provider "helm" {
   kubernetes {
-    config_path = local_file.kubeconfig.filename
+    config_path = local.kubeconfig_path
   }
 }
 
 provider "kubernetes" {
-  config_path = local_file.kubeconfig.filename
+  config_path = local.kubeconfig_path
 }
 
 provider "flux" {
   kubernetes = {
-    config_path = local_file.kubeconfig.filename
+    config_path = local.kubeconfig_path
   }
   git = {
     url = "https://github.com/${var.github_owner}/${var.github_repository}.git"

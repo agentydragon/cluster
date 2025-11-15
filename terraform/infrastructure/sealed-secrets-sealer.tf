@@ -32,14 +32,14 @@ resource "null_resource" "seal_secrets" {
 
   triggers = {
     # Re-seal when the certificate changes or content changes
-    cert_hash    = sha256(tls_self_signed_cert.sealed_secrets.cert_pem)
+    cert_hash    = sha256(local.sealed_secrets_cert_pem)
     content_hash = sha256(each.value.content)
   }
 
   provisioner "local-exec" {
     command = <<-EOF
       # Write the certificate to a temp file
-      echo '${tls_self_signed_cert.sealed_secrets.cert_pem}' > /tmp/seal-cert-${each.key}.pem
+      echo '${local.sealed_secrets_cert_pem}' > /tmp/seal-cert-${each.key}.pem
 
       # Write the secret to a temp file
       cat > /tmp/secret-${each.key}.yaml <<'SECRET_EOF'
@@ -60,7 +60,7 @@ resource "null_resource" "seal_secrets" {
   }
 
   depends_on = [
-    tls_self_signed_cert.sealed_secrets
+    data.external.sealed_secrets_keypair
   ]
 }
 

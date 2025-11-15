@@ -43,4 +43,7 @@ locals {
 
   # Common tags for resources
   common_tags = ["terraform", "talos", "kubernetes"]
+
+  # Paths for intermediate files
+  kubeconfig_path = "${path.module}/kubeconfig"
 }

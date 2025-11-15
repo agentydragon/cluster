@@ -44,7 +44,7 @@ output "cluster_config" {
 # Write kubeconfig for direnv integration (already points to VIP)
 resource "local_file" "kubeconfig" {
   content    = talos_cluster_kubeconfig.talos.kubeconfig_raw
-  filename   = "${path.module}/kubeconfig"
+  filename   = local.kubeconfig_path
   depends_on = [talos_cluster_kubeconfig.talos]
 }
 
