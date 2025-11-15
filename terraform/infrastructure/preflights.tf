@@ -6,6 +6,12 @@ data "external" "git_status_check" {
   program = ["bash", "-c", <<-EOF
     cd "${path.module}/../.."
 
+    # Skip git status check during destroy operations
+    if [[ "$TF_VAR_skip_precommit" == "true" ]]; then
+      echo '{"status": "skipped"}'
+      exit 0
+    fi
+
     # Check for uncommitted changes (excluding .md files)
     if ! git diff --quiet -- ':!*.md' || ! git diff --cached --quiet -- ':!*.md'; then
       echo '{"error": "Git tree is dirty - uncommitted changes detected. Flux would not deploy with uncommitted changes. Please commit first."}' >&2
@@ -23,10 +29,16 @@ data "external" "git_status_check" {
   ]
 }
 
-# Check 2: Run pre-commit validation
+# Check 2: Run pre-commit validation (skip during destroy)
 data "external" "precommit_validation" {
   program = ["bash", "-c", <<-EOF
     cd "${path.module}/../.."
+
+    # Skip pre-commit validation during destroy operations
+    if [[ "$TF_VAR_skip_precommit" == "true" ]]; then
+      echo '{"status": "skipped"}'
+      exit 0
+    fi
 
     # Run pre-commit on all files
     if ! pre-commit run --all-files >/dev/null 2>&1; then
