@@ -86,18 +86,21 @@ for secret in "${REQUIRED_SEALED_SECRETS[@]}"; do
         continue
     fi
 
-    # Test if kubeseal can decrypt this sealed secret using current cert
-    if ! echo "test-data" | kubeseal --cert "$CERT_FILE" --namespace "$namespace" --name "$name" --raw --from-file=/dev/stdin --validate >/dev/null 2>&1; then
+    # Get current private key for testing decryption
+    PRIVATE_KEY=$(secret-tool lookup service sealed-secrets key private_key 2>/dev/null | base64 -d)
+    PRIVATE_KEY_FILE=$(mktemp)
+    echo "$PRIVATE_KEY" > "$PRIVATE_KEY_FILE"
+
+    # Test if this sealed secret can be decrypted with current keypair
+    if ! kubeseal --recovery-unseal --recovery-private-key "$PRIVATE_KEY_FILE" < "$SEALED_SECRET_FILE" >/dev/null 2>&1; then
         echo "❌ Sealed secret $secret: cannot decrypt with current keypair"
         echo "   File: $SEALED_SECRET_FILE"
-        echo "   This sealed secret was created with a different keypair"
-        echo "   You need to either:"
-        echo "   1. Re-seal this secret: kubectl create secret generic $name --dry-run=client --from-file=config.yaml=/path/to/config | kubeseal --cert $CERT_FILE -o yaml > $SEALED_SECRET_FILE"
-        echo "   2. Restore the original sealed-secrets keypair to libsecret keyring"
         VALIDATION_FAILED=true
     else
         echo "✅ Sealed secret $secret: can decrypt with current keypair"
     fi
+
+    rm -f "$PRIVATE_KEY_FILE"
 done
 
 # Cleanup
