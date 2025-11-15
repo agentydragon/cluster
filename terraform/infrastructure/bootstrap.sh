@@ -50,6 +50,70 @@ if ! terraform validate; then
 fi
 echo "✅ Terraform configuration is valid"
 
+# Sealed secrets keypair validation
+echo "🔐 Validating sealed secrets keypair compatibility..."
+cd "${CLUSTER_ROOT}"
+
+# Check if we can decrypt required sealed secrets with current keypair
+REQUIRED_SEALED_SECRETS=(
+    "csi-proxmox/proxmox-csi-plugin"
+)
+
+# Get current sealed secrets cert from libsecret
+if ! SEALED_CERT=$(secret-tool lookup service sealed-secrets key certificate 2>/dev/null | base64 -d); then
+    echo "❌ No sealed-secrets certificate found in libsecret keyring"
+    echo "   Run the cluster bootstrap once to generate a keypair, or restore from backup"
+    exit 1
+fi
+
+# Write cert to temp file for kubeseal validation
+CERT_FILE=$(mktemp)
+echo "$SEALED_CERT" > "$CERT_FILE"
+
+echo "🔍 Checking sealed secrets in GitOps repository..."
+VALIDATION_FAILED=false
+
+for secret in "${REQUIRED_SEALED_SECRETS[@]}"; do
+    namespace=$(echo "$secret" | cut -d'/' -f1)
+    name=$(echo "$secret" | cut -d'/' -f2)
+
+    # Find the sealed secret YAML file
+    SEALED_SECRET_FILE=$(find kubernetes/ -name "*.yaml" -exec grep -l "name: $name" {} \; | head -1)
+
+    if [[ ! -f "$SEALED_SECRET_FILE" ]]; then
+        echo "⚠️  Sealed secret $secret: file not found in repository"
+        VALIDATION_FAILED=true
+        continue
+    fi
+
+    # Test if kubeseal can decrypt this sealed secret using current cert
+    if ! echo "test-data" | kubeseal --cert "$CERT_FILE" --namespace "$namespace" --name "$name" --raw --from-file=/dev/stdin --validate >/dev/null 2>&1; then
+        echo "❌ Sealed secret $secret: cannot decrypt with current keypair"
+        echo "   File: $SEALED_SECRET_FILE"
+        echo "   This sealed secret was created with a different keypair"
+        echo "   You need to either:"
+        echo "   1. Re-seal this secret: kubectl create secret generic $name --dry-run=client --from-file=config.yaml=/path/to/config | kubeseal --cert $CERT_FILE -o yaml > $SEALED_SECRET_FILE"
+        echo "   2. Restore the original sealed-secrets keypair to libsecret keyring"
+        VALIDATION_FAILED=true
+    else
+        echo "✅ Sealed secret $secret: can decrypt with current keypair"
+    fi
+done
+
+# Cleanup
+rm -f "$CERT_FILE"
+
+if [[ "$VALIDATION_FAILED" = true ]]; then
+    echo ""
+    echo "❌ Sealed secrets validation failed"
+    echo "   Some sealed secrets cannot be decrypted with the current keypair"
+    echo "   Fix the issues above before proceeding with cluster deployment"
+    exit 1
+fi
+
+echo "✅ All required sealed secrets are compatible with current keypair"
+cd "${SCRIPT_DIR}"
+
 # Phase 2: Infrastructure Deployment
 echo ""
 echo "🏗️  Phase 2: Infrastructure Deployment"

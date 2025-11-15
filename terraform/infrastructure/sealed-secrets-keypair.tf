@@ -63,8 +63,8 @@ resource "kubernetes_secret" "sealed_secrets_key" {
 
   type = "kubernetes.io/tls"
   data = {
-    "tls.crt" = base64encode(local.sealed_secrets_cert_pem)
-    "tls.key" = base64encode(local.sealed_secrets_private_key_pem)
+    "tls.crt" = local.sealed_secrets_cert_pem
+    "tls.key" = local.sealed_secrets_private_key_pem
   }
 
   depends_on = [

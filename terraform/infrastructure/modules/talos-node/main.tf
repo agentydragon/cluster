@@ -97,6 +97,10 @@ locals {
         extraArgs = {
           provider-id = "proxmox://cluster/${var.vm_id}"
         }
+        # Explicitly set node IP to prevent conflicts with Tailscale IPs
+        nodeIP = {
+          validSubnets = ["10.0.0.0/16"] # Cluster network range
+        }
       }
     }
     cluster = {

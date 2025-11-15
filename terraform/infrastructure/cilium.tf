@@ -40,7 +40,7 @@ resource "helm_release" "cilium_bootstrap" {
   }
 
   depends_on = [
-    data.talos_cluster_health.kubernetes_api, # Wait for k8s API on controllers
+    null_resource.wait_for_k8s_api, # Wait for k8s API readiness via bash check
     null_resource.add_cilium_repo
   ]
 }
@@ -49,7 +49,7 @@ resource "helm_release" "cilium_bootstrap" {
 resource "null_resource" "wait_for_k8s_api" {
   depends_on = [
     local_file.kubeconfig,
-    module.nodes
+    talos_machine_bootstrap.talos
   ]
 
   provisioner "local-exec" {

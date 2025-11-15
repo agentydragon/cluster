@@ -111,26 +111,10 @@ resource "talos_machine_bootstrap" "talos" {
   depends_on           = [module.nodes]
 }
 
-# Check Kubernetes API readiness on controllers only (ignore workers completely)
-data "talos_cluster_health" "kubernetes_api" {
-  client_configuration = talos_machine_secrets.talos.client_configuration
-
-  # Only check controllers - completely ignore workers
-  control_plane_nodes = [for node in local.nodes_by_type.controlplane : node.ip_address]
-  worker_nodes        = [] # Empty - completely ignore workers
-  endpoints           = [for node in local.nodes_by_type.controlplane : node.ip_address]
-
-  # Check Kubernetes health on controllers only
-  skip_kubernetes_checks = false
-
-  timeouts = {
-    read = "5m"
-  }
-
-  depends_on = [
-    talos_machine_bootstrap.talos
-  ]
-}
+# Note: Removed problematic talos_cluster_health check
+# The provider was checking for all nodes including workers, but workers
+# can't join Kubernetes without CNI. Instead we use explicit bash-based
+# API readiness check in cilium.tf that only verifies controller API access.
 
 # Generate kubeconfig for cluster access
 resource "talos_cluster_kubeconfig" "talos" {
