@@ -25,7 +25,7 @@ data:
     loglevel=4
 
     # Disable control socket - not needed for API-only access
-    socket-dir=/dev/null
+    socket-dir=
 
     # Performance settings
     cache-ttl=60
