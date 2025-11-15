@@ -1,10 +1,12 @@
 # Global configuration and constants
 # Centralized location for all cluster-wide settings
 
-# TODO: Add post-destroy cleanup for orphaned Proxmox CSI disks
+# TODO: Add post-destroy cleanup for orphaned Proxmox CSI disks - WITH SAFETY
 # With reclaimPolicy: "Retain", CSI volumes persist after terraform destroy
-# Consider adding: ssh root@atlas 'pvesm list local-zfs | grep "vm-.*-disk-[2-9]" | awk "{print \$1}" | xargs -r -I {} pvesm free local-zfs:{} || true'
-# This would clean up accumulated CSI volumes from previous destroy cycles
+# CRITICAL: Must only delete volumes belonging to THIS cluster (VM IDs 1500-1502, 2000-2002)
+# Consider adding: ssh root@atlas 'pvesm list local-zfs | grep -E "vm-(1500|1501|1502|2000|2001|2002)-disk-[2-9]" | awk "{print \$1}" | xargs -r -I {} pvesm free local-zfs:{} || true'
+# Alternative: Use Proxmox tags or notes to identify cluster-owned volumes for safer cleanup
+# This would clean up accumulated CSI volumes ONLY from our cluster, never touching other VMs
 
 locals {
   # Host configuration
