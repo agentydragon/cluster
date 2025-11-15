@@ -53,6 +53,35 @@ spec:
       labels:
         app: powerdns
     spec:
+      # Initialize SQLite database if it doesn't exist
+      initContainers:
+        - name: init-db
+          image: alpine:3.18
+          command:
+            - sh
+            - -c
+            - |
+              # Create database directory
+              mkdir -p /var/lib/powerdns
+
+              # Only initialize if database doesn't exist
+              if [ ! -f /var/lib/powerdns/pdns.db ]; then
+                echo "Initializing PowerDNS SQLite database..."
+
+                # Install sqlite3
+                apk add --no-cache sqlite
+
+                # Initialize the database with schema
+                sqlite3 /var/lib/powerdns/pdns.db < /etc/powerdns-schema/schema.sql
+                echo "PowerDNS database initialized successfully"
+              else
+                echo "PowerDNS database already exists, skipping initialization"
+              fi
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/powerdns
+            - name: schema
+              mountPath: /etc/powerdns-schema
       containers:
         - name: powerdns
           image: powerdns/pdns-auth-master:latest
@@ -99,6 +128,9 @@ spec:
         - name: config
           configMap:
             name: powerdns-config
+        - name: schema
+          configMap:
+            name: powerdns-schema
         - name: data
           persistentVolumeClaim:
             claimName: powerdns-data
