@@ -9,8 +9,7 @@ data "external" "github_token" {
 # Bootstrap Flux using native provider with pinned version
 resource "flux_bootstrap_git" "cluster" {
   depends_on = [
-    helm_release.cilium_bootstrap,       # Native Helm wait ensures healthy CNI
-    kubernetes_secret.sealed_secrets_key # Ensure sealed secrets keypair exists
+    helm_release.cilium_bootstrap # Native Helm wait ensures healthy CNI
   ]
 
   path = "k8s"

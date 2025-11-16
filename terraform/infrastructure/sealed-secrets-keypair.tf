@@ -47,31 +47,12 @@ EOF
 
 # Import keypair from libsecret storage
 locals {
-  sealed_secrets_private_key_pem = base64decode(data.external.sealed_secrets_keypair.result.private_key)
-  sealed_secrets_cert_pem        = base64decode(data.external.sealed_secrets_keypair.result.certificate)
+  sealed_secrets_cert_pem = base64decode(data.external.sealed_secrets_keypair.result.certificate)
 }
 
-# Deploy keypair as Kubernetes secret before sealed-secrets controller starts
-resource "kubernetes_secret" "sealed_secrets_key" {
-  metadata {
-    name      = "sealed-secrets-key${random_string.key_suffix.result}"
-    namespace = "kube-system"
-    labels = {
-      "sealedsecrets.bitnami.com/sealed-secrets-key" = "active"
-    }
-  }
-
-  type = "kubernetes.io/tls"
-  data = {
-    "tls.crt" = local.sealed_secrets_cert_pem
-    "tls.key" = local.sealed_secrets_private_key_pem
-  }
-
-  depends_on = [
-    local_file.kubeconfig,
-    helm_release.cilium_bootstrap # Native Helm wait ensures healthy CNI
-  ]
-}
+# Note: With Flux embedded manifests, the sealed-secrets controller
+# will be deployed via GitOps and can create its own keypair if needed.
+# The libsecret storage ensures we maintain consistent keys for re-sealing.
 
 # Random suffix to ensure unique key names (sealed-secrets keeps all keys)
 resource "random_string" "key_suffix" {
