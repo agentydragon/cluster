@@ -1,23 +1,5 @@
 # INFRASTRUCTURE MODULE VARIABLES
 
-variable "proxmox_token" {
-  description = "Proxmox API token from pve-auth module"
-  type        = string
-  sensitive   = true
-}
-
-variable "csi_config" {
-  description = "CSI configuration from pve-auth module"
-  type = object({
-    url          = string
-    insecure     = bool
-    token_id     = string
-    token_secret = string
-    region       = string
-    token        = string
-  })
-  sensitive = true
-}
 
 variable "proxmox_node_name" {
   description = "Proxmox node name for VM deployment"
@@ -104,14 +86,3 @@ variable "headscale_login_server" {
   default     = "https://agentydragon.com:8080"
 }
 
-variable "github_owner" {
-  description = "GitHub owner/organization for Flux GitOps"
-  type        = string
-  default     = "agentydragon"
-}
-
-variable "github_repository" {
-  description = "GitHub repository name for Flux GitOps"
-  type        = string
-  default     = "cluster"
-}

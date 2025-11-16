@@ -17,9 +17,6 @@ module "infrastructure" {
   source     = "./modules/infrastructure"
   depends_on = [module.pve_auth]
 
-  # Pass PVE auth outputs
-  proxmox_token     = module.pve_auth.terraform_token
-  csi_config        = module.pve_auth.csi_config
   proxmox_node_name = var.proxmox_node_name
 
   # Cluster configuration
@@ -37,9 +34,6 @@ module "infrastructure" {
   headscale_user         = var.headscale_user
   headscale_login_server = var.headscale_login_server
 
-  # GitHub for Flux GitOps
-  github_owner      = var.github_owner
-  github_repository = var.github_repository
 }
 
 # STORAGE MODULE: Generates CSI secrets for persistent storage
@@ -67,9 +61,7 @@ module "dns" {
   source     = "./modules/dns"
   depends_on = [module.infrastructure, module.gitops]
 
-  cluster_domain      = var.cluster_domain
-  cluster_vip         = var.cluster_vip
-  ingress_pool        = "10.0.3.2"
-  powerdns_server_url = "http://powerdns.dns-system.svc.cluster.local:8081"
-  powerdns_api_key    = "" # Will be retrieved from Vault
+  cluster_domain = var.cluster_domain
+  cluster_vip    = var.cluster_vip
+  ingress_pool   = "10.0.3.2"
 }

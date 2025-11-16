@@ -1,11 +1,6 @@
 # Bootstrap Flux GitOps after CNI is ready
 # This completes the full cluster setup in a single terraform apply
 
-# Get GitHub PAT from gh CLI
-data "external" "github_token" {
-  program = ["sh", "-c", "echo '{\"token\": \"'$(gh auth token)'\"}'"]
-}
-
 # Bootstrap Flux using native provider with pinned version
 resource "flux_bootstrap_git" "cluster" {
   depends_on = [

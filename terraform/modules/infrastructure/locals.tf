@@ -59,6 +59,4 @@ locals {
     services_pool   = "10.0.3.4-20"
   }
 
-  # Paths for intermediate files
-  kubeconfig_path = "${path.module}/kubeconfig"
 }

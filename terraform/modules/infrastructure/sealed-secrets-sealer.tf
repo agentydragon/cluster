@@ -1,12 +1,6 @@
 # Sealed secrets sealing infrastructure
 # CSI secrets moved to storage module - this now handles infrastructure-only secrets
 
-locals {
-  # Infrastructure secrets that need sealing (currently none - CSI moved to storage module)
-  secrets_to_seal = {
-    # Empty for now - add infrastructure secrets here if needed
-  }
-}
 
 # Auto-commit any sealed secret changes in the repository
 resource "null_resource" "commit_sealed_secrets" {

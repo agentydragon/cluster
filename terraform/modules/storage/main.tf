@@ -3,9 +3,6 @@ terraform {
     null = {
       source = "hashicorp/null"
     }
-    local = {
-      source = "hashicorp/local"
-    }
   }
 }
 

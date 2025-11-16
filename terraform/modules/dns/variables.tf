@@ -17,14 +17,3 @@ variable "ingress_pool" {
   default     = "10.0.3.2"
 }
 
-variable "powerdns_server_url" {
-  description = "PowerDNS server API URL"
-  type        = string
-  default     = "http://powerdns.dns-system.svc.cluster.local:8081"
-}
-
-variable "powerdns_api_key" {
-  description = "PowerDNS API key"
-  type        = string
-  sensitive   = true
-}
