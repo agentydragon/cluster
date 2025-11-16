@@ -73,6 +73,43 @@ locals {
           })
         }
       ]
+      # Bake Tailscale and VIP configuration directly into the image
+      configPatches = concat([
+        yamlencode(local.common_machine_config) # Common machine configuration
+        ], var.node_type == "controlplane" ? [
+        # Control plane gets VIP configuration baked in
+        yamlencode({
+          machine = {
+            network = {
+              interfaces = [{
+                interface = "eth0"
+                vip       = { ip = var.shared_config.cluster_vip }
+              }]
+            }
+          }
+        }),
+        # Control plane gets Tailscale configuration with routing
+        yamlencode({
+          apiVersion = "v1alpha1"
+          kind       = "ExtensionServiceConfig"
+          name       = "tailscale"
+          environment = [
+            "TS_AUTHKEY=${data.external.preauth_key.result.key}",
+            "TS_EXTRA_ARGS=${var.shared_config.tailscale_base_args} ${var.shared_config.tailscale_route_args}"
+          ]
+        })
+        ] : [
+        # Workers get basic Tailscale configuration
+        yamlencode({
+          apiVersion = "v1alpha1"
+          kind       = "ExtensionServiceConfig"
+          name       = "tailscale"
+          environment = [
+            "TS_AUTHKEY=${data.external.preauth_key.result.key}",
+            "TS_EXTRA_ARGS=${var.shared_config.tailscale_base_args}"
+          ]
+        })
+      ])
     }
   })
 
@@ -240,58 +277,8 @@ locals {
   )
 }
 
-data "talos_machine_configuration" "config" {
-  # Generate machine configuration with all config baked in at generation time
-  # This eliminates the need for runtime patches that trigger mount controller race condition
-  cluster_name       = local.machine_config.cluster_name
-  cluster_endpoint   = local.machine_config.cluster_endpoint
-  machine_secrets    = local.machine_config.machine_secrets
-  machine_type       = local.machine_config.machine_type
-  talos_version      = local.machine_config.talos_version
-  kubernetes_version = local.machine_config.kubernetes_version
-  examples           = local.machine_config.examples
-  docs               = local.machine_config.docs
-
-  config_patches = concat([
-    yamlencode(local.common_machine_config) # Common machine configuration
-    ], var.node_type == "controlplane" ? [
-    # Control plane gets VIP configuration baked in
-    yamlencode({
-      machine = {
-        network = {
-          interfaces = [{
-            interface = "eth0"
-            vip       = { ip = var.shared_config.cluster_vip }
-          }]
-        }
-      }
-    }),
-    # Control plane gets Tailscale configuration with routing
-    yamlencode({
-      apiVersion = "v1alpha1"
-      kind       = "ExtensionServiceConfig"
-      name       = "tailscale"
-      environment = [
-        "TS_AUTHKEY=${data.external.preauth_key.result.key}",
-        "TS_EXTRA_ARGS=${var.shared_config.tailscale_base_args} ${var.shared_config.tailscale_route_args}"
-      ]
-    })
-    ] : [
-    # Workers get basic Tailscale configuration
-    yamlencode({
-      apiVersion = "v1alpha1"
-      kind       = "ExtensionServiceConfig"
-      name       = "tailscale"
-      environment = [
-        "TS_AUTHKEY=${data.external.preauth_key.result.key}",
-        "TS_EXTRA_ARGS=${var.shared_config.tailscale_base_args}"
-      ]
-    })
-  ])
-}
-
-# NOTE: Machine configuration is baked into disk image at generation time, NOT applied at runtime
-# This avoids the mount controller race condition that caused worker kubelet failures
+# NOTE: All machine configuration (VIP, Tailscale) is now baked directly into 
+# the Image Factory schematic via configPatches, eliminating any runtime patching
 # TODO: May need to handle Tailscale key rotation when pre-auth keys expire (currently 1h)
 
 # TOMBSTONE: Runtime configuration patching removed due to critical Talos bug
