@@ -2,9 +2,9 @@
 
 locals {
   # Layer control (already defined in main.tf)
-  
+
   # PVE-AUTH layer locals (already defined in pve-auth.tf)
-  
+
   # INFRASTRUCTURE layer locals
   # Host configuration
   hosts = {

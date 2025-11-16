@@ -6,7 +6,7 @@ variable "deploy_layer" {
   description = "Which layer to deploy: pve-auth, infrastructure, gitops, dns, or all"
   type        = string
   default     = "all"
-  
+
   validation {
     condition     = contains(["pve-auth", "infrastructure", "gitops", "dns", "storage", "all"], var.deploy_layer)
     error_message = "deploy_layer must be one of: pve-auth, infrastructure, gitops, dns, storage, all"
@@ -52,9 +52,9 @@ variable "github_repository" {
 
 # Local values
 locals {
-  deploy_pve_auth     = contains(["all", "pve-auth"], var.deploy_layer)
+  deploy_pve_auth       = contains(["all", "pve-auth"], var.deploy_layer)
   deploy_infrastructure = contains(["all", "infrastructure"], var.deploy_layer)
-  deploy_gitops       = contains(["all", "gitops"], var.deploy_layer)
-  deploy_dns          = contains(["all", "dns"], var.deploy_layer)
-  deploy_storage      = contains(["all", "storage"], var.deploy_layer)
+  deploy_gitops         = contains(["all", "gitops"], var.deploy_layer)
+  deploy_dns            = contains(["all", "dns"], var.deploy_layer)
+  deploy_storage        = contains(["all", "storage"], var.deploy_layer)
 }

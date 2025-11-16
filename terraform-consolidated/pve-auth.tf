@@ -31,7 +31,7 @@ locals {
 # Auto-provision Proxmox users and tokens via SSH
 data "external" "pve_tokens" {
   for_each = local.deploy_pve_auth ? local.pve_users : {}
-  
+
   program = ["bash", "-c", <<-EOT
     token_json=$(ssh ${local.proxmox_host} '
       # Create user if not exists
