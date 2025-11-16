@@ -3,6 +3,7 @@
 
 # PROVIDER CONFIGURATIONS - Basic providers only (no circular dependencies)
 # Complex providers are configured within their respective modules
+# Provider versions are centrally defined in terraform.tf
 
 # PVE-AUTH MODULE: Creates Proxmox users and API tokens
 module "pve_auth" {
@@ -49,11 +50,7 @@ module "gitops" {
   source     = "./modules/gitops"
   depends_on = [module.infrastructure]
 
-  kubeconfig      = module.infrastructure.kubeconfig
-  cluster_domain  = var.cluster_domain
-  vault_address   = "http://vault.vault.svc.cluster.local:8200"
-  authentik_url   = "https://authentik.${var.cluster_domain}"
-  authentik_token = "" # Will be set via environment variable
+  cluster_domain = var.cluster_domain
 }
 
 # DNS MODULE: PowerDNS zone and record management

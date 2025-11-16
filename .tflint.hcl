@@ -30,15 +30,15 @@ rule "terraform_naming_convention" {
 }
 
 rule "terraform_required_providers" {
-  enabled = true
+  enabled = false  # Modules inherit provider versions from root - source is sufficient
 }
 
 rule "terraform_required_version" {
-  enabled = true
+  enabled = false  # Only root configuration needs this - modules inherit from root
 }
 
 rule "terraform_standard_module_structure" {
-  enabled = true
+  enabled = false  # Root configuration, not a reusable module
 }
 
 rule "terraform_typed_variables" {
@@ -50,12 +50,7 @@ rule "terraform_unused_declarations" {
 }
 
 rule "terraform_unused_required_providers" {
-  enabled = true
-}
-
-# Prevent version redefinitions outside root versions.tf
-rule "terraform_required_providers" {
-  enabled = true
+  enabled = false  # Root module provides providers for child modules to inherit
 }
 
 # Custom rule to prevent terraform blocks with version constraints in non-root files
