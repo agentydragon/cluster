@@ -94,7 +94,13 @@ repos:
 
       - id: terraform-version-centralization
         name: Prevent terraform provider version redefinitions
-        entry: bash -c 'if grep -r -A20 "required_providers" terraform/ --include="*.tf" --exclude-dir=".terraform" | grep -E "version\s*=" | grep -v "terraform/versions.tf"; then echo "❌ FATAL: Provider version constraints found outside root terraform/versions.tf"; echo "All provider versions must be centralized in terraform/versions.tf"; exit 1; fi'
+        entry: >-
+          bash -c
+          'if grep -r -A20 "required_providers" terraform/ --include="*.tf" --exclude-dir=".terraform" | grep -E "version\\s*=" | grep -v "terraform.tf"; then
+          echo "❌ FATAL: Provider version constraints found outside centralized terraform.tf";
+          echo "All provider versions must be centralized in terraform.tf";
+          exit 1;
+          fi'
         language: system
         files: \.tf$
         pass_filenames: false
