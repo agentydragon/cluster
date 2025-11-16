@@ -73,43 +73,6 @@ locals {
           })
         }
       ]
-      # Bake Tailscale and VIP configuration directly into the image
-      configPatches = concat([
-        yamlencode(local.common_machine_config) # Common machine configuration
-        ], var.node_type == "controlplane" ? [
-        # Control plane gets VIP configuration baked in
-        yamlencode({
-          machine = {
-            network = {
-              interfaces = [{
-                interface = "eth0"
-                vip       = { ip = var.shared_config.cluster_vip }
-              }]
-            }
-          }
-        }),
-        # Control plane gets Tailscale configuration with routing
-        yamlencode({
-          apiVersion = "v1alpha1"
-          kind       = "ExtensionServiceConfig"
-          name       = "tailscale"
-          environment = [
-            "TS_AUTHKEY=${data.external.preauth_key.result.key}",
-            "TS_EXTRA_ARGS=${var.shared_config.tailscale_base_args} ${var.shared_config.tailscale_route_args}"
-          ]
-        })
-        ] : [
-        # Workers get basic Tailscale configuration
-        yamlencode({
-          apiVersion = "v1alpha1"
-          kind       = "ExtensionServiceConfig"
-          name       = "tailscale"
-          environment = [
-            "TS_AUTHKEY=${data.external.preauth_key.result.key}",
-            "TS_EXTRA_ARGS=${var.shared_config.tailscale_base_args}"
-          ]
-        })
-      ])
     }
   })
 
@@ -264,11 +227,81 @@ resource "terraform_data" "restart_reminder" {
   depends_on = [proxmox_virtual_environment_vm.vm]
 }
 
-# NOTE: Previously generated machine_config for runtime patching - no longer needed
-# All configuration now baked into Image Factory schematic
+# Generate machine configuration based on node type
+# This is as close as Terraform gets to "take this object + add these fields"
+locals {
+  # Merge base talos config + node-specific machine_type
+  machine_config = merge(
+    var.talos_config_base, # All the shared talos fields
+    {
+      machine_type    = var.node_type                                         # Node-specific override
+      machine_secrets = var.talos_config_base.machine_secrets.machine_secrets # Extract the actual secrets
+    }
+  )
+}
 
-# NOTE: All machine configuration (VIP, Tailscale) is now baked directly into
-# the Image Factory schematic via configPatches, eliminating any runtime patching
+data "talos_machine_configuration" "config" {
+  # Generate machine configuration with all config patches
+  cluster_name       = local.machine_config.cluster_name
+  cluster_endpoint   = local.machine_config.cluster_endpoint
+  machine_secrets    = local.machine_config.machine_secrets
+  machine_type       = local.machine_config.machine_type
+  talos_version      = local.machine_config.talos_version
+  kubernetes_version = local.machine_config.kubernetes_version
+  examples           = local.machine_config.examples
+  docs               = local.machine_config.docs
+
+  config_patches = concat([
+    yamlencode(local.common_machine_config) # Common machine configuration
+    ], var.node_type == "controlplane" ? [
+    # Control plane gets VIP configuration
+    yamlencode({
+      machine = {
+        network = {
+          interfaces = [{
+            interface = "eth0"
+            vip       = { ip = var.shared_config.cluster_vip }
+          }]
+        }
+      }
+    }),
+    # Control plane gets Tailscale configuration with routing
+    yamlencode({
+      apiVersion = "v1alpha1"
+      kind       = "ExtensionServiceConfig"
+      name       = "tailscale"
+      environment = [
+        "TS_AUTHKEY=${data.external.preauth_key.result.key}",
+        "TS_EXTRA_ARGS=${var.shared_config.tailscale_base_args} ${var.shared_config.tailscale_route_args}"
+      ]
+    })
+    ] : [
+    # Workers get basic Tailscale configuration
+    yamlencode({
+      apiVersion = "v1alpha1"
+      kind       = "ExtensionServiceConfig"
+      name       = "tailscale"
+      environment = [
+        "TS_AUTHKEY=${data.external.preauth_key.result.key}",
+        "TS_EXTRA_ARGS=${var.shared_config.tailscale_base_args}"
+      ]
+    })
+  ])
+}
+
+# Apply machine configuration BEFORE cluster bootstrap to avoid race condition
+resource "talos_machine_configuration_apply" "apply" {
+  client_configuration   = var.talos_config_base.machine_secrets.client_configuration
+  machine_configuration  = data.talos_machine_configuration.config.machine_configuration
+  node                   = var.ip_address
+  config_patches         = []
+  
+  # Apply configuration immediately after VM is ready but before bootstrap
+  depends_on = [proxmox_virtual_environment_vm.vm]
+}
+
+# NOTE: Machine configuration is applied BEFORE cluster bootstrap to avoid race condition
+# This ensures kubelet isn't running when config is applied, preventing mount controller issues
 # TODO: May need to handle Tailscale key rotation when pre-auth keys expire (currently 1h)
 
 # TOMBSTONE: Runtime configuration patching removed due to critical Talos bug
