@@ -50,7 +50,7 @@ if ! terraform validate; then
 fi
 echo "✅ Terraform configuration is valid"
 
-# Sealed secrets keypair validation
+# Sealed secrets keypair validation - STRICT RETRIEVAL ONLY
 echo "🔐 Validating sealed secrets keypair compatibility..."
 cd "${CLUSTER_ROOT}"
 
@@ -59,12 +59,32 @@ REQUIRED_SEALED_SECRETS=(
     "csi-proxmox/proxmox-csi-plugin"
 )
 
-# Get current sealed secrets cert from libsecret
-if ! SEALED_CERT=$(secret-tool lookup service sealed-secrets key certificate 2>/dev/null | base64 -d); then
-    echo "❌ No sealed-secrets certificate found in libsecret keyring"
-    echo "   Run the cluster bootstrap once to generate a keypair, or restore from backup"
+# REQUIRE stable keypair to exist - fail if missing
+echo "🔍 Retrieving stable sealed-secrets keypair from libsecret..."
+PRIVATE_KEY=$(secret-tool lookup service sealed-secrets key private_key 2>/dev/null)
+SEALED_CERT=$(secret-tool lookup service sealed-secrets key public_key 2>/dev/null)
+
+if [[ -z "$PRIVATE_KEY" || -z "$SEALED_CERT" ]]; then
+    echo "❌ FATAL: Stable sealed-secrets keypair not found in libsecret"
+    echo ""
+    echo "   This cluster requires a pre-existing stable keypair to decrypt"
+    echo "   committed SealedSecrets. Generate one first:"
+    echo ""
+    echo "   # Generate stable keypair (ONCE):"
+    echo "   openssl genrsa 4096 | secret-tool store service sealed-secrets key private_key"  
+    echo "   openssl req -new -x509 -key <(secret-tool lookup service sealed-secrets key private_key) \\"
+    echo "     -out /tmp/sealed-secrets.crt -days 365 -subj '/CN=sealed-secrets'"
+    echo "   secret-tool store service sealed-secrets key public_key < /tmp/sealed-secrets.crt"
+    echo "   rm /tmp/sealed-secrets.crt"
+    echo ""
+    echo "   Then regenerate all SealedSecrets with this stable key:"
+    echo "   kubeseal --cert <(secret-tool lookup service sealed-secrets key public_key) \\"
+    echo "     < secret.yaml > k8s/path/to/sealed-secret.yaml"
+    echo ""
     exit 1
 fi
+
+echo "✅ Found stable sealed-secrets keypair in libsecret"
 
 # Write cert to temp file for kubeseal validation
 CERT_FILE=$(mktemp)
@@ -86,8 +106,7 @@ for secret in "${REQUIRED_SEALED_SECRETS[@]}"; do
         continue
     fi
 
-    # Get current private key for testing decryption
-    PRIVATE_KEY=$(secret-tool lookup service sealed-secrets key private_key 2>/dev/null | base64 -d)
+    # Use already-retrieved private key for testing decryption
     PRIVATE_KEY_FILE=$(mktemp)
     echo "$PRIVATE_KEY" > "$PRIVATE_KEY_FILE"
 
@@ -110,14 +129,14 @@ if [[ "$VALIDATION_FAILED" = true ]]; then
     echo ""
     echo "⚠️  Sealed secrets validation failed - regenerating with current keypair..."
     echo "🔄 Running terraform apply to regenerate sealed secrets..."
-    
+
     # Regenerate sealed secrets with current keypair
     if ! terraform apply -target=null_resource.seal_secrets -auto-approve; then
         echo "❌ Failed to regenerate sealed secrets"
         echo "   Manual intervention required"
         exit 1
     fi
-    
+
     # Commit the regenerated sealed secrets
     cd "$CLUSTER_ROOT"
     if ! git diff --quiet k8s/**/*-sealed.yaml 2>/dev/null; then
@@ -125,11 +144,7 @@ if [[ "$VALIDATION_FAILED" = true ]]; then
         if ! git commit -m "chore: auto-regenerate sealed secrets with correct keypair
 
 Bootstrap detected incompatible sealed secrets and regenerated them
-with the current cluster's keypair.
-
-🤖 Generated with [Claude Code](https://claude.ai/code)
-
-Co-Authored-By: Claude <noreply@anthropic.com>"; then
+with the current cluster's keypair."; then
             echo "❌ Failed to commit regenerated sealed secrets"
             exit 1
         fi
