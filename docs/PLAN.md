@@ -201,6 +201,14 @@ Through systematic diagnosis of Bank-Vaults storage failures, discovered critica
 - [ ] **Backup/recovery**: Document cluster restore procedures and etcd backup automation
 - [ ] **Conditional Tailscale Auth Key**: Only provision keys for new nodes (avoid regeneration)
 - [ ] **Webhook Inbox**: Deploy webhook inbox service (ducktape term) for receiving webhooks from external services
+- [ ] **TFLint Rule Reconsideration**: Review disabled terraform linting rules and assess if they can be selectively re-enabled
+  - **Current State**: Disabled terraform_required_version, terraform_required_providers, terraform_unused_required_providers
+    to resolve conflict between terraform best practices (pin provider versions once in root) and tflint defaults
+    (expect every module to have versions)
+  - **Future Work**: Investigate per-directory tflint configs, upstream rule improvements, or custom rules that
+    understand module inheritance patterns
+  - **Context**: Current approach prioritizes "pin provider versions exactly once" architectural principle over
+    linter compliance
 
 ## SSO Architecture Design
 
