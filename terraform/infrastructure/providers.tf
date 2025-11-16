@@ -45,12 +45,25 @@ terraform {
   }
 }
 
+# Ensure pve-auth module is applied before reading its state
+resource "null_resource" "pve_auth_dependency" {
+  triggers = {
+    # Re-run when pve-auth configuration changes
+    pve_auth_config = filemd5("../pve-auth/main.tf")
+  }
+
+  provisioner "local-exec" {
+    command = "cd ../pve-auth && terraform apply -auto-approve"
+  }
+}
+
 # Read Proxmox credentials from pve-auth module
 data "terraform_remote_state" "pve_auth" {
   backend = "local"
   config = {
     path = "../pve-auth/terraform.tfstate"
   }
+  depends_on = [null_resource.pve_auth_dependency]
 }
 
 # See: https://registry.terraform.io/providers/bpg/proxmox/latest/docs#argument-reference
