@@ -8,7 +8,7 @@
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-TERRAFORM_DIR="${SCRIPT_DIR}/terraform-consolidated"
+TERRAFORM_DIR="${SCRIPT_DIR}/terraform"
 
 echo "🚀 Starting consolidated Talos cluster bootstrap..."
 echo "📂 Terraform directory: ${TERRAFORM_DIR}"
@@ -25,8 +25,12 @@ if ! git diff-index --quiet HEAD --; then
     exit 1
 fi
 
-# Run pre-commit validation (skip for initial testing)
-echo "🔍 Skipping pre-commit validation for initial testing..."
+# Run pre-commit validation
+echo "🔍 Running pre-commit validation..."
+if ! pre-commit run --all-files; then
+    echo "❌ FATAL: Pre-commit validation failed"
+    exit 1
+fi
 
 # Validate terraform configuration
 echo "🔍 Validating terraform configuration..."
@@ -36,32 +40,20 @@ if ! terraform validate; then
     exit 1
 fi
 
-# Phase 2: Layer-by-layer deployment
+# Phase 2: Single Terraform Apply (All modules with dependencies)
 echo ""
-echo "⚡ Phase 2: Layer-by-layer Deployment"
-echo "===================================="
+echo "⚡ Phase 2: Deploy All Modules"
+echo "=============================="
 
-# PVE-AUTH layer
-echo "🔧 Deploying PVE-AUTH layer..."
-if ! terraform apply -var="deploy_layer=pve-auth" -auto-approve; then
-    echo "❌ FATAL: PVE-AUTH layer deployment failed"
+echo "🚀 Deploying all modules with proper dependencies..."
+echo "     📋 PVE-AUTH → INFRASTRUCTURE → STORAGE + GITOPS + DNS"
+
+if ! terraform apply -auto-approve; then
+    echo "❌ FATAL: Cluster deployment failed"
     exit 1
 fi
-echo "✅ PVE-AUTH layer deployed successfully"
-
-# INFRASTRUCTURE layer
-echo "🏗️  Deploying INFRASTRUCTURE layer..."
-if ! terraform apply -var="deploy_layer=infrastructure" -auto-approve; then
-    echo "❌ FATAL: INFRASTRUCTURE layer deployment failed"
-    exit 1
-fi
-echo "✅ INFRASTRUCTURE layer deployed successfully"
-
-# GITOPS layer (when implemented)
-# echo "🚢 Deploying GITOPS layer..."
-# terraform apply -var="deploy_layer=gitops" -auto-approve
-# echo "✅ GITOPS layer deployed successfully"
 
 echo ""
 echo "🎉 Cluster bootstrap completed successfully!"
-echo "🔗 All layers deployed with centralized provider version management"
+echo "🔗 All modules deployed with proper terraform dependencies"
+echo "📊 Use 'terraform output' to view cluster information"

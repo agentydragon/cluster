@@ -17,14 +17,15 @@ This document tracks project roadmap and strategic architecture decisions for th
   - **Architecture Separation**: Talos→CoreDNS, Terraform→CNI, Flux→Applications
 - [x] **GitOps**: Flux CD managing application platform with proper dependency ordering
 - [x] **VIP HA**: Cluster API on 10.0.3.1 with bootstrap chicken-and-egg solution
-- [x] **Secrets**: sealed-secrets with stable keypair in libsecret for reproducible GitOps
+- [x] **Secrets Management**: Hybrid approach with proper separation of concerns
+  - **Infrastructure Secrets**: SealedSecrets for bootstrap (Proxmox CSI, Flux deploy key)
+  - **Application Secrets**: External Secrets Operator (ESO) for runtime secrets from Vault
   - **Stable Keypair Strategy**: Pre-generated keypair stored in libsecret prevents SealedSecret decryption failures
-  - **Fail-Fast Bootstrap**: Bootstrap script requires keypair to exist, prevents keypair mismatches
-  - **True GitOps**: All secrets committed to git, encrypted with stable key, always decrypt correctly
-- [x] **Turnkey Deployment**: Complete destroy→recreate→verify cycle successful
-  - **Primary Directive Achieved**: `terraform apply` → everything works declaratively
-  - **No Manual Intervention Required**: Full automation from VM creation to working cluster
-  - **Robust Credential Management**: SSH-based ephemeral tokens with automatic cleanup
+  - **No Circular Dependencies**: Vault Stage 1 enables ESO before requiring SSO
+- [x] **Turnkey Deployment**: Complete destroy→recreate→verify cycle successful via consolidated terraform
+  - **Primary Directive Achieved**: `./bootstrap.sh` → everything works declaratively
+  - **No Manual Intervention Required**: Single terraform apply with proper module dependencies
+  - **Proper Module Structure**: PVE-AUTH → INFRASTRUCTURE → STORAGE + GITOPS + DNS
 
 ### Storage Infrastructure - COMPLETE
 
@@ -61,7 +62,7 @@ This document tracks project roadmap and strategic architecture decisions for th
 
 ## TODO
 
-### 📋 Platform Services (Storage foundation complete, services ready for deployment)
+### 📋 Platform Services
 
 - [x] **Vault**: Secret management with Raft storage deployed via GitOps - FULLY OPERATIONAL
   - **Status**: 3-node HA cluster successfully deployed with proper Raft consensus
@@ -70,13 +71,17 @@ This document tracks project roadmap and strategic architecture decisions for th
   - **Storage**: Proxmox CSI volumes with 10Gi per pod for Raft data persistence
   - **Auth**: Kubernetes authentication method configured by Bank-Vaults
   - **Ready for**: HTTPS configuration via cert-manager, production workloads
-- [ ] **External Secrets Operator**: Enable Vault → K8s secrets bridge
+- [x] **External Secrets Operator**: Vault → K8s secrets bridge deployed and configured
+  - **Status**: ClusterSecretStore configured with Vault backend
+  - **Working**: ESO can generate passwords and sync secrets from Vault to Kubernetes
+- [x] **Authentik Bootstrap**: ESO password generator provides bootstrap token (no circular dependency)
+  - **Architecture**: Vault Stage 1 (unsealed) enables ESO → ESO generates Authentik bootstrap token
+  - **No Circular Dependency**: Vault doesn't require SSO initially, Authentik gets secrets from ESO
+- [ ] **Authentik**: Deploy identity provider with blueprint-based configuration
 - [ ] **PowerDNS Secret Migration**: Migrate PowerDNS API key from terraform-generated Kubernetes secrets to Vault
   - **Current State**: Using terraform-controller with cross-namespace secret copying (temporary workaround)
   - **Target State**: PowerDNS API key stored in Vault, synced to Kubernetes via ExternalSecrets operator
   - **Benefits**: Centralized secret management, proper rotation support, eliminates cross-namespace complexity
-- [ ] **Authentik**: Deploy identity provider with blueprint-based configuration
-- [ ] **Authentik & Vault GitOps**: Set up via GitOps and document bootstrap process
 - [ ] **Gitea**: Git service with Authentik OIDC integration
 - [ ] **Harbor**: Container registry with Authentik OIDC authentication
 - [ ] **Matrix/Synapse**: Chat platform with Authentik SSO integration
