@@ -4,8 +4,4 @@ variable "vault_address" {
   type        = string
 }
 
-variable "kubeconfig_path" {
-  description = "Path to kubeconfig file"
-  type        = string
-  default     = "/tmp/kubeconfig"
-}
+# kubeconfig_path variable removed - using in-cluster service account

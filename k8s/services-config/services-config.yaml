@@ -26,7 +26,6 @@ spec:
     customConfiguration: |
       backend "kubernetes" {
         secret_suffix    = "services-config"
-        config_path      = "/tmp/kubeconfig"
         namespace        = "flux-system"
       }
 
@@ -50,8 +49,6 @@ spec:
       value: "https://matrix.test-cluster.agentydragon.com"
     - name: vault_address
       value: "https://vault.test-cluster.agentydragon.com"
-    - name: kubeconfig_path
-      value: "/tmp/kubeconfig"
     # Enable specific services as needed
     - name: enable_harbor
       value: "true"

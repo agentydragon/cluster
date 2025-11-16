@@ -52,11 +52,7 @@ variable "vault_address" {
   default     = "https://vault.test-cluster.agentydragon.com"
 }
 
-variable "kubeconfig_path" {
-  description = "Path to kubeconfig file"
-  type        = string
-  default     = "/tmp/kubeconfig"
-}
+# kubeconfig_path variable removed - using in-cluster service account
 
 # Enable/disable individual services
 variable "enable_harbor" {

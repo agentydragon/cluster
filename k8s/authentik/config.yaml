@@ -24,7 +24,6 @@ spec:
     customConfiguration: |
       backend "kubernetes" {
         secret_suffix    = "authentik-config"
-        config_path      = "/tmp/kubeconfig"
         namespace        = "flux-system"
       }
 
@@ -34,5 +33,3 @@ spec:
       value: "https://auth.test-cluster.agentydragon.com"
     - name: vault_address
       value: "https://vault.test-cluster.agentydragon.com"
-    - name: kubeconfig_path
-      value: "/tmp/kubeconfig"

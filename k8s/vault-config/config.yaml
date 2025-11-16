@@ -21,7 +21,6 @@ spec:
     customConfiguration: |
       backend "kubernetes" {
         secret_suffix    = "vault-config"
-        config_path      = "/tmp/kubeconfig"
         namespace        = "flux-system"
       }
 
@@ -31,5 +30,3 @@ spec:
       value: "https://vault.test-cluster.agentydragon.com"
     - name: kubernetes_api_url
       value: "https://kubernetes.default.svc.cluster.local"
-    - name: kubeconfig_path
-      value: "/tmp/kubeconfig"
