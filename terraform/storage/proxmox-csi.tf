@@ -30,9 +30,10 @@ resource "null_resource" "create_proxmox_csi_sealed_secret" {
         --namespace=csi-proxmox \
         --from-literal=config.yaml='${local.csi_config}' \
         --dry-run=client -o yaml | \
-      kubeseal --format=yaml > ${path.module}/../../k8s/storage/proxmox-csi-sealed.yaml
+      kubeseal --cert <(secret-tool lookup service sealed-secrets key public_key) \
+        --format=yaml > ${path.module}/../../k8s/storage/proxmox-csi-sealed.yaml
 
-      echo "Generated sealed secret at k8s/storage/proxmox-csi-sealed.yaml"
+      echo "Generated sealed secret at k8s/storage/proxmox-csi-sealed.yaml with stable keypair"
     EOF
   }
 }

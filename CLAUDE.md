@@ -202,6 +202,20 @@ Use cloned repos as implementation ground truth.
 
 **Maintenance**: Updated when operational procedures change or new troubleshooting scenarios are discovered.
 
+### docs/TROUBLESHOOTING.md
+
+**Purpose**: Fast-path diagnostic checklist for common cluster issues.
+
+**Content**:
+
+- Quick health checks for core components
+- **Storage troubleshooting** (Proxmox CSI is known tricky - SealedSecret decryption issues)
+- GitOps debugging commands
+- Stable SealedSecret keypair verification
+- Common recovery actions and known issues
+
+**Maintenance**: Updated as new issues are discovered and resolved.
+
 ### docs/PLAN.md
 
 **Purpose**: Describes high-level goals we want to implement, lists what we finished, and what remains to be done as items.
@@ -255,5 +269,15 @@ Never use the `timeout` command prefix - use the tool's built-in timeout paramet
 - **After completing work**: Update docs/BOOTSTRAP.md with new procedures if they change the bootstrap sequence
 - **When planning**: Use docs/PLAN.md to understand goals and add new tasks
 - **When finishing features**: Mark items complete in docs/PLAN.md and ensure docs/BOOTSTRAP.md reflects the new capabilities
+- **When diagnosing issues**: Use docs/TROUBLESHOOTING.md fast-path commands first before deep debugging
 
 This ensures the documentation serves both as operational procedures (docs/BOOTSTRAP.md) and project management (docs/PLAN.md).
+
+## Troubleshooting Priority
+
+**Always use docs/TROUBLESHOOTING.md first** when cluster components aren't working:
+
+1. **Fast-path health checks** - Quick status commands for all core components
+2. **Known tricky components** - Proxmox CSI storage issues, SealedSecret decryption problems  
+3. **Common recovery actions** - Controller restarts, forced reconciliation
+4. **Only then** proceed to deeper investigation if fast-path doesn't resolve the issue
