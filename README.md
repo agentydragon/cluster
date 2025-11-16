@@ -40,9 +40,11 @@ Execute tools like these with the direnv loaded, or use `direnv exec .`.
 
 ## Secret Management Strategy
 
-**Stable SealedSecret Keypair**: Uses pre-generated keypair stored in libsecret to ensure SealedSecrets always decrypt correctly across cluster recreations.
+**Stable SealedSecret Keypair**: Uses pre-generated keypair stored in libsecret to ensure SealedSecrets always
+decrypt correctly across cluster recreations.
 
 **Setup (one-time per dev machine):**
+
 ```bash
 # Generate and store stable keypair
 openssl genrsa 4096 | secret-tool store service sealed-secrets key private_key
