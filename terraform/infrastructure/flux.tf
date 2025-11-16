@@ -6,7 +6,7 @@ data "external" "github_token" {
   program = ["sh", "-c", "echo '{\"token\": \"'$(gh auth token)'\"}'"]
 }
 
-# Bootstrap Flux using native provider
+# Bootstrap Flux using native provider with pinned version
 resource "flux_bootstrap_git" "cluster" {
   depends_on = [
     helm_release.cilium_bootstrap,       # Native Helm wait ensures healthy CNI
@@ -14,6 +14,12 @@ resource "flux_bootstrap_git" "cluster" {
   ]
 
   path = "k8s"
+
+  # Pin Flux version to prevent drift
+  version = "v2.7.3"
+
+  # Use embedded manifests to avoid GitOps version mismatches
+  embedded_manifests = true
 
   # Components to install
   components_extra = [

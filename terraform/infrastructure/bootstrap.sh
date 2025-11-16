@@ -138,6 +138,30 @@ if ! terraform apply -auto-approve; then
     exit 1
 fi
 
+echo ""
+echo "⏱️ Waiting for Flux controllers to stabilize..."
+echo "   This prevents controller restart race conditions"
+if ! kubectl wait --for=condition=available deployment/helm-controller -n flux-system --timeout=300s; then
+    echo "⚠️ helm-controller not ready, but continuing..."
+fi
+if ! kubectl wait --for=condition=available deployment/source-controller -n flux-system --timeout=60s; then
+    echo "⚠️ source-controller not ready, but continuing..."
+fi
+
+echo "🔄 Checking for any failed HelmReleases to retry..."
+FAILED_RELEASES=$(kubectl get helmreleases -A -o json | jq -r '.items[] | select(.status.conditions[]?.reason == "InstallFailed" or .status.conditions[]?.reason == "ArtifactFailed") | "\(.metadata.namespace)/\(.metadata.name)"')
+if [ -n "$FAILED_RELEASES" ]; then
+    echo "🔄 Retrying failed HelmReleases:"
+    for release in $FAILED_RELEASES; do
+        namespace=$(echo $release | cut -d'/' -f1)
+        name=$(echo $release | cut -d'/' -f2)
+        echo "   Retrying $release..."
+        kubectl annotate helmrelease $name -n $namespace fluxcd.io/reconcile=$(date +%s) --overwrite || true
+    done
+    echo "⏱️ Waiting 30 seconds for retries to process..."
+    sleep 30
+fi
+
 # Phase 3: Success Confirmation
 echo ""
 echo "🎉 Bootstrap Complete!"
