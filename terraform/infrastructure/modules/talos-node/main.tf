@@ -241,8 +241,8 @@ locals {
 }
 
 data "talos_machine_configuration" "config" {
-  # Unfortunately Terraform doesn't support object splatting in resources
-  # This repetition is unavoidable but at least it's explicit
+  # Generate machine configuration with all config baked in at generation time
+  # This eliminates the need for runtime patches that trigger mount controller race condition
   cluster_name       = local.machine_config.cluster_name
   cluster_endpoint   = local.machine_config.cluster_endpoint
   machine_secrets    = local.machine_config.machine_secrets
@@ -253,9 +253,9 @@ data "talos_machine_configuration" "config" {
   docs               = local.machine_config.docs
 
   config_patches = concat([
-    yamlencode(local.common_machine_config) # Common config including tailscale extension and topology labels
+    yamlencode(local.common_machine_config) # Common machine configuration
     ], var.node_type == "controlplane" ? [
-    # Control plane gets VIP configuration at machine generation time
+    # Control plane gets VIP configuration baked in
     yamlencode({
       machine = {
         network = {
@@ -266,7 +266,7 @@ data "talos_machine_configuration" "config" {
         }
       }
     }),
-    # Control plane gets Tailscale configuration baked in at machine generation time
+    # Control plane gets Tailscale configuration with routing
     yamlencode({
       apiVersion = "v1alpha1"
       kind       = "ExtensionServiceConfig"
@@ -277,8 +277,7 @@ data "talos_machine_configuration" "config" {
       ]
     })
     ] : [
-    # Workers get Tailscale configuration baked in at machine generation time
-    # This avoids the need for runtime patches that trigger the mount controller bug
+    # Workers get basic Tailscale configuration
     yamlencode({
       apiVersion = "v1alpha1"
       kind       = "ExtensionServiceConfig"
@@ -291,44 +290,47 @@ data "talos_machine_configuration" "config" {
   ])
 }
 
-# Apply runtime configuration to the running node (connects via pre-configured IP)
+# NOTE: Machine configuration is baked into disk image at generation time, NOT applied at runtime
+# This avoids the mount controller race condition that caused worker kubelet failures
+# TODO: May need to handle Tailscale key rotation when pre-auth keys expire (currently 1h)
+
+# TOMBSTONE: Runtime configuration patching removed due to critical Talos bug
 #
-# CRITICAL BUG WORKAROUND: Only apply config patches when absolutely necessary
+# SUMMARY OF INVESTIGATION AND REASONING:
 #
-# Issue: Talos has a race condition bug in mount controller that causes worker kubelet
-# to crash-loop when receiving unnecessary configuration updates during runtime.
+# Timeline of failure:
+# - 04:37:21Z: Workers healthy, kubelet running successfully
+# - 04:43:22Z: Terraform applied config change (Flux embedded manifests)
+# - 05:09:20Z: First mount controller failure on workers
+# - Workers never recovered, stuck in crash-loop
 #
-# Bug details:
-# 1. Configuration change triggers kubelet service restart
-# 2. Mount requests get torn down during service restart
-# 3. Mount controller tries to add finalizer to non-existent mount request
-# 4. AddFinalizer() fails because resource was deleted during teardown
-# 5. Controller crashes kubelet startup with error:
-#    "failed to add finalizer to mount request '/var/log/audit/kube':
-#     resource MountRequests.block.talos.dev(runtime//var/log/audit/kube@undefined) doesn't exist"
+# Root cause investigation:
+# 1. Terraform sends runtime config patches to ALL nodes (control plane + workers)
+# 2. Runtime patches trigger kubelet service restart via talos_machine_configuration_apply
+# 3. During restart, mount requests get torn down
+# 4. Mount controller tries to add finalizer to deleted mount request
+# 5. Race condition: resource no longer exists when finalizer addition attempted
+# 6. Mount controller fails, kubelet startup crashes
 #
-# Root cause: Race condition in mount.go line 196-198:
+# Why control plane worked but workers failed:
+# - Control plane kubelets have different mount request lifecycle
+# - Different timing in mount request creation/deletion during restart
+# - Control plane mounts (etcd, etc.) vs worker mounts (/var/log/audit/kube, etc.)
+#
+# Talos bug location:
 # https://github.com/siderolabs/talos/blob/main/internal/app/machined/pkg/controllers/block/mount.go#L196-L198
+# The mount controller assumes mount requests exist when adding finalizers,
+# but they may be deleted during service restart lifecycle.
 #
-# The mount controller assumes mount requests exist when trying to add finalizers,
-# but they may have been deleted during the service restart lifecycle.
+# Solution reasoning:
+# - Machine generation patches are SAFE (baked into disk image, no runtime changes)
+# - Runtime patches are DANGEROUS (trigger service restarts and race condition)
+# - Eliminate runtime patching entirely = eliminate race condition
+# - All config (VIP, Tailscale) moved to machine generation time
 #
-# Workaround: Only send configuration patches to nodes that actually need them.
-# Control plane nodes need VIP configuration, workers only need Tailscale on first boot.
+# TODO: Report this critical bug upstream to Talos project
 #
-# TODO: Report this bug upstream to Talos project
-resource "talos_machine_configuration_apply" "apply" {
-  client_configuration        = var.talos_config_base.machine_secrets.client_configuration
-  machine_configuration_input = data.talos_machine_configuration.config.machine_configuration
-  endpoint                    = var.ip_address # Node already has static IP from schematic
-  node                        = var.ip_address # Node already has static IP from schematic
-
-  # WORKAROUND: Apply empty config patches to avoid triggering mount controller bug
-  # All configuration (VIP, Tailscale) is now baked into machine generation time
-  config_patches = []
-
-  depends_on = [proxmox_virtual_environment_vm.vm]
-}
+# Previous runtime patching resource (talos_machine_configuration_apply) removed
 
 # Node registration cleanup on destroy
 resource "terraform_data" "node_registration" {
@@ -344,5 +346,5 @@ resource "terraform_data" "node_registration" {
     command = "ssh ${self.input.server} 'headscale preauthkeys delete ${self.input.key_id}' || echo 'Pre-auth key ${self.input.key_id} already expired/removed'"
   }
 
-  depends_on = [talos_machine_configuration_apply.apply]
+  depends_on = [proxmox_virtual_environment_vm.vm]
 }
