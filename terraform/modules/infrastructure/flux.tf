@@ -3,6 +3,8 @@
 
 # Bootstrap Flux using native provider with pinned version
 resource "flux_bootstrap_git" "cluster" {
+  count = var.enable_flux_bootstrap ? 1 : 0
+
   depends_on = [
     helm_release.cilium_bootstrap # Native Helm wait ensures healthy CNI
   ]

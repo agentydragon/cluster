@@ -86,3 +86,9 @@ variable "headscale_login_server" {
   default     = "https://agentydragon.com:8080"
 }
 
+variable "enable_flux_bootstrap" {
+  description = "Whether to bootstrap Flux during infrastructure deployment"
+  type        = bool
+  default     = false
+}
+
