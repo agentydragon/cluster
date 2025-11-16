@@ -4,7 +4,7 @@
 
 # Proxmox provider using credentials from pve-auth module
 provider "proxmox" {
-  endpoint = "https://${var.proxmox_api_host}:8006/"
+  endpoint = "https://${var.proxmox_api_host}:443/"
   username = "terraform@pve"
   # Parse the token from the JSON config returned by pve-auth module
   api_token = jsondecode(module.pve_auth.terraform_token)["token"]
