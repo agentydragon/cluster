@@ -5,3 +5,4 @@ resources:
   - token-secret.yaml
   - config.yaml
   - sso-secrets.yaml
+  - postgres-external-secret.yaml
