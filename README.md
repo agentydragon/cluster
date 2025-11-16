@@ -38,6 +38,21 @@ Execute tools like these with the direnv loaded, or use `direnv exec .`.
   - cert-manager provisions Let's Encrypt certs
 - HTTPS chain: Internet → VPS nginx reads CNI → Tailscale VPN → HA VIP → NGINX Ingress terminates TLS → app
 
+## Secret Management Strategy
+
+**Stable SealedSecret Keypair**: Uses pre-generated keypair stored in libsecret to ensure SealedSecrets always decrypt correctly across cluster recreations.
+
+**Setup (one-time per dev machine):**
+```bash
+# Generate and store stable keypair
+openssl genrsa 4096 | secret-tool store service sealed-secrets key private_key
+openssl req -new -x509 -key <(secret-tool lookup service sealed-secrets key private_key) \
+  -out /tmp/sealed-secrets.crt -days 365 -subj '/CN=sealed-secrets'
+secret-tool store service sealed-secrets key public_key < /tmp/sealed-secrets.crt
+```
+
+**Bootstrap fail-fast**: Script requires keypair to exist, prevents keypair mismatches that break GitOps.
+
 ## CNI Architecture Decision
 
 **Infrastructure vs GitOps Separation**: Based on circular dependency analysis and industry best practices

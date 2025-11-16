@@ -71,7 +71,7 @@ if [[ -z "$PRIVATE_KEY" || -z "$SEALED_CERT" ]]; then
     echo "   committed SealedSecrets. Generate one first:"
     echo ""
     echo "   # Generate stable keypair (ONCE):"
-    echo "   openssl genrsa 4096 | secret-tool store service sealed-secrets key private_key"  
+    echo "   openssl genrsa 4096 | secret-tool store service sealed-secrets key private_key"
     echo "   openssl req -new -x509 -key <(secret-tool lookup service sealed-secrets key private_key) \\"
     echo "     -out /tmp/sealed-secrets.crt -days 365 -subj '/CN=sealed-secrets'"
     echo "   secret-tool store service sealed-secrets key public_key < /tmp/sealed-secrets.crt"

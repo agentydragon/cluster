@@ -10,6 +10,24 @@ Step-by-step instructions for cold-starting the Talos cluster from nothing and m
 - `direnv` configured in cluster directory
 - VPS with nginx and PowerDNS configured via Ansible
 - Access to AWS Route 53 for `agentydragon.com`
+- **Stable SealedSecret keypair** stored in libsecret (one-time setup, see below)
+
+### Step 0: One-Time SealedSecret Keypair Setup
+
+**IMPORTANT**: Generate stable keypair ONCE and store in libsecret. Required before first bootstrap:
+
+```bash
+# Generate stable keypair (run ONCE per development machine)
+openssl genrsa 4096 | secret-tool store service sealed-secrets key private_key
+openssl req -new -x509 -key <(secret-tool lookup service sealed-secrets key private_key) \
+  -out /tmp/sealed-secrets.crt -days 365 -subj '/CN=sealed-secrets'
+secret-tool store service sealed-secrets key public_key < /tmp/sealed-secrets.crt
+rm /tmp/sealed-secrets.crt
+
+# Regenerate ALL SealedSecrets with this stable key
+kubeseal --cert <(secret-tool lookup service sealed-secrets key public_key) \
+  < k8s/storage/proxmox-csi-secret.yaml > k8s/storage/proxmox-csi-sealed.yaml
+```
 
 ### Step 1: Fully Declarative Deployment
 
@@ -17,13 +35,14 @@ All credentials are auto-provisioned via SSH to `root@atlas` and `root@agentydra
 
 ```bash
 cd terraform/infrastructure
-terraform apply
+./bootstrap.sh
 
-# After terraform completes, run the Stage 1 health check to verify everything is working:
-./cluster-health-check.py
+# Bootstrap script handles validation, terraform apply, and health checks
 ```
 
-**Prerequisites:** Ensure `gh auth login` is completed for GitHub access.
+**Prerequisites:** 
+- `gh auth login` completed for GitHub access
+- Stable SealedSecret keypair in libsecret (Step 0)
 
 This **single command** handles:
 
