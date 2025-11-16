@@ -40,7 +40,8 @@ cd terraform/infrastructure
 # Bootstrap script handles validation, terraform apply, and health checks
 ```
 
-**Prerequisites:** 
+**Prerequisites:**
+
 - `gh auth login` completed for GitHub access
 - Stable SealedSecret keypair in libsecret (Step 0)
 
