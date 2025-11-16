@@ -291,11 +291,11 @@ data "talos_machine_configuration" "config" {
 
 # Apply machine configuration BEFORE cluster bootstrap to avoid race condition
 resource "talos_machine_configuration_apply" "apply" {
-  client_configuration   = var.talos_config_base.machine_secrets.client_configuration
-  machine_configuration  = data.talos_machine_configuration.config.machine_configuration
-  node                   = var.ip_address
-  config_patches         = []
-  
+  client_configuration        = var.talos_config_base.machine_secrets.client_configuration
+  machine_configuration_input = data.talos_machine_configuration.config.machine_configuration
+  node                        = var.ip_address
+  config_patches              = []
+
   # Apply configuration immediately after VM is ready but before bootstrap
   depends_on = [proxmox_virtual_environment_vm.vm]
 }
