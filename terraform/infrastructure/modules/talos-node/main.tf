@@ -253,8 +253,9 @@ data "talos_machine_configuration" "config" {
   docs               = local.machine_config.docs
 
   config_patches = concat([
-    yamlencode(local.common_machine_config) # Now includes tailscale extension and topology labels
+    yamlencode(local.common_machine_config) # Common config including tailscale extension and topology labels
     ], var.node_type == "controlplane" ? [
+    # Control plane gets VIP configuration at machine generation time
     yamlencode({
       machine = {
         network = {
@@ -264,30 +265,67 @@ data "talos_machine_configuration" "config" {
           }]
         }
       }
-    })
-  ] : [])
-}
-
-# Apply runtime configuration to the running node (connects via pre-configured IP)
-resource "talos_machine_configuration_apply" "apply" {
-  client_configuration        = var.talos_config_base.machine_secrets.client_configuration
-  machine_configuration_input = data.talos_machine_configuration.config.machine_configuration
-  endpoint                    = var.ip_address # Node already has static IP from schematic
-  node                        = var.ip_address # Node already has static IP from schematic
-
-  # Apply runtime patches (Tailscale service config with dynamic auth keys)
-  # Network/IP configuration is already handled by schematic META key during boot
-  config_patches = [
+    }),
+    # Control plane gets Tailscale configuration baked in at machine generation time
     yamlencode({
       apiVersion = "v1alpha1"
       kind       = "ExtensionServiceConfig"
       name       = "tailscale"
       environment = [
         "TS_AUTHKEY=${data.external.preauth_key.result.key}",
-        "TS_EXTRA_ARGS=${var.shared_config.tailscale_base_args}${var.node_type == "controlplane" ? " ${var.shared_config.tailscale_route_args}" : ""}"
+        "TS_EXTRA_ARGS=${var.shared_config.tailscale_base_args} ${var.shared_config.tailscale_route_args}"
       ]
     })
-  ]
+    ] : [
+    # Workers get Tailscale configuration baked in at machine generation time
+    # This avoids the need for runtime patches that trigger the mount controller bug
+    yamlencode({
+      apiVersion = "v1alpha1"
+      kind       = "ExtensionServiceConfig"
+      name       = "tailscale"
+      environment = [
+        "TS_AUTHKEY=${data.external.preauth_key.result.key}",
+        "TS_EXTRA_ARGS=${var.shared_config.tailscale_base_args}"
+      ]
+    })
+  ])
+}
+
+# Apply runtime configuration to the running node (connects via pre-configured IP)
+#
+# CRITICAL BUG WORKAROUND: Only apply config patches when absolutely necessary
+#
+# Issue: Talos has a race condition bug in mount controller that causes worker kubelet
+# to crash-loop when receiving unnecessary configuration updates during runtime.
+#
+# Bug details:
+# 1. Configuration change triggers kubelet service restart
+# 2. Mount requests get torn down during service restart
+# 3. Mount controller tries to add finalizer to non-existent mount request
+# 4. AddFinalizer() fails because resource was deleted during teardown
+# 5. Controller crashes kubelet startup with error:
+#    "failed to add finalizer to mount request '/var/log/audit/kube':
+#     resource MountRequests.block.talos.dev(runtime//var/log/audit/kube@undefined) doesn't exist"
+#
+# Root cause: Race condition in mount.go line 196-198:
+# https://github.com/siderolabs/talos/blob/main/internal/app/machined/pkg/controllers/block/mount.go#L196-L198
+#
+# The mount controller assumes mount requests exist when trying to add finalizers,
+# but they may have been deleted during the service restart lifecycle.
+#
+# Workaround: Only send configuration patches to nodes that actually need them.
+# Control plane nodes need VIP configuration, workers only need Tailscale on first boot.
+#
+# TODO: Report this bug upstream to Talos project
+resource "talos_machine_configuration_apply" "apply" {
+  client_configuration        = var.talos_config_base.machine_secrets.client_configuration
+  machine_configuration_input = data.talos_machine_configuration.config.machine_configuration
+  endpoint                    = var.ip_address # Node already has static IP from schematic
+  node                        = var.ip_address # Node already has static IP from schematic
+
+  # WORKAROUND: Apply empty config patches to avoid triggering mount controller bug
+  # All configuration (VIP, Tailscale) is now baked into machine generation time
+  config_patches = []
 
   depends_on = [proxmox_virtual_environment_vm.vm]
 }
