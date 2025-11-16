@@ -50,10 +50,11 @@ spec:
       redis:
         host: ""
 
-      # Bootstrap configuration (token from SealedSecret)
+      # Bootstrap configuration (password and token from ESO)
       bootstrap:
-        password: "admin"
-        # Token will be injected via extraEnvFrom
+        # Password will be injected via extraEnvFrom (ESO-generated)
+        password: ""
+        # Token will be injected via extraEnvFrom (ESO-generated)
         token: ""
 
       # Extract secrets from ESO-generated secrets
@@ -62,6 +63,8 @@ spec:
             name: authentik-bootstrap
         - secretRef:
             name: authentik-secret-key
+        - secretRef:
+            name: authentik-admin-password
         - secretRef:
             name: authentik-postgres-env
 
