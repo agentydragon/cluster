@@ -99,6 +99,7 @@ variable "kubernetes_version" {
 variable "headscale_user" {
   description = "Headscale user for pre-auth key generation"
   type        = string
+  default     = "agentydragon"
 }
 
 variable "headscale_login_server" {

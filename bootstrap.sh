@@ -15,11 +15,7 @@ TERRAFORM_DIR="${SCRIPT_DIR}/terraform"
 echo "🚀 Starting layered Talos cluster bootstrap..."
 echo "📂 Terraform directory: ${TERRAFORM_DIR}"
 
-# Ensure required environment variables are set
-if [[ -z "${TF_VAR_headscale_user}" ]]; then
-    export TF_VAR_headscale_user="agentydragon"
-    echo "📝 Set TF_VAR_headscale_user to default: agentydragon"
-fi
+# Environment variables no longer required - defaults hardcoded in terraform
 
 # Phase 0: Preflight Validation
 echo ""
