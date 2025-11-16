@@ -106,3 +106,34 @@ variable "headscale_login_server" {
   default     = "https://agentydragon.com:8080"
 }
 
+# SSO Provider Variables
+# These are set via environment variables after services are deployed
+
+variable "powerdns_api_key" {
+  description = "PowerDNS API key for DNS management"
+  type        = string
+  default     = ""
+  sensitive   = true
+}
+
+variable "authentik_token" {
+  description = "Authentik API token for SSO configuration"
+  type        = string
+  default     = ""
+  sensitive   = true
+}
+
+variable "harbor_admin_password" {
+  description = "Harbor admin password for registry configuration"
+  type        = string
+  default     = ""
+  sensitive   = true
+}
+
+variable "gitea_admin_token" {
+  description = "Gitea admin token for git service configuration"
+  type        = string
+  default     = ""
+  sensitive   = true
+}
+
