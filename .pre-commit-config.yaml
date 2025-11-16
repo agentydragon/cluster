@@ -61,7 +61,7 @@ repos:
       - id: terraform_validate
         files: ^terraform/infrastructure/
       - id: terraform_tflint
-        files: ^terraform/infrastructure/
+        files: \.tf$
         args:
           - --args=--config=__GIT_WORKING_DIR__/.tflint.hcl
       # - id: terraform_checkov  # Replaced with local nix-based hook below
@@ -90,4 +90,11 @@ repos:
         entry: bash -c 'find terraform/ -name "cilium" -type d | while read d; do if [[ -f "$d/values.yaml" ]]; then echo "Templating Helm chart in $d..."; helm template test-release cilium/cilium -f "$d/values.yaml" --dry-run >/dev/null || exit 1; fi; done'
         language: system
         files: ^terraform/.*cilium.*\.(yaml|yml|tf)$
+        pass_filenames: false
+
+      - id: terraform-version-centralization
+        name: Prevent terraform provider version redefinitions
+        entry: bash -c 'if grep -r -A20 "required_providers" terraform/ --include="*.tf" --exclude-dir=".terraform" | grep -E "version\s*=" | grep -v "terraform/versions.tf"; then echo "❌ FATAL: Provider version constraints found outside root terraform/versions.tf"; echo "All provider versions must be centralized in terraform/versions.tf"; exit 1; fi'
+        language: system
+        files: \.tf$
         pass_filenames: false

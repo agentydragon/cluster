@@ -52,3 +52,13 @@ rule "terraform_unused_declarations" {
 rule "terraform_unused_required_providers" {
   enabled = true
 }
+
+# Prevent version redefinitions outside root versions.tf
+rule "terraform_required_providers" {
+  enabled = true
+}
+
+# Custom rule to prevent terraform blocks with version constraints in non-root files
+rule "terraform_module_version" {
+  enabled = true
+}
