@@ -264,20 +264,10 @@ resource "terraform_data" "restart_reminder" {
   depends_on = [proxmox_virtual_environment_vm.vm]
 }
 
-# Generate machine configuration based on node type
-# This is as close as Terraform gets to "take this object + add these fields"
-locals {
-  # Merge base talos config + node-specific machine_type
-  machine_config = merge(
-    var.talos_config_base, # All the shared talos fields
-    {
-      machine_type    = var.node_type                                         # Node-specific override
-      machine_secrets = var.talos_config_base.machine_secrets.machine_secrets # Extract the actual secrets
-    }
-  )
-}
+# NOTE: Previously generated machine_config for runtime patching - no longer needed
+# All configuration now baked into Image Factory schematic
 
-# NOTE: All machine configuration (VIP, Tailscale) is now baked directly into 
+# NOTE: All machine configuration (VIP, Tailscale) is now baked directly into
 # the Image Factory schematic via configPatches, eliminating any runtime patching
 # TODO: May need to handle Tailscale key rotation when pre-auth keys expire (currently 1h)
 
