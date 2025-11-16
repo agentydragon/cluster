@@ -36,8 +36,8 @@ spec:
 
     # Authentik server configuration
     authentik:
-      # Secret key for encryption (will be generated)
-      secret_key: "please-change-me-in-production-to-32-byte-key"
+      # Secret key injected via extraEnvFrom (ESO-generated secure key)
+      secret_key: ""
 
       # Error reporting
       error_reporting:
@@ -56,10 +56,12 @@ spec:
         # Token will be injected via extraEnvFrom
         token: ""
 
-      # Extract bootstrap token from ESO-generated secret and PostgreSQL password from external secret
+      # Extract secrets from ESO-generated secrets
       extraEnvFrom:
         - secretRef:
             name: authentik-bootstrap
+        - secretRef:
+            name: authentik-secret-key
         - secretRef:
             name: authentik-postgres-env
 
