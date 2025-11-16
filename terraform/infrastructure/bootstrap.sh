@@ -108,10 +108,34 @@ rm -f "$CERT_FILE"
 
 if [[ "$VALIDATION_FAILED" = true ]]; then
     echo ""
-    echo "❌ Sealed secrets validation failed"
-    echo "   Some sealed secrets cannot be decrypted with the current keypair"
-    echo "   Fix the issues above before proceeding with cluster deployment"
-    exit 1
+    echo "⚠️  Sealed secrets validation failed - regenerating with current keypair..."
+    echo "🔄 Running terraform apply to regenerate sealed secrets..."
+    
+    # Regenerate sealed secrets with current keypair
+    if ! terraform apply -target=null_resource.seal_secrets -auto-approve; then
+        echo "❌ Failed to regenerate sealed secrets"
+        echo "   Manual intervention required"
+        exit 1
+    fi
+    
+    # Commit the regenerated sealed secrets
+    cd "$CLUSTER_ROOT"
+    if ! git diff --quiet k8s/**/*-sealed.yaml 2>/dev/null; then
+        git add k8s/**/*-sealed.yaml
+        if ! git commit -m "chore: auto-regenerate sealed secrets with correct keypair
+
+Bootstrap detected incompatible sealed secrets and regenerated them
+with the current cluster's keypair.
+
+🤖 Generated with [Claude Code](https://claude.ai/code)
+
+Co-Authored-By: Claude <noreply@anthropic.com>"; then
+            echo "❌ Failed to commit regenerated sealed secrets"
+            exit 1
+        fi
+        echo "✅ Regenerated and committed updated sealed secrets"
+    fi
+    cd "${SCRIPT_DIR}"
 fi
 
 echo "✅ All required sealed secrets are compatible with current keypair"

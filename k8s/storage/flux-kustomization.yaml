@@ -18,6 +18,10 @@ spec:
   # Storage components deploy after cluster networking is ready
   # Verify Proxmox CSI controller is ready
   healthChecks:
+    - apiVersion: v1
+      kind: Secret
+      name: proxmox-csi-plugin
+      namespace: csi-proxmox
     - apiVersion: apps/v1
       kind: Deployment
       name: proxmox-csi-controller

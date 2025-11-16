@@ -27,3 +27,7 @@ spec:
       kind: CustomResourceDefinition
       name: externalsecrets.external-secrets.io
       namespace: ""
+    - apiVersion: apps/v1
+      kind: Deployment
+      name: sealed-secrets-controller
+      namespace: kube-system
