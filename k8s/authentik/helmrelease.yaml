@@ -56,10 +56,12 @@ spec:
         # Token will be injected via extraEnvFrom
         token: ""
 
-      # Extract bootstrap token from sealed secret
+      # Extract bootstrap token from sealed secret and PostgreSQL password from external secret
       extraEnvFrom:
         - secretRef:
             name: bootstrap
+        - secretRef:
+            name: authentik-postgres-env
 
     # Server deployment
     server:
@@ -100,13 +102,13 @@ spec:
           cpu: 500m
           memory: 1Gi
 
-    # PostgreSQL with external secret for password
+    # PostgreSQL with password injected via environment variable
     postgresql:
       enabled: true
       auth:
-        existingSecret: "authentik-postgresql"
+        existingSecret: "authentik-postgres-env"
         secretKeys:
-          adminPasswordKey: "postgres-password"
+          adminPasswordKey: "password"
           userPasswordKey: "password"
 
     # Redis (optional)
