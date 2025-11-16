@@ -17,6 +17,10 @@ terraform {
       source  = "hashicorp/helm"
       version = "~> 3.1.0"
     }
+    flux = {
+      source  = "fluxcd/flux"
+      version = "~> 1.7.0"
+    }
     vault = {
       source  = "hashicorp/vault"
       version = "~> 5.4.0"

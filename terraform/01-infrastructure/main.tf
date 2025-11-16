@@ -11,16 +11,7 @@ provider "proxmox" {
   insecure  = true # Dev environment with self-signed certs
 }
 
-# Flux provider configuration - required for infrastructure module
-provider "flux" {
-  git = {
-    url = "ssh://git@github.com/agentydragon/cluster.git"
-    ssh = {
-      username    = "git"
-      private_key = file("~/.ssh/id_ed25519")
-    }
-  }
-}
+# Note: Flux provider removed from Layer 1 - Flux bootstrap moved to Layer 2
 
 # PVE-AUTH MODULE: Creates Proxmox users and API tokens
 module "pve_auth" {
@@ -52,8 +43,8 @@ module "infrastructure" {
   headscale_user         = var.headscale_user
   headscale_login_server = var.headscale_login_server
 
-  # Enable Flux bootstrap - GitOps engine is part of infrastructure
-  enable_flux_bootstrap = true
+  # Disable Flux bootstrap in Layer 1 - moved to Layer 2 for proper dependency handling
+  enable_flux_bootstrap = false
 }
 
 # STORAGE MODULE: Generates CSI secrets for persistent storage
