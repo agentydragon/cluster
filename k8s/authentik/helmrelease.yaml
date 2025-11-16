@@ -56,10 +56,10 @@ spec:
         # Token will be injected via extraEnvFrom
         token: ""
 
-      # Extract bootstrap token from sealed secret and PostgreSQL password from external secret
+      # Extract bootstrap token from ESO-generated secret and PostgreSQL password from external secret
       extraEnvFrom:
         - secretRef:
-            name: bootstrap
+            name: authentik-bootstrap
         - secretRef:
             name: authentik-postgres-env
 
