@@ -1,4 +1,5 @@
-# CONSOLIDATED OUTPUTS from all modules
+# LAYER 1 OUTPUTS - Infrastructure components
+# These outputs are consumed by subsequent layers via terraform_remote_state
 
 # PVE-AUTH outputs
 output "proxmox_tokens_created" {
@@ -24,6 +25,16 @@ output "cluster_endpoint" {
   value       = module.infrastructure.cluster_endpoint
 }
 
+output "cluster_domain" {
+  description = "Cluster domain name for service configuration"
+  value       = var.cluster_domain
+}
+
+output "cluster_vip" {
+  description = "Cluster VIP for service endpoints"
+  value       = var.cluster_vip
+}
+
 output "cluster_nodes" {
   description = "Cluster node information"
   value = {
@@ -38,23 +49,12 @@ output "storage_configured" {
   value       = module.storage.csi_secret_generated
 }
 
-# GITOPS outputs
-output "sso_configured" {
-  description = "Whether SSO services were configured"
+# Infrastructure readiness indicator
+output "infrastructure_ready" {
+  description = "Indicates infrastructure layer is complete and ready for service deployment"
   value = {
-    admin_groups = module.gitops.admin_groups
-  }
-  sensitive = true
-}
-
-# DNS outputs - conditional based on whether DNS module is enabled
-output "dns_configured" {
-  description = "DNS zone and records configured"
-  value = length(module.dns) > 0 ? {
-    cluster_zone = module.dns[0].cluster_zone
-    dns_records  = module.dns[0].dns_records
-    } : {
-    cluster_zone = "not-configured"
-    dns_records  = []
+    cluster_ready = module.infrastructure.cluster_endpoint != null
+    storage_ready = module.storage.csi_secret_generated
+    timestamp     = timestamp()
   }
 }

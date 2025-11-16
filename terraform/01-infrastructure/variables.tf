@@ -1,4 +1,5 @@
-# CONSOLIDATED VARIABLES for all modules
+# LAYER 1 VARIABLES - Infrastructure only
+# No service API configuration variables here
 
 # Common variables
 variable "cluster_domain" {
@@ -105,35 +106,3 @@ variable "headscale_login_server" {
   type        = string
   default     = "https://agentydragon.com:8080"
 }
-
-# SSO Provider Variables
-# These are set via environment variables after services are deployed
-
-variable "powerdns_api_key" {
-  description = "PowerDNS API key for DNS management - leave empty during bootstrap"
-  type        = string
-  default     = ""
-  sensitive   = true
-}
-
-variable "authentik_token" {
-  description = "Authentik API token for SSO configuration"
-  type        = string
-  default     = ""
-  sensitive   = true
-}
-
-variable "harbor_admin_password" {
-  description = "Harbor admin password for registry configuration"
-  type        = string
-  default     = ""
-  sensitive   = true
-}
-
-variable "gitea_admin_token" {
-  description = "Gitea admin token for git service configuration"
-  type        = string
-  default     = ""
-  sensitive   = true
-}
-

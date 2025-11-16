@@ -10,16 +10,13 @@ provider "proxmox" {
   endpoint = "https://${var.proxmox_api_host}:8006/"
   username = "terraform@pve"
   # Parse the token from the JSON config returned by pve-auth module
-  api_token = jsondecode(jsondecode(module.pve_auth.terraform_token)["config_json"])["token"]
+  api_token = jsondecode(module.pve_auth.terraform_token)["token"]
   insecure  = true # Dev environment with self-signed certs
 }
 
-# PowerDNS provider - will be available after infrastructure deployment
-provider "powerdns" {
-  server_url = "http://10.0.3.3:8081" # PowerDNS API endpoint on cluster VIP
-  # API key will be set via TF_VAR_powerdns_api_key environment variable
-  api_key = var.powerdns_api_key
-}
+# PowerDNS provider - skipped during bootstrap phase
+# This provider is only configured when PowerDNS is available (when api_key is provided)
+# During bootstrap, the DNS module uses count=0 so this provider is not accessed
 
 # Authentik provider - will be available after infrastructure + SSO deployment
 provider "authentik" {
@@ -92,7 +89,9 @@ module "gitops" {
 }
 
 # DNS MODULE: PowerDNS zone and record management
+# Only runs when PowerDNS API key is provided (after PowerDNS is deployed)
 module "dns" {
+  count      = var.powerdns_api_key != "" ? 1 : 0
   source     = "./modules/dns"
   depends_on = [module.infrastructure, module.gitops]
 
