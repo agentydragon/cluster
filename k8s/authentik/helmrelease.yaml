@@ -100,9 +100,14 @@ spec:
           cpu: 500m
           memory: 1Gi
 
-    # PostgreSQL (use external or disable for SQLite)
+    # PostgreSQL with external secret for password
     postgresql:
       enabled: true
+      auth:
+        existingSecret: "authentik-postgresql"
+        secretKeys:
+          adminPasswordKey: "postgres-password"
+          userPasswordKey: "password"
 
     # Redis (optional)
     redis:
