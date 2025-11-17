@@ -77,17 +77,22 @@ spec:
     # Service configuration
     service:
       http:
-        type: NodePort
+        type: ClusterIP
         port: 3000
-        nodePort: 30500
       ssh:
         type: NodePort
         port: 2222
         nodePort: 30501
 
-    # Ingress disabled (using NodePort)
+    # Ingress configuration
     ingress:
-      enabled: false
+      enabled: true
+      className: "nginx"
+      hosts:
+        - host: git.test-cluster.agentydragon.com
+          paths:
+            - path: /
+              pathType: Prefix
 
     # Resources
     resources:
