@@ -54,6 +54,9 @@ resource "null_resource" "wait_for_k8s_api" {
   ]
 
   provisioner "local-exec" {
+    environment = {
+      KUBECONFIG = local_file.kubeconfig.filename
+    }
     command = <<-EOF
       echo "Waiting for Kubernetes API to be ready..."
       i=1
