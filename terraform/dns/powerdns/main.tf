@@ -1,4 +1,10 @@
 terraform {
+  required_providers {
+    powerdns = {
+      source = "pan-net/powerdns"
+    }
+  }
+
   backend "kubernetes" {
     secret_suffix = "powerdns-config"
     namespace     = "flux-system"
