@@ -2,9 +2,29 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
   - namespace.yaml
-  - deployment.yaml
-  - service.yaml
-  - pvc.yaml
-  - schema.yaml
-  - api-key-eso.yaml
-  - terraform.yaml
+  - helmrepository.yaml
+  - helmrelease.yaml
+
+# Post-deployment patch to add Reflector annotations to Helm-created secret
+patches:
+  - target:
+      kind: Secret
+      name: powerdns-api-key
+      namespace: dns-system
+    patch: |-
+      - op: add
+        path: /metadata/annotations
+        value:
+          reflector.v1.k8s.emberstack.com/reflection-allowed: "true"
+          reflector.v1.k8s.emberstack.com/reflection-allowed-namespaces: "external-dns,cert-manager"
+          reflector.v1.k8s.emberstack.com/reflection-auto-enabled: "true"
+          reflector.v1.k8s.emberstack.com/reflection-auto-namespaces: "external-dns,cert-manager"
+          reflector.v1.k8s.emberstack.com/reflection-transforms: |
+            - target: external-dns
+              data:
+                - key: PDNS_API_KEY
+                  value: "{{ .POWERDNS_API_KEY }}"
+            - target: cert-manager
+              data:
+                - key: PDNS_API_KEY
+                  value: "{{ .POWERDNS_API_KEY }}"
