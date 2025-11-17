@@ -7,11 +7,35 @@ Validates Flux kustomization dependencies are correctly ordered and logical
 import sys
 import yaml
 from pathlib import Path
-from typing import Dict, List, Set
+from typing import Dict, List, Set, Optional
 from collections import defaultdict
+from dataclasses import dataclass
 
 
-def load_kustomizations(root: Path = Path("k8s")) -> Dict[str, Dict]:
+@dataclass
+class DependsOn:
+    name: str
+    namespace: Optional[str] = None
+
+
+@dataclass
+class KustomizationSpec:
+    path: str
+    depends_on: List[DependsOn]
+
+    @classmethod
+    def from_dict(cls, spec_dict: Dict) -> "KustomizationSpec":
+        depends_on = []
+        for dep in spec_dict.get("dependsOn", []):
+            if isinstance(dep, dict) and dep.get("name"):
+                depends_on.append(
+                    DependsOn(name=dep["name"], namespace=dep.get("namespace"))
+                )
+
+        return cls(path=spec_dict.get("path", ""), depends_on=depends_on)
+
+
+def load_kustomizations(root: Path = Path("k8s")) -> Dict[str, KustomizationSpec]:
     """Load all Flux kustomizations from the repository"""
     kustomizations = {}
 
@@ -29,11 +53,9 @@ def load_kustomizations(root: Path = Path("k8s")) -> Dict[str, Dict]:
                     ):
                         name = doc.get("metadata", {}).get("name")
                         if name:
-                            kustomizations[name] = {
-                                "spec": doc.get("spec", {}),
-                                "file": str(flux_kustomization_file),
-                                "doc": doc,
-                            }
+                            kustomizations[name] = KustomizationSpec.from_dict(
+                                doc.get("spec", {})
+                            )
         except Exception as e:
             print(
                 f"Warning: Failed to parse {flux_kustomization_file}: {e}",
@@ -43,16 +65,16 @@ def load_kustomizations(root: Path = Path("k8s")) -> Dict[str, Dict]:
     return kustomizations
 
 
-def build_dependency_graph(kustomizations: Dict[str, Dict]) -> Dict[str, List[str]]:
+def build_dependency_graph(
+    kustomizations: Dict[str, KustomizationSpec],
+) -> Dict[str, List[str]]:
     """Build dependency graph from kustomizations"""
     graph = defaultdict(list)
 
-    for name, config in kustomizations.items():
-        depends_on = config["spec"].get("dependsOn", [])
+    for name, spec in kustomizations.items():
+        depends_on = spec.depends_on
         for dep in depends_on:
-            dep_name = dep.get("name")
-            if dep_name:
-                graph[dep_name].append(name)
+            graph[dep.name].append(name)
 
     return dict(graph)
 
@@ -121,11 +143,8 @@ def check_required_dependencies() -> List[str]:
 
     # Build reverse dependency lookup
     depends_on_map = {}
-    for name, config in kustomizations.items():
-        depends_on = config["spec"].get("dependsOn", [])
-        depends_on_map[name] = [
-            dep.get("name") for dep in depends_on if dep.get("name")
-        ]
+    for name, spec in kustomizations.items():
+        depends_on_map[name] = [dep.name for dep in spec.depends_on]
 
     def has_dependency_path(
         from_kust: str, to_kust: str, visited: Set[str] = None
@@ -202,10 +221,7 @@ def validate_external_secrets_dependencies() -> List[str]:
     # Check dependencies
     for service in services_with_external_secrets:
         if service in kustomizations:
-            deps = [
-                dep.get("name")
-                for dep in kustomizations[service]["spec"].get("dependsOn", [])
-            ]
+            deps = [dep.name for dep in kustomizations[service].depends_on]
             if "external-secrets" not in deps:
                 errors.append(
                     f"❌ {service} uses ExternalSecret resources but doesn't depend on external-secrets kustomization"
