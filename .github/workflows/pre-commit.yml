@@ -28,7 +28,7 @@ jobs:
             pre-commit-${{ runner.os }}-
 
       - name: Install pre-commit
-        run: nix-shell --run "pip install pre-commit"
+        run: nix-shell --run "pip install --user pre-commit"
 
       - name: Run pre-commit
         run: nix-shell --run "pre-commit run --all-files"
