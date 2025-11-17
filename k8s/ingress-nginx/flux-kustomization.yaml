@@ -14,6 +14,7 @@ spec:
   wait: true
   dependsOn:
     - name: metallb-config # Wait for MetalLB + IPAddressPools
+    - name: cert-manager # Wait for cert-manager for TLS certificates
   # Ensure MetalLB can assign VIP before creating LoadBalancer service
   healthChecks:
     - apiVersion: metallb.io/v1beta1

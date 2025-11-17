@@ -2,13 +2,13 @@
 apiVersion: bitnami.com/v1alpha1
 kind: SealedSecret
 metadata:
-  name: proxmox-csi
+  name: proxmox-csi-plugin
   namespace: csi-proxmox
 spec:
   encryptedData:
     config.yaml: AgCdHMToazXTyqrGukcXsQ7ZQJw3oNGrYR0vBvENwjBQ5UunEFOSztEkSZ6QA9oik/p17/WNepxu06+owYCTtYVKQNRM0v/YHFGvixEu4lW8lAIw+v9dJXS5kZ/OgSnYUMOQlToRBQ4AaiNctSd4LMb5WawVtte1apsyFjZucEY7kki7pHrB4GdOxn3Dtz58xldCundj1m/xPOwSxAWBXUdc3uGoixyHDbYBdOSiAsE+ZQkJ266Tvs7UIjhef1Sesb1nm4AdayNvpFn9mRcRGzb0I57Dw+KEKfMJy1lGHLM75mBtS2FOqlPeXsCcPTmCfz2W5RklaJDbEeVPsRBOKCDHglYFdXYRLBHWqfBq2JDxXt5TFmVGXdfFMcm1Hyc/tFGxXKKrc4nHBpqjwoMpcl/yu1sLep+YXuJSH4b8ayPwOd3zWkmjdcBTxtBsOF86YnBtT+j1AQ8P4MOyOMIxNIF6/k5/zdsQ4fysnhqhUmjcyQ00HtjJ3y+8yq9MySsS/rO72Ubf5LjBCsPKP1tg+A4lj37YbboFxocm+DHZ1XBInw8P5guJAumIEnbXU9ldSa9N5EGXl1syMT/IHbURyQlrGbRiWNMeRGuxUTJbF22T30NORjQOt+M4Gn8cDdTLyizBy1eLpRBRdQx9ktvDlSqZbINhSW7KYtXEVcnFXVVVE8A6nUvHfUfzwZG9X/GEj+hPkpq84GqsGXikojmrbkmNCjd3aUpGeM3UtB9/t6lgG5arsOiY5RooVkfcfExbqp+z2v/5za/hXVcq6V4RQBQzrPNJ+iEkgcTWkYYiY4+XZ/XkZfvAiTuhpJMTkYBQQmIpwOBw+lwrY9f+fds7YdA01i8uQt1/o7qTk0D95pDfQy8jILSwWeqS9wd2Ro5ZUoedywnHn7tlh//EWc+qN8sH97sO8ZGNOVGssuZri2/WUbNcSB6SS5ytLCnocMb+6EE=
   template:
     metadata:
-      name: proxmox-csi
+      name: proxmox-csi-plugin
       namespace: csi-proxmox
     type: Opaque

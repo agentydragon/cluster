@@ -133,7 +133,7 @@ def check_required_dependencies() -> List[str]:
             "must_come_before": ["external-secrets"],
             "reason": "Vault must be ready before external-secrets can connect",
         },
-        "metallb": {
+        "metallb-config": {
             "must_come_before": ["ingress-nginx"],
             "reason": "Load balancer needed for ingress controller",
         },
@@ -176,10 +176,19 @@ def check_required_dependencies() -> List[str]:
             if dependent not in kustomizations:
                 continue
 
-            if not has_dependency_path(prereq, dependent):
-                errors.append(
-                    f"❌ {dependent} should depend on {prereq} ({rule['reason']})"
-                )
+            # Check if dependent has prereq in its dependency chain
+            if prereq not in depends_on_map.get(dependent, []):
+                # Also check for transitive dependencies
+                has_transitive_dep = False
+                for dep in depends_on_map.get(dependent, []):
+                    if has_dependency_path(prereq, dep):
+                        has_transitive_dep = True
+                        break
+
+                if not has_transitive_dep:
+                    errors.append(
+                        f"❌ {dependent} should depend on {prereq} ({rule['reason']})"
+                    )
 
     return errors
 
