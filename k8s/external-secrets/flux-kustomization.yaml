@@ -1,26 +1,19 @@
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
-  name: external-secrets
+  name: external-secrets-config
   namespace: flux-system
 spec:
-  interval: 10m
-  timeout: 5m
+  interval: 10m0s
+  path: ./k8s/external-secrets
+  prune: true
   sourceRef:
     kind: GitRepository
     name: flux-system
-  path: "./k8s/external-secrets"
-  prune: true
+  timeout: 5m0s
   wait: true
   dependsOn:
-    - name: vault # External Secrets needs Vault to be running for ClusterSecretStore
-  # Verify External Secrets can connect to Vault
-  healthChecks:
-    - apiVersion: v1
-      kind: Service
-      name: vault
-      namespace: vault
-    - apiVersion: apps/v1
-      kind: Deployment
-      name: external-secrets
-      namespace: external-secrets-system
+    - name: external-secrets-operator
+      namespace: flux-system
+    - name: vault
+      namespace: flux-system
