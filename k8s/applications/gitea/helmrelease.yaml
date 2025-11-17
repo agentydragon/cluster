@@ -56,10 +56,14 @@ spec:
           START_SSH_SERVER: true
 
         database:
-          DB_TYPE: sqlite3
+          DB_TYPE: postgres
+          HOST: gitea-postgresql-ha-pgpool:5432
+          NAME: gitea
+          USER: gitea
+          PASSWD: gitea
 
         session:
-          PROVIDER: file
+          PROVIDER: db
 
         cache:
           ENABLED: true
@@ -108,9 +112,13 @@ spec:
       enabled: true
       size: 10Gi
 
-    # PostgreSQL (disabled - using SQLite)
+    # PostgreSQL configuration
     postgresql:
-      enabled: false
+      enabled: true
+      auth:
+        username: gitea
+        password: gitea
+        database: gitea
 
     # Redis (disabled)
     redis-cluster:
