@@ -1,9 +1,11 @@
 ---
 apiVersion: source.toolkit.fluxcd.io/v1
-kind: HelmRepository
+kind: GitRepository
 metadata:
   name: cdwv-powerdns
   namespace: dns-system
 spec:
   interval: 24h
-  url: https://cdwv.github.io/powerdns-helm
+  url: https://github.com/cdwv/powerdns-helm
+  ref:
+    branch: master

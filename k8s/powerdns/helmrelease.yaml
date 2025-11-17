@@ -8,9 +8,9 @@ spec:
   interval: 15m
   chart:
     spec:
-      chart: pdns
+      chart: .
       sourceRef:
-        kind: HelmRepository
+        kind: GitRepository
         name: cdwv-powerdns
         namespace: dns-system
       interval: 15m
