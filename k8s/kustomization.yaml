@@ -15,6 +15,7 @@ resources:
   - vault-config/flux-kustomization.yaml
   - external-secrets-operator/flux-kustomization.yaml
   - external-secrets/flux-kustomization.yaml
+  - reflector/flux-kustomization.yaml
   - authentik/flux-kustomization.yaml
   - authentik-config/flux-kustomization.yaml
   - services-config/flux-kustomization.yaml

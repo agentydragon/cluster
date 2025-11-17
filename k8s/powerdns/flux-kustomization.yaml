@@ -15,6 +15,7 @@ spec:
   dependsOn:
     - name: metallb-config # Wait for MetalLB + IPAddressPools
     - name: external-secrets-config # Wait for External Secrets ClusterSecretStore for bootstrap secret generation
+    - name: reflector # Wait for Reflector to handle secret copying
   # Ensure MetalLB can assign VIP before creating LoadBalancer service
   healthChecks:
     - apiVersion: metallb.io/v1beta1
