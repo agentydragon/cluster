@@ -66,7 +66,7 @@ locals {
 
     # Tailscale config (DRY)
     tailscale_base_args  = "--login-server=${local.global_config.headscale_login_server} --accept-routes"
-    tailscale_route_args = "--advertise-routes=${local.networks.cluster_cidr}"
+    tailscale_route_args = "--advertise-routes=${local.networks.cluster_cidr} --advertise-tags tag:cluster-router"
   }
 
   # Talos machine configuration base (splattable object)

@@ -52,13 +52,23 @@ This document tracks project roadmap and strategic architecture decisions for th
 - [x] **NGINX Ingress**: HA deployment using MetalLB LoadBalancer
 - [x] **External Connectivity**: VPS proxy via Tailscale to cluster ingress
 
-### DNS & Certificates - COMPLETE
+### DNS & Certificates - PARTIAL
 
 - [x] **DNS Delegation**: Route 53 → VPS PowerDNS → Cluster PowerDNS (10.0.3.3)
 - [x] **PowerDNS**: In-cluster authoritative DNS server with LoadBalancer service
 - [x] **cert-manager**: Automatic SSL certificates via PowerDNS DNS-01 challenges
 - [ ] PARTIAL **SNI Passthrough**: Port 8443 SNI from VPS to cluster (enables end-to-end SSL)
 - [x] **VPS PowerDNS Zone Automation**: DNS delegation VPS→cluster (10.0.3.3)
+- [ ] **CRITICAL: Tailscale Route Auto-Approval**: VPS cannot reach cluster DNS VIP (10.0.3.3)
+  - **Current Issue**: Controller nodes advertise routes (10.0.0.0/16) but VPS cannot access cluster
+  - **Root Cause**: Headscale routes require manual approval - breaks PRIME DIRECTIVE
+  - **Required Fix**: Declarative auto-approval of routes from cluster controller nodes
+  - **Impact**: DNS resolution fails for `git.test-cluster.agentydragon.com` and all cluster services
+  - **Solutions**:
+    - Headscale auto-approve configuration for specific users/tags
+    - Terraform external data source for automated route approval
+    - VPS Ansible task to approve routes during bootstrap
+  - **Blocking**: All external access to cluster services until resolved
 
 ## TODO
 
@@ -72,17 +82,26 @@ This document tracks project roadmap and strategic architecture decisions for th
   - **Auth**: Kubernetes authentication method configured by Bank-Vaults
   - **Ready for**: HTTPS configuration via cert-manager, production workloads
 - [x] **External Secrets Operator**: Vault → K8s secrets bridge deployed and configured
-  - **Status**: ClusterSecretStore configured with Vault backend
+  - **Status**: ClusterSecretStore configured with Vault backend, operator+config phases separated
   - **Working**: ESO can generate passwords and sync secrets from Vault to Kubernetes
+  - **Fixed**: Chicken-and-egg problem resolved via phased deployment (operator → config)
 - [x] **Authentik Bootstrap**: ESO password generator provides bootstrap token (no circular dependency)
   - **Architecture**: Vault Stage 1 (unsealed) enables ESO → ESO generates Authentik bootstrap token
   - **No Circular Dependency**: Vault doesn't require SSO initially, Authentik gets secrets from ESO
-- [ ] **Authentik**: Deploy identity provider with blueprint-based configuration
+- [x] **Authentik**: Identity provider deployed with ESO-generated secrets - OPERATIONAL
+  - **Status**: Successfully deployed with proper PostgreSQL and secret key configuration
+  - **Working**: Admin interface accessible, ESO provides all secrets (admin password, secret key, postgres)
+  - **Fixed**: envFrom pattern for secret injection, separated core deployment from SSO configuration
+  - **Ready for**: Blueprint-based configuration and service integration
 - [ ] **PowerDNS Secret Migration**: Migrate PowerDNS API key from terraform-generated Kubernetes secrets to Vault
   - **Current State**: Using terraform-controller with cross-namespace secret copying (temporary workaround)
   - **Target State**: PowerDNS API key stored in Vault, synced to Kubernetes via ExternalSecrets operator
   - **Benefits**: Centralized secret management, proper rotation support, eliminates cross-namespace complexity
-- [ ] **Gitea**: Git service with Authentik OIDC integration
+- [x] **Gitea**: Git service deployed with chart auto-managed PostgreSQL - OPERATIONAL
+  - **Status**: Successfully deployed with ingress at git.test-cluster.agentydragon.com
+  - **Working**: Admin authentication via ESO-generated password, PostgreSQL auto-managed by chart
+  - **Fixed**: Chart version updated to 12.4.0, ingress enabled with nginx controller
+  - **Ready for**: Authentik OIDC integration
 - [ ] **Harbor**: Container registry with Authentik OIDC authentication
 - [ ] **Matrix/Synapse**: Chat platform with Authentik SSO integration
 - [ ] **Cross-integration**: Vault OIDC auth + Authentik-Vault secrets management
