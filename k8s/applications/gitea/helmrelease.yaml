@@ -105,9 +105,20 @@ spec:
       enabled: true
       size: 10Gi
 
-    # PostgreSQL configuration - let chart auto-generate passwords
+    # PostgreSQL configuration with ESO-generated password
     postgresql:
       enabled: true
+      auth:
+        username: gitea
+        database: gitea
+        existingSecret: gitea-postgresql-secret
+        secretKeys:
+          adminPasswordKey: postgres-password
+          userPasswordKey: password
+
+    # Disable PostgreSQL HA (using single instance instead)
+    postgresql-ha:
+      enabled: false
 
     # Redis (disabled)
     redis-cluster:
