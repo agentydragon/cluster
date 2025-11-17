@@ -62,7 +62,7 @@ fi
 
 # Verify infrastructure readiness
 echo "🔍 Verifying infrastructure readiness..."
-KUBECONFIG_PATH="$(terraform output -raw kubeconfig)"
+KUBECONFIG_PATH="${TERRAFORM_DIR}/01-infrastructure/kubeconfig"
 export KUBECONFIG="$KUBECONFIG_PATH"
 
 # Wait for cluster API

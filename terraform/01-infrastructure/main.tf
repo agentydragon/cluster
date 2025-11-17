@@ -37,6 +37,14 @@ resource "local_file" "kubeconfig" {
   depends_on = [module.infrastructure]
 }
 
+# Write talosconfig from Talos to file for CLI access
+resource "local_file" "talosconfig" {
+  content  = module.infrastructure.talos_config
+  filename = "${path.module}/talosconfig.yml"
+
+  depends_on = [module.infrastructure]
+}
+
 # Note: Flux provider removed from Layer 1 - Flux bootstrap moved to Layer 2
 
 # PVE-AUTH MODULE: Creates Proxmox users and API tokens
