@@ -19,7 +19,7 @@ spec:
       namespace: flux-system
     - name: vault
       namespace: flux-system
-    - name: external-secrets
+    - name: external-secrets-config
       namespace: flux-system
     - name: authentik
       namespace: flux-system
