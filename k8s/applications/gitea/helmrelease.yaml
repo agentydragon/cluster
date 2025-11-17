@@ -37,9 +37,9 @@ spec:
     gitea:
       admin:
         username: "admin"
-        # Password from Vault via ExternalSecret
-        existingSecret: "gitea-secrets"
-        passwordKey: "admin-password"
+        # Password from ESO password generator
+        existingSecret: "gitea-admin-password"
+        passwordKey: "password"
         email: "admin@test-cluster.agentydragon.com"
 
       config:
