@@ -39,7 +39,7 @@ spec:
                 - key: api-key
                   value: "{{ .powerdns_api_key }}"
       data:
-        powerdns_api_key: "{{ .api_key }}"
+        powerdns_api_key: "{{ .password }}"
   dataFrom:
     - sourceRef:
         generatorRef:
