@@ -14,7 +14,7 @@ spec:
 
   # Depend on PowerDNS API key from ESO
   dependsOn:
-    - name: external-secrets-config
+    - name: external-secrets-operator
       namespace: flux-system
 
   # Use in-cluster service account
