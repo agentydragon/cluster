@@ -6,6 +6,4 @@ resources:
   - secret-key-external-secret.yaml
   - admin-password-external-secret.yaml
   - token-secret.yaml
-  - config.yaml
-  - sso-secrets.yaml
   - postgres-external-secret.yaml
