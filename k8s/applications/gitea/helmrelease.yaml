@@ -36,9 +36,9 @@ spec:
     # Gitea configuration
     gitea:
       admin:
-        username: "admin"
-        # Password from ESO password generator
+        # Username and password from ESO-generated secret
         existingSecret: "gitea-admin-password"
+        usernameKey: "username"
         passwordKey: "password"
         email: "admin@test-cluster.agentydragon.com"
 
