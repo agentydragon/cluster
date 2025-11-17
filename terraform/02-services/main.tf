@@ -1,30 +1,20 @@
 # LAYER 2: SERVICES
-# Service deployment via GitOps - no external service APIs
-# Includes: Authentik, PowerDNS, Harbor, Gitea, Matrix via Flux
+# Service deployment via GitOps - requires Layer 1 to be complete
 
-# Configure providers using infrastructure from layer 1
+# Static provider configuration - Layer 1 writes kubeconfig to known location
 provider "kubernetes" {
-  host                   = data.terraform_remote_state.infrastructure.outputs.cluster_endpoint
-  client_certificate     = base64decode(data.terraform_remote_state.infrastructure.outputs.kubeconfig_data.client_certificate)
-  client_key             = base64decode(data.terraform_remote_state.infrastructure.outputs.kubeconfig_data.client_key)
-  cluster_ca_certificate = base64decode(data.terraform_remote_state.infrastructure.outputs.kubeconfig_data.cluster_ca_certificate)
+  config_path = "../01-infrastructure/kubeconfig"
 }
 
 provider "helm" {
   kubernetes {
-    host                   = data.terraform_remote_state.infrastructure.outputs.cluster_endpoint
-    client_certificate     = base64decode(data.terraform_remote_state.infrastructure.outputs.kubeconfig_data.client_certificate)
-    client_key             = base64decode(data.terraform_remote_state.infrastructure.outputs.kubeconfig_data.client_key)
-    cluster_ca_certificate = base64decode(data.terraform_remote_state.infrastructure.outputs.kubeconfig_data.cluster_ca_certificate)
+    config_path = "../01-infrastructure/kubeconfig"
   }
 }
 
 provider "flux" {
   kubernetes = {
-    host                   = data.terraform_remote_state.infrastructure.outputs.cluster_endpoint
-    client_certificate     = base64decode(data.terraform_remote_state.infrastructure.outputs.kubeconfig_data.client_certificate)
-    client_key             = base64decode(data.terraform_remote_state.infrastructure.outputs.kubeconfig_data.client_key)
-    cluster_ca_certificate = base64decode(data.terraform_remote_state.infrastructure.outputs.kubeconfig_data.cluster_ca_certificate)
+    config_path = "../01-infrastructure/kubeconfig"
   }
   git = {
     url = "ssh://git@github.com/agentydragon/cluster.git"
@@ -35,24 +25,17 @@ provider "flux" {
   }
 }
 
+# Test Kubernetes connectivity
+resource "kubernetes_namespace" "test" {
+  metadata {
+    name = "test-namespace"
+  }
+}
+
 # FLUX BOOTSTRAP: Initialize GitOps engine
 resource "flux_bootstrap_git" "cluster" {
-  path = "k8s"
-
-  # Pin Flux version to prevent drift
-  version = "v2.7.3"
-
-  # Use embedded manifests to avoid GitOps version mismatches
-  embedded_manifests = true
-
-  # Components to install
-  components_extra = [
-    "image-reflector-controller",
-    "image-automation-controller"
-  ]
-
-  # Network policies for additional security
-  network_policy = true
+  path       = "k8s"
+  depends_on = [kubernetes_namespace.test]
 }
 
 # NOTE: Service configuration moved to Layer 3 after services are deployed

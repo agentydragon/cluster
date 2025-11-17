@@ -9,6 +9,13 @@ import sys
 import json
 from pathlib import Path
 import argparse
+from collections import defaultdict
+
+try:
+    import yaml
+except ImportError:
+    print("PyYAML required: pip install PyYAML", file=sys.stderr)
+    sys.exit(1)
 
 
 async def validate_kustomization(kustomization_path: Path) -> tuple[Path, bool, str]:
@@ -18,13 +25,13 @@ async def validate_kustomization(kustomization_path: Path) -> tuple[Path, bool, 
             "kustomize",
             "build",
             str(kustomization_path.parent),
-            stdout=asyncio.subprocess.DEVNULL,
+            stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
         )
-        _, stderr = await proc.communicate()
+        stdout, stderr = await proc.communicate()
 
         if proc.returncode == 0:
-            return kustomization_path, True, ""
+            return kustomization_path, True, stdout.decode()
         else:
             return kustomization_path, False, stderr.decode()
     except Exception as e:
@@ -66,12 +73,58 @@ async def main():
     # Process results
     successful = []
     failed = []
+    kustomize_outputs = {}
 
-    for kustomization, success, error in results:
+    for kustomization, success, output in results:
         if success:
             successful.append(kustomization)
+            kustomize_outputs[kustomization] = output
         else:
-            failed.append((kustomization, error))
+            failed.append((kustomization, output))
+
+    # Check for duplicate external-secrets installations
+    external_secrets_deployments = defaultdict(list)
+
+    for kustomization, output in kustomize_outputs.items():
+        try:
+            documents = yaml.safe_load_all(output)
+            for doc in documents:
+                if (
+                    doc
+                    and doc.get("kind") == "HelmRelease"
+                    and doc.get("metadata", {}).get("name") == "external-secrets"
+                ):
+                    namespace = doc.get("metadata", {}).get("namespace", "default")
+                    chart_version = (
+                        doc.get("spec", {})
+                        .get("chart", {})
+                        .get("spec", {})
+                        .get("version", "unknown")
+                    )
+                    external_secrets_deployments[f"{namespace}/{chart_version}"].append(
+                        str(kustomization.parent)
+                    )
+        except Exception:
+            # Ignore YAML parsing errors for duplicate check
+            pass
+
+    # Validate exactly one external-secrets installation
+    duplicate_errors = []
+    if len(external_secrets_deployments) > 1:
+        duplicate_errors.append("Multiple external-secrets HelmRelease found:")
+        for deployment, paths in external_secrets_deployments.items():
+            duplicate_errors.append(f"  {deployment}: {', '.join(paths)}")
+        duplicate_errors.append(
+            "There should be exactly ONE external-secrets installation."
+        )
+    elif len(external_secrets_deployments) == 0:
+        duplicate_errors.append(
+            "No external-secrets HelmRelease found. At least one is required."
+        )
+
+    if duplicate_errors:
+        error_msg = "\n".join(duplicate_errors)
+        failed.append((Path("external-secrets-validation"), error_msg))
 
     # Output results
     if args.format == "json":

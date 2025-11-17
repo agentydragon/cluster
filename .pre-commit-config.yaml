@@ -84,6 +84,7 @@ repos:
         language: system
         files: ^k8s/.*\.(yaml|yml)$
         pass_filenames: false
+        # Validates kustomize builds and ensures exactly one external-secrets installation
 
       - id: helm-template-dry-run
         name: Validate Helm templates
