@@ -13,6 +13,7 @@ resources:
   - vault-operator/flux-kustomization.yaml
   - vault/flux-kustomization.yaml
   - vault-config/flux-kustomization.yaml
+  - external-secrets-operator/flux-kustomization.yaml
   - external-secrets/flux-kustomization.yaml
   - authentik/flux-kustomization.yaml
   - services-config/flux-kustomization.yaml
