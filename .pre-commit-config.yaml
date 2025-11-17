@@ -86,6 +86,22 @@ repos:
         pass_filenames: false
         # Validates kustomize builds and ensures exactly one external-secrets installation
 
+      - id: flux-build-dry-run
+        name: Validate Flux kustomizations (dry-run)
+        entry: python3 scripts/validate-flux-build.py
+        language: system
+        files: ^k8s/.*\.(yaml|yml)$
+        pass_filenames: false
+        # Validates Flux can build all kustomizations and checks result
+
+      - id: gitops-dependency-validation
+        name: Validate GitOps dependencies
+        entry: python3 scripts/validate-dependencies.py
+        language: system
+        files: ^k8s/.*\.(yaml|yml)$
+        pass_filenames: false
+        # Validates Flux dependency graph and critical service ordering
+
       - id: helm-template-dry-run
         name: Validate Helm templates
         entry: bash -c 'find terraform/ -name "cilium" -type d | while read d; do if [[ -f "$d/values.yaml" ]]; then echo "Templating Helm chart in $d..."; helm template test-release cilium/cilium -f "$d/values.yaml" --dry-run >/dev/null || exit 1; fi; done'
