@@ -14,7 +14,7 @@ spec:
   wait: true
   dependsOn:
     - name: metallb-config # Wait for MetalLB + IPAddressPools
-    - name: external-secrets # Wait for External Secrets Operator for bootstrap secret generation
+    - name: external-secrets-config # Wait for External Secrets ClusterSecretStore for bootstrap secret generation
   # Ensure MetalLB can assign VIP before creating LoadBalancer service
   healthChecks:
     - apiVersion: metallb.io/v1beta1

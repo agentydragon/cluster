@@ -15,7 +15,7 @@ spec:
   dependsOn:
     - name: vault
       namespace: flux-system
-    - name: external-secrets
+    - name: external-secrets-config
       namespace: flux-system
     - name: cert-manager # Wait for cert-manager for TLS certificates
       namespace: flux-system

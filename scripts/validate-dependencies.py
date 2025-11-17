@@ -117,9 +117,9 @@ def check_required_dependencies() -> List[str]:
 
     # Define critical dependency rules
     dependency_rules = {
-        "external-secrets": {
+        "external-secrets-config": {
             "must_come_before": ["authentik", "gitea", "harbor", "powerdns", "matrix"],
-            "reason": "Applications need external-secrets to sync secrets from Vault",
+            "reason": "Applications need external-secrets ClusterSecretStore to sync secrets from Vault",
         },
         "cert-manager": {
             "must_come_before": ["ingress-nginx", "authentik", "gitea", "harbor"],
@@ -130,7 +130,10 @@ def check_required_dependencies() -> List[str]:
             "reason": "Applications need ingress controller for external access",
         },
         "vault": {
-            "must_come_before": ["external-secrets"],
+            "must_come_before": [
+                "external-secrets-operator",
+                "external-secrets-config",
+            ],
             "reason": "Vault must be ready before external-secrets can connect",
         },
         "metallb-config": {
@@ -231,9 +234,9 @@ def validate_external_secrets_dependencies() -> List[str]:
     for service in services_with_external_secrets:
         if service in kustomizations:
             deps = [dep.name for dep in kustomizations[service].depends_on]
-            if "external-secrets" not in deps:
+            if "external-secrets-config" not in deps:
                 errors.append(
-                    f"❌ {service} uses ExternalSecret resources but doesn't depend on external-secrets kustomization"
+                    f"❌ {service} uses ExternalSecret resources but doesn't depend on external-secrets-config kustomization"
                 )
 
     return errors
