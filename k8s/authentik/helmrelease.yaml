@@ -36,7 +36,7 @@ spec:
 
     # Authentik server configuration
     authentik:
-      # Secret key injected via extraEnvFrom (ESO-generated secure key)
+      # Secret key will be available in the main authentik secret via ESO merge
       secret_key: ""
 
       # Error reporting
@@ -57,12 +57,10 @@ spec:
         # Token will be injected via extraEnvFrom (ESO-generated)
         token: ""
 
-      # Extract secrets from ESO-generated secrets
+      # Extract secrets from ESO-generated secrets (except secret key which is per-component)
       extraEnvFrom:
         - secretRef:
             name: authentik-bootstrap
-        - secretRef:
-            name: authentik-secret-key
         - secretRef:
             name: authentik-admin-password
         - secretRef:
@@ -72,6 +70,11 @@ spec:
     server:
       name: server
       replicas: 1
+
+      # Load ESO-generated secret key via envFrom
+      envFrom:
+        - secretRef:
+            name: authentik-secret-key
 
       # Service configuration
       service:
@@ -98,6 +101,11 @@ spec:
     worker:
       name: worker
       replicas: 1
+
+      # Load ESO-generated secret key via envFrom
+      envFrom:
+        - secretRef:
+            name: authentik-secret-key
 
       resources:
         requests:
