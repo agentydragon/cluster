@@ -1,0 +1,121 @@
+# Default values for PowerDNS
+replicaCount: 1
+
+image:
+  repository: powerdns/pdns-auth-47
+  tag: "4.7.3"
+  pullPolicy: IfNotPresent
+
+# PowerDNS configuration
+powerdns:
+  # API configuration
+  api:
+    enabled: true
+    # API key will be sourced from secret
+    secretName: powerdns-api-key
+    secretKey: PDNS_API_KEY
+
+  # Web server configuration
+  webserver:
+    enabled: true
+    port: 8081
+    address: "0.0.0.0"
+    allowFrom: "10.0.0.0/8,172.16.0.0/12,192.168.0.0/16"
+
+  # Database backend configuration
+  backend: "gsqlite3"
+  sqlite:
+    database: "/var/lib/powerdns/pdns.sqlite3"
+
+  # Additional PowerDNS configuration
+  config:
+    {}
+    # Example:
+    # local-port: 5353
+    # local-address: "0.0.0.0"
+
+# Service configuration
+service:
+  # DNS service (public-facing)
+  dns:
+    type: LoadBalancer
+    port: 53
+    protocol: Both # TCP and UDP
+    annotations:
+      {}
+      # metallb.universe.tf/address-pool: dns-pool
+      # metallb.universe.tf/loadBalancerIPs: 10.0.3.3
+
+  # API service (internal)
+  api:
+    type: ClusterIP
+    port: 8081
+
+# Persistence configuration
+persistence:
+  enabled: true
+  storageClass: ""
+  accessMode: ReadWriteOnce
+  size: 1Gi
+  # existingClaim: ""
+
+# External Secret Operator integration
+externalSecret:
+  enabled: false
+  # If enabled, creates ExternalSecret for API key
+  secretStore:
+    name: vault-backend
+    kind: ClusterSecretStore
+  # Vault path for API key
+  vaultPath: "kv/data/powerdns"
+  # Generated secret name
+  secretName: powerdns-api-key
+
+# Resource limits
+resources:
+  limits:
+    cpu: 500m
+    memory: 512Mi
+  requests:
+    cpu: 100m
+    memory: 128Mi
+
+# Health checks
+healthChecks:
+  enabled: true
+  livenessProbe:
+    httpGet:
+      path: /
+      port: api
+    initialDelaySeconds: 30
+    periodSeconds: 10
+  readinessProbe:
+    httpGet:
+      path: /
+      port: api
+    initialDelaySeconds: 5
+    periodSeconds: 5
+
+# Security context
+securityContext:
+  runAsNonRoot: true
+  runAsUser: 953
+  runAsGroup: 953
+  fsGroup: 953
+
+# Pod security context
+podSecurityContext:
+  fsGroup: 953
+
+# Node selection
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
+# Pod annotations
+podAnnotations: {}
+
+# Service account
+serviceAccount:
+  create: false
+  name: ""

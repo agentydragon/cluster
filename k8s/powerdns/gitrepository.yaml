@@ -2,10 +2,10 @@
 apiVersion: source.toolkit.fluxcd.io/v1
 kind: GitRepository
 metadata:
-  name: cdwv-powerdns
+  name: powerdns-chart
   namespace: dns-system
 spec:
   interval: 24h
-  url: https://github.com/cdwv/powerdns-helm
+  url: https://github.com/agentydragon/cluster
   ref:
-    branch: master
+    branch: main

@@ -8,43 +8,41 @@ spec:
   interval: 15m
   chart:
     spec:
-      chart: .
+      chart: ./charts/powerdns
       sourceRef:
         kind: GitRepository
-        name: cdwv-powerdns
+        name: powerdns-chart
         namespace: dns-system
       interval: 15m
   values:
+    # Service configuration with MetalLB
+    service:
+      dns:
+        type: LoadBalancer
+        annotations:
+          metallb.universe.tf/address-pool: dns-pool
+          metallb.universe.tf/loadBalancerIPs: 10.0.3.3
+
     # PowerDNS configuration
-    pdns:
+    powerdns:
       api:
         enabled: true
+        secretName: powerdns-api-key
+        secretKey: PDNS_API_KEY
       webserver:
+        enabled: true
         allowFrom: "10.0.0.0/8,172.16.0.0/12,192.168.0.0/16"
-      dnsupdate:
-        enabled: false
+      backend: "gsqlite3"
 
-    # Use single replica for DNS consistency
-    replicaCount: 1
+    # Storage configuration
+    persistence:
+      enabled: true
+      size: 1Gi
 
-    # Service configuration
-    service:
-      type: LoadBalancer
-      annotations:
-        metallb.universe.tf/address-pool: dns-pool
-        metallb.universe.tf/loadBalancerIPs: 10.0.3.3
-
-    # Disable ingress (we don't need web UI exposed)
-    ingress:
-      enabled: false
-
-    # MariaDB configuration (backend database)
-    mariadb:
-      master:
-        persistence:
-          enabled: true
-          accessModes:
-            - ReadWriteOnce
-          size: 2Gi
-      metrics:
-        enabled: false
+    # External Secret integration - use our chart's built-in ESO support
+    externalSecret:
+      enabled: true
+      secretStore:
+        name: vault-backend
+        kind: ClusterSecretStore
+      secretName: powerdns-api-key

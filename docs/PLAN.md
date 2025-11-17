@@ -52,11 +52,19 @@ This document tracks project roadmap and strategic architecture decisions for th
 - [x] **NGINX Ingress**: HA deployment using MetalLB LoadBalancer
 - [x] **External Connectivity**: VPS proxy via Tailscale to cluster ingress
 
-### DNS & Certificates - PARTIAL
+### DNS & Certificates - BLOCKED
 
 - [x] **DNS Delegation**: Route 53 → VPS PowerDNS → Cluster PowerDNS (10.0.3.3)
-- [x] **PowerDNS**: In-cluster authoritative DNS server with LoadBalancer service
-- [x] **cert-manager**: Automatic SSL certificates via PowerDNS DNS-01 challenges
+- [ ] **PowerDNS Deployment**: In-cluster authoritative DNS server with LoadBalancer service
+  - **Status**: BLOCKED - cdwv/powerdns-helm chart has YAML parsing bug (duplicate value keys)
+  - **Solution**: Created custom PowerDNS Helm chart with modern features (ESO integration, official images)
+  - **Next**: Deploy custom chart with ESO-generated API key
+- [ ] **external-dns**: Automatic DNS record creation for ingresses
+  - **Status**: Configuration created but not deployed (blocked by PowerDNS)
+  - **Provider**: PowerDNS native provider (better than RFC2136)
+- [ ] **cert-manager webhook**: Automatic SSL certificates via PowerDNS DNS-01 challenges
+  - **Status**: Configuration created but not deployed (blocked by PowerDNS)
+  - **Webhook**: cert-manager-webhook-powerdns for DNS-01 validation
 - [ ] **PowerDNS Operator Evaluation**: Reconsider PowerDNS Operator vs current external-dns + Helm chart approach
   - **Current**: external-dns + cdwv/powerdns-helm chart (fixed YAML bug locally)
   - **Alternative**: PowerDNS Operator (34⭐, Aug 2024) for zone/record management only (still need PowerDNS server deployment)
@@ -104,10 +112,20 @@ This document tracks project roadmap and strategic architecture decisions for th
   - **Working**: Admin interface accessible, ESO provides all secrets (admin password, secret key, postgres)
   - **Fixed**: envFrom pattern for secret injection, separated core deployment from SSO configuration
   - **Ready for**: Blueprint-based configuration and service integration
-- [ ] **PowerDNS Secret Migration**: Migrate PowerDNS API key from terraform-generated Kubernetes secrets to Vault
-  - **Current State**: Using terraform-controller with cross-namespace secret copying (temporary workaround)
-  - **Target State**: PowerDNS API key stored in Vault, synced to Kubernetes via ExternalSecrets operator
-  - **Benefits**: Centralized secret management, proper rotation support, eliminates cross-namespace complexity
+- [ ] **PowerDNS Custom Chart Deployment**: Deploy custom PowerDNS Helm chart to replace buggy cdwv chart
+  - **Status**: Custom chart created with ESO integration, official images, modern security
+  - **Next Steps**:
+    1. Create ESO secret for PowerDNS API key
+    2. Deploy custom chart via GitRepository
+    3. Verify PowerDNS API and LoadBalancer
+- [ ] **PowerDNS API Key via ESO**: Generate PowerDNS API key using External Secrets Operator
+  - **Current State**: Chart ready for ESO integration, need Vault secret + ExternalSecret
+  - **Implementation**: `vault kv put kv/powerdns apikey="$(openssl rand -base64 32)"`
+- [ ] **external-dns Deployment**: Deploy external-dns with PowerDNS provider once PowerDNS is working
+  - **Status**: Configuration ready, needs PowerDNS API endpoint
+- [ ] **cert-manager webhook Deployment**: Deploy PowerDNS webhook for DNS-01 challenges
+  - **Status**: Configuration ready, needs PowerDNS API endpoint
+- [ ] **Test Auto-Ingress Flow**: Verify ingress → DNS record → certificate automation works end-to-end
 - [x] **Gitea**: Git service deployed with chart auto-managed PostgreSQL - OPERATIONAL
   - **Status**: Successfully deployed with ingress at git.test-cluster.agentydragon.com
   - **Working**: Admin authentication via ESO-generated password, PostgreSQL auto-managed by chart

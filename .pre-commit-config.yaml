@@ -6,7 +6,7 @@ repos:
       - id: check-added-large-files
       - id: check-yaml
         args: ["--allow-multiple-documents"]
-        exclude: flux-system/
+        exclude: (flux-system/|k8s/.*-chart/templates/|charts/.*/templates/)
       - id: check-merge-conflict
       - id: check-json
       - id: check-executables-have-shebangs
@@ -18,13 +18,14 @@ repos:
     hooks:
       - id: kubeconform
         args: [-p, k8s/]
-        exclude: terraform\.yaml$
+        exclude: (terraform\.yaml$|k8s/.*-chart/|charts/)
 
   - repo: https://github.com/Agilicus/pre-commit-hook-k8svalidate.git
     rev: v0.0.8
     hooks:
       - id: k8svalidate
         files: ^k8s/.*\.yaml$
+        exclude: (k8s/.*-chart/|charts/)
 
   - repo: local
     hooks:
@@ -33,7 +34,7 @@ repos:
         entry: prettier
         language: system
         types: [yaml]
-        exclude: (flux-system/|\.ya?ml\.j2$)
+        exclude: (flux-system/|\.ya?ml\.j2$|charts/.*/templates/)
         args: ["--write", "--print-width", "120"]
 
   - repo: local
