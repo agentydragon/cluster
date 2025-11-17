@@ -6,6 +6,16 @@ output "kubeconfig" {
   sensitive   = true
 }
 
+output "kubeconfig_data" {
+  description = "Kubeconfig data components for provider configuration"
+  value = {
+    client_certificate     = talos_cluster_kubeconfig.talos.kubernetes_client_configuration.client_certificate
+    client_key             = talos_cluster_kubeconfig.talos.kubernetes_client_configuration.client_key
+    cluster_ca_certificate = talos_cluster_kubeconfig.talos.kubernetes_client_configuration.ca_certificate
+  }
+  sensitive = true
+}
+
 output "talos_config" {
   description = "Talos client configuration"
   value       = data.talos_client_configuration.talos.talos_config

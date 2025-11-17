@@ -40,8 +40,11 @@ resource "null_resource" "proxmox_csi_secret" {
       EOF
 
       # Seal the secret using stable keypair from libsecret
-      kubeseal --cert <(secret-tool lookup service sealed-secrets key public_key) \
+      # Write certificate to temporary file (process substitution not supported in all shells)
+      secret-tool lookup service sealed-secrets key public_key > /tmp/sealed-secrets-cert.pem
+      kubeseal --cert /tmp/sealed-secrets-cert.pem \
         --format=yaml < /tmp/proxmox-csi-secret.yaml > ${path.root}/../../k8s/storage/proxmox-csi-sealed.yaml
+      rm /tmp/sealed-secrets-cert.pem
 
       # Clean up temporary file
       rm /tmp/proxmox-csi-secret.yaml

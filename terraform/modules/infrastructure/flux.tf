@@ -6,7 +6,8 @@ resource "flux_bootstrap_git" "cluster" {
   count = var.enable_flux_bootstrap ? 1 : 0
 
   depends_on = [
-    helm_release.cilium_bootstrap # Native Helm wait ensures healthy CNI
+    talos_cluster_kubeconfig.talos,
+    talos_machine_bootstrap.talos
   ]
 
   path = "k8s"
