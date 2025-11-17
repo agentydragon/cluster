@@ -105,13 +105,9 @@ spec:
       enabled: true
       size: 10Gi
 
-    # PostgreSQL configuration
+    # PostgreSQL configuration - let chart auto-generate passwords
     postgresql:
       enabled: true
-      auth:
-        username: gitea
-        password: gitea
-        database: gitea
 
     # Redis (disabled)
     redis-cluster:
