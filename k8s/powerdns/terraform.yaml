@@ -12,9 +12,9 @@ spec:
     name: flux-system
     namespace: flux-system
 
-  # Depend on PowerDNS secrets being ready
+  # Depend on PowerDNS API key from ESO
   dependsOn:
-    - name: powerdns-secrets
+    - name: external-secrets-config
       namespace: flux-system
 
   # Use in-cluster service account
@@ -35,6 +35,8 @@ spec:
       value: "http://powerdns-api.dns-system:8081"
     - name: cluster_domain
       value: "test-cluster.agentydragon.com"
+    - name: ingress_ip
+      value: "10.0.3.2"
 
   # Variables from secrets (same namespace as terraform resource)
   varsFrom:

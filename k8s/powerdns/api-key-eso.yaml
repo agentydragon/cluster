@@ -1,0 +1,57 @@
+---
+apiVersion: generators.external-secrets.io/v1alpha1
+kind: Password
+metadata:
+  name: powerdns-api-key-generator
+  namespace: dns-system
+spec:
+  length: 32
+  digits: 10
+  symbols: 0
+  symbolCharacters: ""
+  noUpper: false
+  allowRepeat: true
+---
+apiVersion: external-secrets.io/v1beta1
+kind: ExternalSecret
+metadata:
+  name: powerdns-api-key
+  namespace: dns-system
+spec:
+  refreshInterval: 24h
+  target:
+    name: powerdns-api-key
+    creationPolicy: Owner
+    template:
+      type: Opaque
+      data:
+        api-key: "{{ .api_key }}"
+  dataFrom:
+    - sourceRef:
+        generatorRef:
+          apiVersion: generators.external-secrets.io/v1alpha1
+          kind: Password
+          name: powerdns-api-key-generator
+---
+# Copy to flux-system namespace for Terraform consumption
+apiVersion: external-secrets.io/v1beta1
+kind: ExternalSecret
+metadata:
+  name: powerdns-api-key-flux
+  namespace: flux-system
+spec:
+  refreshInterval: 24h
+  target:
+    name: powerdns-api-key
+    creationPolicy: Owner
+    template:
+      type: Opaque
+      data:
+        powerdns_api_key: "{{ .api_key }}"
+  dataFrom:
+    - sourceRef:
+        generatorRef:
+          apiVersion: generators.external-secrets.io/v1alpha1
+          kind: Password
+          name: powerdns-api-key-generator
+          namespace: dns-system
