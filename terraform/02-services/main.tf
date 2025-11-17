@@ -55,11 +55,5 @@ resource "flux_bootstrap_git" "cluster" {
   network_policy = true
 }
 
-# GITOPS MODULE: SSO services deployment
-# Deploys services via Flux but does not configure them via APIs
-module "gitops" {
-  source     = "../modules/gitops"
-  depends_on = [flux_bootstrap_git.cluster]
-
-  cluster_domain = data.terraform_remote_state.infrastructure.outputs.cluster_domain
-}
+# NOTE: Service configuration moved to Layer 3 after services are deployed
+# Layer 2 only deploys services via Flux - configuration happens in Layer 3

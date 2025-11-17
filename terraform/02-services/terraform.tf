@@ -21,13 +21,5 @@ terraform {
       source  = "fluxcd/flux"
       version = "~> 1.7.0"
     }
-    vault = {
-      source  = "hashicorp/vault"
-      version = "~> 5.4.0"
-    }
-    random = {
-      source  = "hashicorp/random"
-      version = "~> 3.7.0"
-    }
   }
 }

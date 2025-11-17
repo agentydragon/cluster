@@ -14,6 +14,12 @@ output "kubeconfig" {
   sensitive   = true
 }
 
+output "kubeconfig_data" {
+  description = "Kubeconfig data components for provider configuration"
+  value       = module.infrastructure.kubeconfig_data
+  sensitive   = true
+}
+
 output "talos_config" {
   description = "Talos client configuration"
   value       = module.infrastructure.talos_config
