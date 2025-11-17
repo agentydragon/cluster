@@ -12,10 +12,7 @@ spec:
     name: flux-system
     namespace: flux-system
 
-  # Depend on PowerDNS API key from ESO
-  dependsOn:
-    - name: external-secrets-operator
-      namespace: flux-system
+  # No dependencies needed - PowerDNS API key secret is managed separately
 
   # Use in-cluster service account
   serviceAccountName: tf-runner
