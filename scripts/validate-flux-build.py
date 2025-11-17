@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """
 Flux Build Validation Script
-Validates that Flux can build all kustomizations and analyzes the results
+Validates that Flux can build all kustomizations and analyzes the results.
+Requires flux CLI to be available - does not fall back to alternatives.
 """
 
 import subprocess
@@ -11,27 +12,11 @@ from collections import defaultdict
 from typing import List, Tuple
 
 
-def run_kustomize_build() -> Tuple[bool, str, str]:
-    """Run kustomize build as fallback when flux build requires cluster access"""
-    try:
-        result = subprocess.run(
-            ["kustomize", "build", "./k8s"], capture_output=True, text=True, timeout=60
-        )
-        return result.returncode == 0, result.stdout, result.stderr
-
-    except subprocess.TimeoutExpired:
-        return False, "", "kustomize build timed out after 60 seconds"
-    except FileNotFoundError:
-        return False, "", "kustomize command not found - ensure kustomize is installed"
-    except Exception as e:
-        return False, "", f"kustomize build failed: {str(e)}"
-
-
 def run_flux_build() -> Tuple[bool, str, str]:
-    """Run flux build and capture output, with kustomize fallback"""
+    """Run flux build and capture output - fail if flux is not available"""
     try:
-        # First try flux build with dry-run (requires kustomization file)
-        kustomization_file = "./k8s/flux-system/flux-kustomization.yaml"
+        # Try flux build with dry-run (requires kustomization file)
+        kustomization_file = "./k8s/flux-system/gotk-sync.yaml"
         result = subprocess.run(
             [
                 "flux",
@@ -49,19 +34,14 @@ def run_flux_build() -> Tuple[bool, str, str]:
             timeout=60,
         )
 
-        if result.returncode == 0:
-            return True, result.stdout, result.stderr
-
-        # If flux build fails (no cluster access, etc.), fall back to kustomize
-        print("⚠️  Flux build not available, falling back to kustomize build...")
-        return run_kustomize_build()
+        return result.returncode == 0, result.stdout, result.stderr
 
     except FileNotFoundError:
-        print("⚠️  Flux CLI not found, falling back to kustomize build...")
-        return run_kustomize_build()
+        return False, "", "flux CLI not found - ensure flux is installed and available"
+    except subprocess.TimeoutExpired:
+        return False, "", "flux build timed out after 60 seconds"
     except Exception as e:
-        print(f"⚠️  Flux build failed ({e}), falling back to kustomize build...")
-        return run_kustomize_build()
+        return False, "", f"flux build failed: {str(e)}"
 
 
 def analyze_flux_output(output: str) -> List[str]:
