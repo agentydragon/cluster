@@ -57,22 +57,21 @@ spec:
         # Token will be injected via extraEnvFrom (ESO-generated)
         token: ""
 
-      # Extract secrets from ESO-generated secrets (except secret key which is per-component)
-      extraEnvFrom:
-        - secretRef:
-            name: authentik-bootstrap
-        - secretRef:
-            name: authentik-admin-password
-        - secretRef:
-            name: authentik-postgres-env
+      # Secrets now loaded per-component via server.envFrom and worker.envFrom
 
     # Server deployment
     server:
       name: server
       replicas: 1
 
-      # Load ESO-generated secret key via envFrom
+      # Load ESO-generated secret key via envFrom (plus all global secrets)
       envFrom:
+        - secretRef:
+            name: authentik-bootstrap
+        - secretRef:
+            name: authentik-admin-password
+        - secretRef:
+            name: authentik-postgres-env
         - secretRef:
             name: authentik-secret-key
 
@@ -102,8 +101,14 @@ spec:
       name: worker
       replicas: 1
 
-      # Load ESO-generated secret key via envFrom
+      # Load ESO-generated secret key via envFrom (plus all global secrets)
       envFrom:
+        - secretRef:
+            name: authentik-bootstrap
+        - secretRef:
+            name: authentik-admin-password
+        - secretRef:
+            name: authentik-postgres-env
         - secretRef:
             name: authentik-secret-key
 
