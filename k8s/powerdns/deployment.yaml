@@ -12,7 +12,7 @@ data:
 
     # API configuration for cert-manager integration
     api=yes
-    api-key=changeme-secure-api-key
+    # API key is provided via PDNS_API_KEY environment variable
     webserver=yes
     webserver-address=0.0.0.0
     webserver-port=8081
