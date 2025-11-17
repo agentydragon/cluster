@@ -1,6 +1,7 @@
 # LAYER 1: INFRASTRUCTURE
-# Pure infrastructure deployment - no external service APIs
-# Includes: PVE auth, VMs, Talos cluster, CNI, storage, Vault
+# Infrastructure deployment with ephemeral VM-specific auth
+# Includes: PVE terraform auth, VMs, Talos cluster, CNI, storage, Vault
+# References: 00-persistent-auth for CSI tokens and sealed secrets
 
 # Proxmox provider using credentials from pve-auth module
 provider "proxmox" {
@@ -87,10 +88,15 @@ module "infrastructure" {
 # SEALED SECRETS: Apply stable keypair after Kubernetes API is ready
 # Moved from infrastructure module to properly handle kubeconfig dependency chain
 
-# STORAGE MODULE: Generates CSI secrets for persistent storage
-module "storage" {
-  source     = "../modules/storage"
-  depends_on = [module.infrastructure, helm_release.cilium_bootstrap]
+# Reference persistent auth layer for CSI configuration
+data "terraform_remote_state" "persistent_auth" {
+  backend = "local"
 
-  csi_config = module.pve_auth.csi_config
+  config = {
+    path = "../00-persistent-auth/terraform.tfstate"
+  }
 }
+
+# STORAGE: CSI sealed secrets generated in 00-persistent-auth layer
+# No module needed here - persistent auth layer handles sealed secret generation
+# CSI driver deployed by GitOps using sealed secrets from persistent layer

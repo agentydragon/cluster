@@ -4,6 +4,29 @@
 
 **The primary goal is to achieve a committed repo state where the bootstrap script → everything works.**
 
+## ⚠️ CRITICAL: PERSISTENT AUTH PROTECTION
+
+**AI agents and automated processes MUST NEVER destroy the persistent auth layer (00-persistent-auth) without
+explicit user authorization.**
+
+**FORBIDDEN OPERATIONS:**
+
+- `cd terraform/00-persistent-auth && terraform destroy`
+- Any command that would destroy CSI tokens or sealed secrets keypair
+- "Clean slate" operations that include persistent auth
+
+**PERMITTED OPERATIONS:**
+
+- VM lifecycle: `cd terraform/01-infrastructure && terraform destroy && terraform apply`
+- Services reset: Layers 02-services, 03-configuration
+- Selective bootstrap: `./bootstrap.sh --start-from=infrastructure`
+
+**RATIONALE:** The persistent auth layer contains:
+
+- Proxmox CSI tokens (required for storage)
+- Sealed secrets keypair (required for secret decryption)
+- These survive VM teardown by design to prevent git commit churn and maintain storage continuity
+
 ### Objective
 
 Achieve a committed repository state such that:

@@ -49,18 +49,12 @@ output "cluster_nodes" {
   }
 }
 
-# STORAGE outputs
-output "storage_configured" {
-  description = "Whether storage CSI driver was configured"
-  value       = module.storage.csi_secret_generated
-}
-
 # Infrastructure readiness indicator
 output "infrastructure_ready" {
   description = "Indicates infrastructure layer is complete and ready for service deployment"
   value = {
-    cluster_ready = module.infrastructure.cluster_endpoint != null
-    storage_ready = module.storage.csi_secret_generated
-    timestamp     = timestamp()
+    cluster_ready   = module.infrastructure.cluster_endpoint != null
+    persistent_auth = data.terraform_remote_state.persistent_auth.outputs.persistent_auth_ready.csi_ready
+    timestamp       = timestamp()
   }
 }
