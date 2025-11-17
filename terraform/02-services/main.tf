@@ -4,18 +4,27 @@
 
 # Configure providers using infrastructure from layer 1
 provider "kubernetes" {
-  config_path = data.terraform_remote_state.infrastructure.outputs.kubeconfig
+  host                   = data.terraform_remote_state.infrastructure.outputs.cluster_endpoint
+  client_certificate     = base64decode(data.terraform_remote_state.infrastructure.outputs.kubeconfig_data.client_certificate)
+  client_key             = base64decode(data.terraform_remote_state.infrastructure.outputs.kubeconfig_data.client_key)
+  cluster_ca_certificate = base64decode(data.terraform_remote_state.infrastructure.outputs.kubeconfig_data.cluster_ca_certificate)
 }
 
 provider "helm" {
   kubernetes {
-    config_path = data.terraform_remote_state.infrastructure.outputs.kubeconfig
+    host                   = data.terraform_remote_state.infrastructure.outputs.cluster_endpoint
+    client_certificate     = base64decode(data.terraform_remote_state.infrastructure.outputs.kubeconfig_data.client_certificate)
+    client_key             = base64decode(data.terraform_remote_state.infrastructure.outputs.kubeconfig_data.client_key)
+    cluster_ca_certificate = base64decode(data.terraform_remote_state.infrastructure.outputs.kubeconfig_data.cluster_ca_certificate)
   }
 }
 
 provider "flux" {
   kubernetes = {
-    config_path = data.terraform_remote_state.infrastructure.outputs.kubeconfig
+    host                   = data.terraform_remote_state.infrastructure.outputs.cluster_endpoint
+    client_certificate     = base64decode(data.terraform_remote_state.infrastructure.outputs.kubeconfig_data.client_certificate)
+    client_key             = base64decode(data.terraform_remote_state.infrastructure.outputs.kubeconfig_data.client_key)
+    cluster_ca_certificate = base64decode(data.terraform_remote_state.infrastructure.outputs.kubeconfig_data.cluster_ca_certificate)
   }
   git = {
     url = "ssh://git@github.com/agentydragon/cluster.git"
