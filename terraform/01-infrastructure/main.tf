@@ -11,6 +11,32 @@ provider "proxmox" {
   insecure  = true # Dev environment with self-signed certs
 }
 
+# Kubernetes provider configured with kubeconfig from Talos
+provider "kubernetes" {
+  host                   = module.infrastructure.cluster_endpoint
+  client_certificate     = base64decode(module.infrastructure.kubeconfig_data.client_certificate)
+  client_key             = base64decode(module.infrastructure.kubeconfig_data.client_key)
+  cluster_ca_certificate = base64decode(module.infrastructure.kubeconfig_data.cluster_ca_certificate)
+}
+
+# Helm provider configured with kubeconfig from Talos
+provider "helm" {
+  kubernetes = {
+    host                   = module.infrastructure.cluster_endpoint
+    client_certificate     = base64decode(module.infrastructure.kubeconfig_data.client_certificate)
+    client_key             = base64decode(module.infrastructure.kubeconfig_data.client_key)
+    cluster_ca_certificate = base64decode(module.infrastructure.kubeconfig_data.cluster_ca_certificate)
+  }
+}
+
+# Write kubeconfig from Talos to file for provider consumption
+resource "local_file" "kubeconfig" {
+  content  = module.infrastructure.kubeconfig
+  filename = "${path.module}/kubeconfig"
+
+  depends_on = [module.infrastructure]
+}
+
 # Note: Flux provider removed from Layer 1 - Flux bootstrap moved to Layer 2
 
 # PVE-AUTH MODULE: Creates Proxmox users and API tokens
@@ -47,10 +73,16 @@ module "infrastructure" {
   enable_flux_bootstrap = false
 }
 
+# CILIUM CNI: Install after Kubernetes API is ready
+# Moved from infrastructure module to properly handle kubeconfig dependency chain
+
+# SEALED SECRETS: Apply stable keypair after Kubernetes API is ready
+# Moved from infrastructure module to properly handle kubeconfig dependency chain
+
 # STORAGE MODULE: Generates CSI secrets for persistent storage
 module "storage" {
   source     = "../modules/storage"
-  depends_on = [module.infrastructure]
+  depends_on = [module.infrastructure, helm_release.cilium_bootstrap]
 
   csi_config = module.pve_auth.csi_config
 }
