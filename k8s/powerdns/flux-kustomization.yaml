@@ -22,12 +22,3 @@ spec:
       kind: IPAddressPool
       name: dns-pool
       namespace: metallb-system
-    # Verify PowerDNS own services are ready
-    - apiVersion: v1
-      kind: Service
-      name: powerdns-api
-      namespace: dns-system
-    - apiVersion: v1
-      kind: Endpoints
-      name: powerdns-api
-      namespace: dns-system
