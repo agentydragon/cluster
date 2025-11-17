@@ -1,0 +1,26 @@
+---
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-prod-dns
+spec:
+  acme:
+    server: https://acme-v02.api.letsencrypt.org/directory
+    email: admin@test-cluster.agentydragon.com
+    privateKeySecretRef:
+      name: letsencrypt-prod-dns-account-key
+    solvers:
+      - dns01:
+          webhook:
+            groupName: acme.zacharyseguin.ca
+            solverName: pdns
+            config:
+              host: http://powerdns-pdns.dns-system:8081
+              ttl: 120
+              timeout: 30
+              apiKeySecretRef:
+                name: powerdns-api-key # Reflector copies from dns-system
+                key: PDNS_API_KEY
+        selector:
+          dnsZones:
+            - test-cluster.agentydragon.com

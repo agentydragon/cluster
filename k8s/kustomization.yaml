@@ -16,6 +16,8 @@ resources:
   - external-secrets-operator/flux-kustomization.yaml
   - external-secrets/flux-kustomization.yaml
   - reflector/flux-kustomization.yaml
+  - external-dns/flux-kustomization.yaml
+  - cert-manager-webhook/flux-kustomization.yaml
   - authentik/flux-kustomization.yaml
   - authentik-config/flux-kustomization.yaml
   - services-config/flux-kustomization.yaml

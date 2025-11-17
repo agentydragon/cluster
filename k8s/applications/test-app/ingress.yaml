@@ -5,13 +5,14 @@ metadata:
   namespace: test-app
   annotations:
     nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod-dns"
+    external-dns.alpha.kubernetes.io/hostname: test.test-cluster.agentydragon.com
 spec:
   ingressClassName: nginx
   tls:
     - hosts:
         - test.test-cluster.agentydragon.com
-      # Note: TLS termination happens at VPS nginx proxy
-      # This section is for documentation/future cert-manager integration
+      secretName: test-web-server-tls
   rules:
     - host: test.test-cluster.agentydragon.com
       http:
