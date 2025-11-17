@@ -28,15 +28,18 @@ spec:
       type: Opaque
       metadata:
         annotations:
-          # Reflector will copy this secret to dns-system namespace
+          # Reflector will copy this secret to dns-system namespace with key transformation
           reflector.v1.k8s.emberstack.com/reflection-allowed: "true"
           reflector.v1.k8s.emberstack.com/reflection-allowed-namespaces: "dns-system"
           reflector.v1.k8s.emberstack.com/reflection-auto-enabled: "true"
           reflector.v1.k8s.emberstack.com/reflection-auto-namespaces: "dns-system"
+          reflector.v1.k8s.emberstack.com/reflection-transforms: |
+            - target: dns-system
+              data:
+                - key: api-key
+                  value: "{{ .powerdns_api_key }}"
       data:
         powerdns_api_key: "{{ .api_key }}"
-        # Also add the key in the format PowerDNS container expects
-        api-key: "{{ .api_key }}"
   dataFrom:
     - sourceRef:
         generatorRef:
