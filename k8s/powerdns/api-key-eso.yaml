@@ -37,7 +37,7 @@ spec:
             - target: dns-system
               data:
                 - key: api-key
-                  value: "{{ .powerdns_api_key }}"
+                  value: "{{ .password }}"
       data:
         powerdns_api_key: "{{ .password }}"
   dataFrom:
