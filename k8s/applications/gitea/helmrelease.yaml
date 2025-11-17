@@ -103,13 +103,15 @@ spec:
       enabled: true
       size: 10Gi
 
-    # PostgreSQL configuration with chart auto-generated passwords
+    # PostgreSQL configuration with full chart auto-management
     postgresql:
       enabled: true
-      auth:
-        username: gitea
-        database: gitea
-        # Let chart auto-generate passwords - no existingSecret specified
+      global:
+        postgresql:
+          auth:
+            username: gitea
+            database: gitea
+            # No password specified - let chart fully auto-generate
 
     # Disable PostgreSQL HA (using single instance instead)
     postgresql-ha:
