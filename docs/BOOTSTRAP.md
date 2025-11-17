@@ -211,7 +211,7 @@ Cluster should now be operational with GitOps and external HTTPS connectivity.
 
 The cluster uses a **3-layer terraform architecture** that properly models API dependencies:
 
-```
+```text
 Layer 1: Infrastructure (terraform/01-infrastructure/)
 ├── Proxmox API → VMs created
 ├── Talos API → Cluster bootstrapped, kubeconfig generated
@@ -244,4 +244,5 @@ Each layer uses providers appropriate to its API dependencies:
 - **Layer 2**: Kubernetes, Helm, Flux, Vault
 - **Layer 3**: PowerDNS, Authentik, Harbor, Gitea
 
-The Kubernetes and Helm providers in Layer 1 use kubeconfig data directly from Talos outputs, avoiding file-based configuration issues.
+The Kubernetes and Helm providers in Layer 1 use kubeconfig data directly from Talos outputs, avoiding file-based
+configuration issues.
