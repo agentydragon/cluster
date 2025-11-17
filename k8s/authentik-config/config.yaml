@@ -35,8 +35,7 @@ spec:
       value: "http://instance.vault.svc.cluster.local:8200"
   varsFrom:
     - kind: Secret
-      name: instance-unseal-keys
-      namespace: vault
+      name: vault-token
       varsKeys:
-        - vault_token=vault-root
+        - vault_token
       optional: false
