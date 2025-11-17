@@ -3,4 +3,3 @@ kind: Kustomization
 resources:
   - sealed-secrets.yaml
   - tofu-controller.yaml
-  - external-secrets.yaml
