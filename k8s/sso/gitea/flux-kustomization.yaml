@@ -1,21 +1,21 @@
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
-  name: authentik-config
+  name: gitea-sso
   namespace: flux-system
 spec:
-  interval: 15m0s
-  path: ./k8s/authentik-config
-  prune: true
+  interval: 10m
+  timeout: 5m
   sourceRef:
     kind: GitRepository
     name: flux-system
-  timeout: 10m0s
+  path: "./k8s/sso/gitea"
+  prune: true
   wait: true
   dependsOn:
-    - name: authentik # Wait for authentik to be ready before generating SSO secrets
+    - name: gitea # Wait for gitea base app
       namespace: flux-system
-    - name: vault-config # Wait for vault to be configured
+    - name: authentik # Wait for authentik to be ready
       namespace: flux-system
     - name: external-secrets-config # Wait for ESO to be configured
       namespace: flux-system

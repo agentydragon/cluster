@@ -1,0 +1,22 @@
+apiVersion: external-secrets.io/v1beta1
+kind: ExternalSecret
+metadata:
+  name: authentik-api-token
+  namespace: flux-system
+spec:
+  refreshInterval: 24h
+  secretStoreRef:
+    name: vault-backend
+    kind: SecretStore
+  target:
+    name: authentik-api-token
+    creationPolicy: Owner
+    template:
+      type: Opaque
+      data:
+        authentik_token: "{{ .authentik_api_token }}"
+  data:
+    - secretKey: authentik_api_token
+      remoteRef:
+        key: kv/authentik
+        property: api_token
