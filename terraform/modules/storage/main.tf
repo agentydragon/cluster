@@ -26,7 +26,7 @@ resource "null_resource" "proxmox_csi_secret" {
       apiVersion: v1
       kind: Secret
       metadata:
-        name: proxmox-csi
+        name: proxmox-csi-plugin
         namespace: csi-proxmox
       type: Opaque
       stringData:
