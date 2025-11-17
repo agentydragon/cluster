@@ -16,6 +16,7 @@ terraform {
 
 provider "vault" {
   address = var.vault_address
+  token   = var.vault_token
 }
 
 # Generate secure client secrets for all SSO services

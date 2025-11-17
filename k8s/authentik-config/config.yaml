@@ -32,4 +32,11 @@ spec:
     - name: authentik_url
       value: "https://auth.test-cluster.agentydragon.com"
     - name: vault_address
-      value: "https://vault.test-cluster.agentydragon.com"
+      value: "http://instance.vault.svc.cluster.local:8200"
+  varsFrom:
+    - kind: Secret
+      name: instance-unseal-keys
+      namespace: vault
+      varsKeys:
+        - vault_token=vault-root
+      optional: false
