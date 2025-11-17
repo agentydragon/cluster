@@ -57,6 +57,17 @@ This document tracks project roadmap and strategic architecture decisions for th
 - [x] **DNS Delegation**: Route 53 → VPS PowerDNS → Cluster PowerDNS (10.0.3.3)
 - [x] **PowerDNS**: In-cluster authoritative DNS server with LoadBalancer service
 - [x] **cert-manager**: Automatic SSL certificates via PowerDNS DNS-01 challenges
+- [ ] **PowerDNS Operator Evaluation**: Reconsider PowerDNS Operator vs current external-dns + Helm chart approach
+  - **Current**: external-dns + cdwv/powerdns-helm chart (fixed YAML bug locally)
+  - **Alternative**: PowerDNS Operator (34⭐, Aug 2024) for zone/record management only (still need PowerDNS server deployment)
+  - **Limitation**: Operator doesn't deploy PowerDNS servers - only manages zones/records via API
+  - **Evaluate**: Whether zone-only management offers advantages over external-dns direct integration
+- [ ] **Technitium DNS Evaluation**: Alternative to PowerDNS for authoritative DNS
+  - **Alternative**: Technitium DNS Server (4.6k⭐, active development, excellent API)
+  - **Pros**: Modern architecture, comprehensive DNSSEC, excellent web UI, official Docker images
+  - **Cons**: RFC2136-only integration (no native external-dns provider), TSIG key complexity, newer K8s ecosystem
+  - **Integration**: Would require RFC2136 for both external-dns and cert-manager (vs PowerDNS native providers)
+  - **Evaluate**: Whether advanced features justify integration complexity vs PowerDNS simplicity
 - [ ] PARTIAL **SNI Passthrough**: Port 8443 SNI from VPS to cluster (enables end-to-end SSL)
 - [x] **VPS PowerDNS Zone Automation**: DNS delegation VPS→cluster (10.0.3.3)
 - [ ] **CRITICAL: Tailscale Route Auto-Approval**: VPS cannot reach cluster DNS VIP (10.0.3.3)
