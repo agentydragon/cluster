@@ -203,23 +203,43 @@ kubectl get nodes
 
 ### PowerDNS DNS Delegation Issues
 
+**Architecture**: Secondary Zone via AXFR
+
+- **Primary**: Cluster PowerDNS (10.0.3.3) - authoritative source of truth
+- **Secondary**: VPS PowerDNS (ns1.agentydragon.com) - public-facing nameserver
+- **Replication**: Automatic AXFR zone transfers over Tailscale VPN
+- **Public Delegation**: Route 53 → ns1.agentydragon.com → serves from local zone copy
+
 **Symptoms**: DNS queries fail, cert-manager DNS-01 challenges fail
 **Root Causes & Solutions**:
 
 1. **VIP Not Assigned to PowerDNS Service**:
-   - **Symptom**: `kubectl get svc powerdns-external` shows `<pending>` for EXTERNAL-IP
+   - **Symptom**: `kubectl get svc -n dns-system` shows `<pending>` for EXTERNAL-IP
    - **Solution**: Check MetalLB configuration and pod status
    - **Fix**: Verify MetalLB speaker pods running, check IPAddressPool config
 
-2. **DNS Delegation Chain Broken**:
-   - **Symptom**: `dig @ns1.agentydragon.com test-cluster.agentydragon.com NS` fails
-   - **Solution**: Check VPS PowerDNS zone configuration
-   - **Fix**: Verify delegation records point to cluster PowerDNS VIP
+2. **Zone Not Replicating to VPS (AXFR Failure)**:
+   - **Symptom**: `dig @ns1.agentydragon.com test-cluster.agentydragon.com SOA` shows old/missing data
+   - **Check**: `ssh root@agentydragon.com "docker exec powerdns pdnsutil list-zone test-cluster.agentydragon.com"`
+   - **Solution**: Verify Tailscale route advertisement and VPS secondary configuration
+   - **Fix**:
+     - Check routes: `ssh root@agentydragon.com "tailscale status"` (should show 10.0.3.0/27)
+     - Verify VPS config: `secondary=yes` in PowerDNS config
+     - Manual transfer: `ssh root@agentydragon.com "docker exec powerdns pdns_control retrieve test-cluster.agentydragon.com"`
 
-3. **PowerDNS API Not Accessible**:
+3. **NS Records Point to Wrong Nameserver**:
+   - **Symptom**: cert-manager fails with "no such host" errors for NS records
+   - **Check**: `dig @10.0.3.3 test-cluster.agentydragon.com NS` (should return `ns1.agentydragon.com`)
+   - **Solution**: Fix NS records in zone
+   - **Fix**:
+     `kubectl exec -n dns-system deployment/powerdns -- pdnsutil replace-rrset
+     test-cluster.agentydragon.com @ NS 3600 "ns1.agentydragon.com."`
+   - **Note**: Public DNS will cache old NS records (check TTL with `dig`)
+
+4. **PowerDNS API Not Accessible**:
    - **Symptom**: cert-manager fails to create DNS-01 challenge records
    - **Solution**: Check PowerDNS pod logs and API service
-   - **Fix**: Verify PowerDNS API key secret exists in dns-system namespace
+   - **Fix**: Verify PowerDNS API key secret exists in cert-manager namespace (reflector copies from dns-system)
 
 ### MetalLB LoadBalancer Issues
 

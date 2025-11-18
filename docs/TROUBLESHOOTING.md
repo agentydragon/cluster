@@ -219,3 +219,72 @@ kubectl delete sealedsecret proxmox-csi-plugin -n csi-proxmox
 - **Issue**: Node stuck NotReady with "InvalidDiskCapacity"
 - **Cause**: Kubelet disk detection problems
 - **Fix**: Usually resolves automatically, or restart VM
+
+### DNS & Certificate Manager
+
+#### PowerDNS Zone Replication (AXFR)
+
+**Architecture**:
+
+- Primary: Cluster PowerDNS (10.0.3.3) - authoritative source
+- Secondary: VPS PowerDNS (ns1.agentydragon.com) - public-facing
+- Replication: AXFR over Tailscale VPN
+
+**Check zone replication status**:
+
+```bash
+# Verify VPS has zone data
+ssh root@agentydragon.com "docker exec powerdns pdnsutil list-zone test-cluster.agentydragon.com"
+
+# Manually trigger zone transfer
+ssh root@agentydragon.com "docker exec powerdns pdns_control retrieve test-cluster.agentydragon.com"
+
+# Verify NS records are correct
+dig @ns1.agentydragon.com test-cluster.agentydragon.com NS
+```
+
+**Common issues**:
+
+- **VPS not fetching zone**: Check `secondary=yes` in VPS PowerDNS config
+- **Tailscale route not working**: Verify routes advertised and enabled in Headscale
+- **Old NS records cached**: Wait for TTL expiry (check with `dig test-cluster.agentydragon.com NS`)
+
+#### cert-manager DNS-01 Validation
+
+**Check certificate status**:
+
+```bash
+kubectl get certificates -A
+kubectl get certificaterequests -A
+kubectl get challenges -A
+kubectl logs -n cert-manager -l app.kubernetes.io/name=cert-manager --tail=50
+```
+
+**Common failures**:
+
+1. **"propagation check failed: no such host"**
+   - **Symptom**: cert-manager trying to resolve old NS record names
+   - **Cause**: DNS cache still returning stale NS records
+   - **Check**: `dig test-cluster.agentydragon.com NS` (check TTL)
+   - **Fix**: Wait for DNS cache expiry (typically 1 hour from NS change)
+
+2. **"webhook call failed"**
+   - **Check**: PowerDNS webhook pod running: `kubectl get pods -n cert-manager -l app.kubernetes.io/name=cert-manager-webhook-powerdns`
+   - **Check**: PowerDNS API accessible:
+     `kubectl exec -n cert-manager deployment/cert-manager-webhook-powerdns -- wget -O-
+     http://powerdns-api.dns-system:8081/api/v1/servers`
+
+3. **Challenge TXT record not created**
+   - **Check**: PowerDNS logs: `kubectl logs -n dns-system deployment/powerdns`
+   - **Check**: Webhook logs: `kubectl logs -n cert-manager -l app.kubernetes.io/name=cert-manager-webhook-powerdns`
+   - **Verify**: API key secret exists: `kubectl get secret powerdns-api-key -n cert-manager`
+
+**Force certificate retry**:
+
+```bash
+# Delete failed resources to trigger fresh attempt
+kubectl delete challenge -n <namespace> --all
+kubectl delete order -n <namespace> --all
+kubectl delete certificaterequest -n <namespace> --all
+# Certificate resource will recreate them automatically
+```
