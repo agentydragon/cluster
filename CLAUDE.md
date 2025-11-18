@@ -1,5 +1,23 @@
 # Claude Code Instructions
 
+## ⚠️ CRITICAL: REPOSITORY SCOPE
+
+**Your work is confined to this cluster repository (`/home/agentydragon/code/cluster`) ONLY.**
+
+**FORBIDDEN OPERATIONS:**
+
+- Editing or pushing files outside this repository (e.g., ~/code/ducktape, other repos)
+- Making commits in other repositories without explicit instruction
+- Pushing changes to other git repositories (user controls those separately)
+
+**PERMITTED OPERATIONS:**
+
+- Reading reference code from `/code/*` for documentation and implementation patterns
+- Suggesting changes for other repositories (user will implement them)
+- Working with files exclusively in `/home/agentydragon/code/cluster`
+
+**EXCEPTION:** Only edit/commit/push to other repositories when user explicitly instructs you to do so.
+
 ## PRIMARY DIRECTIVE: DECLARATIVE TURNKEY BOOTSTRAP
 
 **The primary goal is to achieve a committed repo state where the bootstrap script → everything works.**
