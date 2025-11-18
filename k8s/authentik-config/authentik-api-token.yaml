@@ -1,3 +1,19 @@
+# Phase 1: Bootstrap with generated token
+# Generate API token that will be manually created in Authentik UI
+---
+apiVersion: generators.external-secrets.io/v1alpha1
+kind: Password
+metadata:
+  name: authentik-api-token-generator
+  namespace: flux-system
+spec:
+  length: 64
+  digits: 10
+  symbols: 0
+  symbolCharacters: ""
+  noUpper: false
+  allowRepeat: true
+---
 apiVersion: external-secrets.io/v1beta1
 kind: ExternalSecret
 metadata:
@@ -5,18 +21,36 @@ metadata:
   namespace: flux-system
 spec:
   refreshInterval: 24h
-  secretStoreRef:
-    name: vault-backend
-    kind: SecretStore
   target:
     name: authentik-api-token
     creationPolicy: Owner
     template:
       type: Opaque
       data:
-        authentik_token: "{{ .authentik_api_token }}"
-  data:
-    - secretKey: authentik_api_token
-      remoteRef:
-        key: kv/authentik
-        property: api_token
+        authentik_token: "{{ .password }}"
+  dataFrom:
+    - sourceRef:
+        generatorRef:
+          apiVersion: generators.external-secrets.io/v1alpha1
+          kind: Password
+          name: authentik-api-token-generator
+# Phase 2: After manual bootstrap, migrate to Vault-backed token
+# ---
+# apiVersion: external-secrets.io/v1beta1
+# kind: ExternalSecret
+# metadata:
+#   name: authentik-api-token
+#   namespace: flux-system
+# spec:
+#   refreshInterval: 24h
+#   secretStoreRef:
+#     kind: ClusterSecretStore  # Fixed: was SecretStore
+#     name: vault-backend
+#   target:
+#     name: authentik-api-token
+#     creationPolicy: Owner
+#   data:
+#     - secretKey: authentik_token
+#       remoteRef:
+#         key: kv/authentik
+#         property: api_token
