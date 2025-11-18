@@ -44,16 +44,4 @@ locals {
     headscale = "root@${local.hosts.headscale}"
   }
 
-  # Network configuration
-  networks = {
-    cluster_cidr = "10.0.0.0/16"
-    gateway      = "10.0.0.1"
-
-    # VIP pools
-    cluster_api_vip = "10.0.3.1"
-    ingress_pool    = "10.0.3.2"
-    dns_pool        = "10.0.3.3"
-    services_pool   = "10.0.3.4-20"
-  }
-
 }

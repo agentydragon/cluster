@@ -66,7 +66,7 @@ locals {
 
     # Tailscale config (DRY)
     tailscale_base_args  = "--login-server=${local.global_config.headscale_login_server} --accept-routes"
-    tailscale_route_args = "--advertise-routes=${local.networks.cluster_api_vip}/32,${local.networks.ingress_pool}/32,${local.networks.dns_pool}/32,10.0.3.4/28 --advertise-tags=tag:cluster-router"
+    tailscale_route_args = "--advertise-routes=10.0.3.0/27 --advertise-tags=tag:cluster-router"
   }
 
   # Talos machine configuration base (splattable object)
