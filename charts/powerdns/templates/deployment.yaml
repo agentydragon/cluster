@@ -75,6 +75,10 @@ spec:
           value: {{ .Values.powerdns.webserver.allowFrom | quote }}
         {{- end }}
 
+        # Disable control socket (not needed for containerized deployment)
+        - name: PDNS_control_console
+          value: "no"
+
         ports:
         - name: dns-tcp
           containerPort: 53
@@ -102,8 +106,6 @@ spec:
         volumeMounts:
         - name: config
           mountPath: /etc/pdns
-        - name: run
-          mountPath: /var/run/pdns
 
         {{- with .Values.resources }}
         resources:
@@ -113,9 +115,6 @@ spec:
       volumes:
       # pschiffe/pdns-mysql entrypoint writes config to /etc/pdns
       - name: config
-        emptyDir: {}
-      # PowerDNS creates control socket in /var/run/pdns
-      - name: run
         emptyDir: {}
 
       {{- with .Values.nodeSelector }}
