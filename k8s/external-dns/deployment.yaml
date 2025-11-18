@@ -28,7 +28,7 @@ spec:
             - --txt-owner-id=external-dns
             - --log-level=debug
             - --interval=30s
-            - --target=172.235.48.86 # VPS public IP for external access
+            - --default-targets=172.235.48.86
           env:
             - name: PDNS_API_KEY
               valueFrom:
