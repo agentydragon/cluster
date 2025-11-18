@@ -115,17 +115,20 @@ This document tracks project roadmap and strategic architecture decisions for th
   - **Cons**: RFC2136-only integration (no native external-dns provider), TSIG key complexity, newer K8s ecosystem
   - **Integration**: Would require RFC2136 for both external-dns and cert-manager (vs PowerDNS native providers)
   - **Evaluate**: Whether advanced features justify integration complexity vs PowerDNS simplicity
-- [ ] PARTIAL **SNI Passthrough**: Port 8443 SNI from VPS to cluster (enables end-to-end SSL)
-- [ ] **Let's Encrypt Certificate Validation**: Waiting for DNS cache expiry
-  - **Status**: DNS infrastructure 100% complete and operational ✅
+- [ ] **SNI Passthrough on Port 443**: VPS nginx SNI routing to cluster for native HTTPS (not 8443)
+  - **Current**: VPS nginx configured with TLS stream SNI router to cluster ingress VIP (10.0.3.2:443)
+  - **Configuration**: `nginx-streams/https-sni-router.j2` routes `*.test-cluster.agentydragon.com` to cluster
+  - **Limitation**: Public endpoint on port 8443, not 443 (requires SNI setup on VPS nginx for port 443)
+  - **Impact**: HTTP-01 ACME challenges fail (Let's Encrypt only supports ports 80/443, not 8443)
+- [x] **Let's Encrypt Certificates**: Automatic TLS certificates via cert-manager - WORKING ✅
+  - **Status**: DNS infrastructure and cert-manager fully operational
   - **DNS Configuration**: All A records point to VPS IP (172.235.48.86) ✅
-  - **ACME Challenges**: TXT records present and replicated via AXFR ✅
-  - **Authoritative DNS**: Both cluster and VPS PowerDNS serving correct NS records (`ns1.agentydragon.com`)
-  - **Blocking Issue**: Public DNS cache still returning old NS records (TTL: ~23 minutes remaining)
-  - **Root Cause**: NS records were changed from `ns1/ns2.test-cluster.agentydragon.com` → `ns1.agentydragon.com`
-  - **Current Behavior**: cert-manager propagation checks fail looking up non-existent old NS names
-  - **Expected Outcome**: Certificates will auto-issue once DNS cache expires
-  - **Service Status**: Gitea accessible and working ✅
+  - **Authoritative DNS**: PowerDNS serving from `ns1.agentydragon.com` ✅
+  - **Challenge Solvers**:
+    - **DNS-01** (PowerDNS webhook): Works for wildcard domains (*.test-cluster.agentydragon.com) ✅
+    - **HTTP-01** (nginx ingress): Configured but blocked by port 8443 limitation ⚠️
+  - **Current Workaround**: Use DNS-01 solver (wildcard certs) until port 443 SNI is configured
+  - **Services**: Gitea, Vault, Harbor, Authentik all accessible ✅
 
 ## TODO
 
@@ -166,9 +169,10 @@ This document tracks project roadmap and strategic architecture decisions for th
   - **Status**: Configuration ready, needs PowerDNS API endpoint
 - [ ] **Test Auto-Ingress Flow**: Verify ingress → DNS record → certificate automation works end-to-end
 - [x] **Gitea**: Git service deployed with chart auto-managed PostgreSQL - OPERATIONAL
-  - **Status**: Successfully deployed with ingress at git.test-cluster.agentydragon.com
+  - **Status**: Successfully deployed with ingress at git.test-cluster.agentydragon.com:8443
   - **Working**: Admin authentication via ESO-generated password, PostgreSQL auto-managed by chart
-  - **Fixed**: Chart version updated to 12.4.0, ingress enabled with nginx controller
+  - **TLS**: Let's Encrypt certificate configured (pending port 443 SNI setup for HTTP-01 validation)
+  - **Fixed**: Chart version updated to 12.4.0, ingress enabled with nginx controller, TLS annotations added
   - **Ready for**: Authentik OIDC integration
 - [ ] **Harbor**: Container registry with Authentik OIDC authentication
 - [ ] **Matrix/Synapse**: Chat platform with Authentik SSO integration
