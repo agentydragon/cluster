@@ -14,6 +14,7 @@ spec:
   wait: true
   dependsOn:
     - name: vault # Wait for Vault instance to be ready
+    - name: external-secrets-config # Required for ExternalSecret resources
   # Verify terraform resource is ready
   healthChecks:
     - apiVersion: infra.contrib.fluxcd.io/v1alpha2

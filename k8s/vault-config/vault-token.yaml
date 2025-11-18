@@ -1,0 +1,50 @@
+# Phase 1: Bootstrap - Copy Vault root token from Bank Vaults unseal secret
+# This makes the root token available to Terraform resources that need to write to Vault
+#
+# Phase 2: TODO: Create a dedicated Terraform service token with limited permissions
+# instead of using the root token
+---
+apiVersion: external-secrets.io/v1beta1
+kind: ExternalSecret
+metadata:
+  name: vault-token
+  namespace: flux-system
+spec:
+  refreshInterval: 24h
+  # Use sourceRef to copy from another Kubernetes secret
+  dataFrom:
+    - extract:
+        key: instance-unseal-keys
+        conversionStrategy: Default
+  target:
+    name: vault-token
+    creationPolicy: Owner
+    template:
+      type: Opaque
+      data:
+        # Terraform expects key "vault_token"
+        vault_token: '{{ index . "vault-root" }}'
+  # Reference the Bank Vaults unseal keys secret
+  secretStoreRef:
+    kind: SecretStore
+    name: vault-secret-store
+---
+# SecretStore to read from vault namespace secrets
+apiVersion: external-secrets.io/v1beta1
+kind: SecretStore
+metadata:
+  name: vault-secret-store
+  namespace: flux-system
+spec:
+  provider:
+    kubernetes:
+      # Read from vault namespace
+      remoteNamespace: vault
+      server:
+        caProvider:
+          type: ConfigMap
+          name: kube-root-ca.crt
+          key: ca.crt
+      auth:
+        serviceAccount:
+          name: external-secrets
