@@ -26,19 +26,29 @@ resource "authentik_provider_oauth2" "matrix" {
   client_id          = "matrix"
   client_secret      = var.client_secret
   authorization_flow = data.authentik_flow.default_authorization_flow.id
+  invalidation_flow  = data.authentik_flow.default_invalidation_flow.id
 
-  redirect_uris = [
-    "${var.matrix_url}/_synapse/client/oidc/callback"
+  allowed_redirect_uris = [
+    {
+      matching_mode = "strict"
+      url           = "${var.matrix_url}/_synapse/client/oidc/callback"
+    }
   ]
 
-  property_mappings = data.authentik_property_mapping_provider_scope.scopes.ids
+  client_type                = "confidential"
+  issuer_mode                = "per_provider"
+  include_claims_in_id_token = true
 
-  signing_algorithm = "RS256"
+  property_mappings = data.authentik_property_mapping_provider_scope.scopes.ids
 }
 
 # Data sources for default flows and mappings
 data "authentik_flow" "default_authorization_flow" {
   slug = "default-authentication-flow"
+}
+
+data "authentik_flow" "default_invalidation_flow" {
+  slug = "default-invalidation-flow"
 }
 
 data "authentik_property_mapping_provider_scope" "scopes" {
