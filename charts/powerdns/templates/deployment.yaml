@@ -79,6 +79,12 @@ spec:
         - name: PDNS_socket_dir
           value: "/tmp"
 
+        # Disable setuid/setgid (already enforced by Kubernetes securityContext)
+        - name: PDNS_setuid
+          value: ""
+        - name: PDNS_setgid
+          value: ""
+
         ports:
         - name: dns-tcp
           containerPort: 53
