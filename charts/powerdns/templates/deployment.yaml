@@ -85,6 +85,12 @@ spec:
         - name: PDNS_setgid
           value: ""
 
+        # Additional custom configuration
+        {{- range $key, $value := .Values.powerdns.config }}
+        - name: PDNS_{{ $key | replace "-" "_" }}
+          value: {{ $value | quote }}
+        {{- end }}
+
         ports:
         - name: dns-tcp
           containerPort: 53
