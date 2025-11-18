@@ -101,10 +101,17 @@ securityContext:
   runAsNonRoot: true
   runAsUser: 953
   runAsGroup: 953
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop: ["ALL"]
+  seccompProfile:
+    type: RuntimeDefault
 
 # Pod security context
 podSecurityContext:
   fsGroup: 953
+  seccompProfile:
+    type: RuntimeDefault
 
 # Node selection
 nodeSelector: {}
