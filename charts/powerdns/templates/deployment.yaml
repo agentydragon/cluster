@@ -75,9 +75,9 @@ spec:
           value: {{ .Values.powerdns.webserver.allowFrom | quote }}
         {{- end }}
 
-        # Disable control socket (not needed for containerized deployment)
-        - name: PDNS_control_console
-          value: "no"
+        # Move control socket to writable /tmp directory
+        - name: PDNS_socket_dir
+          value: "/tmp"
 
         ports:
         - name: dns-tcp
