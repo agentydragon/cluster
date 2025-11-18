@@ -1,7 +1,7 @@
 variable "authentik_url" {
   description = "Authentik server URL"
   type        = string
-  default     = "https://auth.test-cluster.agentydragon.com"
+  default     = "http://authentik-server.authentik.svc.cluster.local"
 }
 
 variable "authentik_token" {
