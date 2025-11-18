@@ -74,7 +74,7 @@ and critic-agent validation for reliable production deployments.
 
 ### Automatic Repository Management
 
-Clones and analyzes source code using `/mnt/tankshare/code/domain.tld/org/repo` structure:
+Clones and analyzes source code using `/code/domain.tld/org/repo` structure:
 
 ```bash
 # Auto-discovery of configuration options

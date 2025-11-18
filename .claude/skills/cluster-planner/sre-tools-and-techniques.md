@@ -81,8 +81,8 @@ systemctl status kubelet  # Node agent health
 
 ```bash
 # 5. Clone and Analyze Source Code
-# Structure: /mnt/tankshare/code/domain.tld/org/repo
-find /mnt/tankshare/code -name "*.go" -exec grep -l "flag.String\|flag.Int\|log.level\|debug" {} \;
+# Structure: /code/domain.tld/org/repo
+find /code -name "*.go" -exec grep -l "flag.String\|flag.Int\|log.level\|debug" {} \;
 rg "config\.|viper\.|flag\." --type go  # Find configuration options
 rg "log\..*level\|debug\|trace" --type go  # Find debug options
 ```bash
@@ -178,7 +178,7 @@ grafana_dashboard="cluster-capacity-planning"
 ```bash
 # 1. Clone source if not exists
 COMPONENT="vault"  # example
-REPO_PATH="/mnt/tankshare/code/github.com/hashicorp/${COMPONENT}"
+REPO_PATH="/code/github.com/hashicorp/${COMPONENT}"
 
 if [ ! -d "$REPO_PATH" ]; then
     mkdir -p "$(dirname "$REPO_PATH")"

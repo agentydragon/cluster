@@ -105,10 +105,10 @@ dig @<external-dns-ip> <domain>
 
 ### Clone Strategy for Debugging
 
-The skill follows the `/mnt/tankshare/code/domain.tld/org/repo` structure:
+The skill follows the `/code/domain.tld/org/repo` structure:
 
 ```bash
-/mnt/tankshare/code/
+/code/
 ├── github.com/
 │   ├── longhorn/longhorn/           # Storage implementation
 │   ├── cert-manager/cert-manager/   # Certificate management
@@ -127,7 +127,7 @@ The skill follows the `/mnt/tankshare/code/domain.tld/org/repo` structure:
 1. **Clone Source Code**:
 
    ```bash
-   cd /mnt/tankshare/code
+   cd /code
    git clone https://github.com/component-org/component-name
    ```
 
@@ -154,12 +154,12 @@ The skill follows the `/mnt/tankshare/code/domain.tld/org/repo` structure:
 
 ```bash
 # Clone source if not exists
-if [ ! -d "/mnt/tankshare/code/github.com/longhorn/longhorn" ]; then
-  cd /mnt/tankshare/code/github.com/longhorn && git clone https://github.com/longhorn/longhorn.git
+if [ ! -d "/code/github.com/longhorn/longhorn" ]; then
+  cd /code/github.com/longhorn && git clone https://github.com/longhorn/longhorn.git
 fi
 
 # Check configuration options
-grep -r "flag.String\|viper.Get" /mnt/tankshare/code/github.com/longhorn/longhorn/cmd/
+grep -r "flag.String\|viper.Get" /code/github.com/longhorn/longhorn/cmd/
 
 # Common debug flags
 kubectl patch deployment longhorn-manager -n longhorn-system -p '{"spec":{"template":{"spec":{"containers":[{"name":"longhorn-manager","args":["longhorn-manager","--debug","--log-level","debug"]}]}}}}'
@@ -172,12 +172,12 @@ kubectl get nodes -o jsonpath='{.items[*].status.allocatable.storage}'
 
 ```bash
 # Clone vault source
-if [ ! -d "/mnt/tankshare/code/github.com/hashicorp/vault" ]; then
-  cd /mnt/tankshare/code/github.com/hashicorp && git clone https://github.com/hashicorp/vault.git
+if [ ! -d "/code/github.com/hashicorp/vault" ]; then
+  cd /code/github.com/hashicorp && git clone https://github.com/hashicorp/vault.git
 fi
 
 # Check debug options from source
-grep -r "log_level\|debug" /mnt/tankshare/code/github.com/hashicorp/vault/command/server.go
+grep -r "log_level\|debug" /code/github.com/hashicorp/vault/command/server.go
 
 # Enable debug mode
 kubectl patch statefulset vault -n vault -p '{"spec":{"template":{"spec":{"containers":[{"name":"vault","env":[{"name":"VAULT_LOG_LEVEL","value":"debug"}]}]}}}}'
@@ -190,12 +190,12 @@ kubectl exec -n vault vault-0 -- vault status -format=json
 
 ```bash
 # Clone cilium source
-if [ ! -d "/mnt/tankshare/code/github.com/cilium/cilium" ]; then
-  cd /mnt/tankshare/code/github.com/cilium && git clone https://github.com/cilium/cilium.git
+if [ ! -d "/code/github.com/cilium/cilium" ]; then
+  cd /code/github.com/cilium && git clone https://github.com/cilium/cilium.git
 fi
 
 # Find debug options
-grep -r "debug\|log-level" /mnt/tankshare/code/github.com/cilium/cilium/daemon/cmd/
+grep -r "debug\|log-level" /code/github.com/cilium/cilium/daemon/cmd/
 
 # Enable debug mode
 kubectl patch configmap cilium-config -n kube-system -p '{"data":{"debug":"true","log-level":"debug"}}'
@@ -210,12 +210,12 @@ cilium connectivity test
 
 ```bash
 # Clone cert-manager source
-if [ ! -d "/mnt/tankshare/code/github.com/cert-manager/cert-manager" ]; then
-  cd /mnt/tankshare/code/github.com/cert-manager && git clone https://github.com/cert-manager/cert-manager.git
+if [ ! -d "/code/github.com/cert-manager/cert-manager" ]; then
+  cd /code/github.com/cert-manager && git clone https://github.com/cert-manager/cert-manager.git
 fi
 
 # Check debug flags
-grep -r "log-level\|verbose" /mnt/tankshare/code/github.com/cert-manager/cert-manager/cmd/controller/
+grep -r "log-level\|verbose" /code/github.com/cert-manager/cert-manager/cmd/controller/
 
 # Enable verbose logging
 kubectl patch deployment cert-manager -n cert-manager -p '{"spec":{"template":{"spec":{"containers":[{"name":"cert-manager","args":["--v=4","--log-level=debug"]}]}}}}'

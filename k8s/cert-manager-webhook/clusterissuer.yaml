@@ -15,7 +15,7 @@ spec:
             groupName: acme.zacharyseguin.ca
             solverName: pdns
             config:
-              host: http://powerdns-pdns.dns-system:8081
+              host: http://powerdns-api.dns-system:8081
               ttl: 120
               timeout: 30
               apiKeySecretRef:

@@ -1,5 +1,5 @@
 # Cilium CNI configuration for Terraform-managed infrastructure layer
-# Reference: /mnt/tankshare/code/github.com/cilium/cilium/install/kubernetes/cilium/values.yaml
+# Reference: /code/github.com/cilium/cilium/install/kubernetes/cilium/values.yaml
 
 cluster:
   name: talos-cluster

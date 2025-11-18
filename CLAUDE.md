@@ -226,7 +226,7 @@ Use `ssh root@atlas` to access the Proxmox host. No password required (SSH keys 
 
 ## Reference Code Location
 
-**Base**: `/mnt/tankshare/code` using `domain.tld/org/repo` pattern
+**Base**: `/code` using `domain.tld/org/repo` pattern
 
 **Key references:**
 
