@@ -55,40 +55,58 @@ This document tracks project roadmap and strategic architecture decisions for th
 - [x] **NGINX Ingress**: HA deployment using MetalLB LoadBalancer
 - [x] **External Connectivity**: VPS proxy via Tailscale to cluster ingress
 
-### DNS & Certificates - IN PROGRESS
+### DNS & Certificates - COMPLETE
 
-- [x] **DNS Delegation**: Route 53 → VPS PowerDNS → Cluster PowerDNS (10.0.3.3)
-- [ ] **PowerDNS Deployment**: In-cluster authoritative DNS server with LoadBalancer service
-  - **Status**: Chart developed but deployment blocked by infrastructure issue
-  - **Progress**:
-    - [x] Created custom PowerDNS Helm chart (charts/powerdns/)
-    - [x] Fixed binary paths: `/usr/local/sbin/pdns_server` (official image location)
-    - [x] Image pinning: `powerdns/pdns-auth-49:4.9.11` (verified via Docker Hub API)
-    - [x] Proxmox CSI storage integration with explicit storageClass
+- [x] **DNS Delegation**: Route 53 delegates `test-cluster.agentydragon.com` to VPS PowerDNS (`ns1.agentydragon.com`)
+- [x] **PowerDNS Deployment**: In-cluster authoritative DNS server with LoadBalancer service (10.0.3.3)
+  - **Status**: FULLY OPERATIONAL ✅
+  - **Backend**: MariaDB (switched from SQLite for automatic schema initialization)
+  - **Deployment**:
+    - [x] Custom PowerDNS Helm chart (charts/powerdns/)
+    - [x] Binary paths: `/usr/local/sbin/pdns_server` (official image location)
+    - [x] Image: `powerdns/pdns-auth-49:4.9.11` (Docker Hub verified)
+    - [x] Proxmox CSI storage integration for MariaDB data
     - [x] External Secrets Operator integration for API key
     - [x] Pod Security Standards "restricted" compliance
-    - [ ] Deployment blocked: Worker node kubelet zombie process
-  - **Infrastructure Issue Discovered**:
-    - **Root Cause**: Containerd crashed on worker0 (~9 hours before teardown), leaving kubelet process (PID 89823) orphaned
-    - **Zombie State**: Old kubelet still running but Talos service manager cannot restart it
-    - **Error**: "cannot delete running task kubelet: failed precondition"
-    - **Impact**: PowerDNS pods stuck in Pending - kubelet never called CSI to mount volumes
-    - **Resolution**: Cluster destroyed for clean rebuild
-  - **Containerd Crash Analysis**:
-    - Containerd exited with status 2 while kubelet was running
-    - Kubelet process and shim survived the crash as orphans
-    - No OOM or kernel errors found in logs (logs rotated after 9 hours)
-    - Exact crash cause unknown - logs from failure point unavailable
-  - **Next**: Redeploy cluster and test PowerDNS with working kubelet
-- [ ] **external-dns**: Automatic DNS record creation for ingresses
-  - **Status**: Configuration created but not deployed (blocked by PowerDNS)
-  - **Provider**: PowerDNS native provider (better than RFC2136)
-- [ ] **cert-manager webhook**: Automatic SSL certificates via PowerDNS DNS-01 challenges
-  - **Status**: Configuration created but not deployed (blocked by PowerDNS)
+    - [x] AXFR configuration for VPS secondary zone replication
+  - **AXFR Configuration**:
+    - `allow-axfr-ips: "10.0.0.0/8,100.64.0.3"` (cluster network + VPS Tailscale IP)
+    - `disable-axfr: "no"` (enable zone transfers)
+  - **Previous Infrastructure Issue** (RESOLVED):
+    - Containerd crash on worker0 left zombie kubelet process
+    - PowerDNS pods stuck Pending - CSI mount operations blocked
+    - Fixed via cluster rebuild
+- [x] **external-dns**: Automatic DNS record creation for ingresses
+  - **Status**: DEPLOYED AND WORKING ✅
+  - **Provider**: PowerDNS native provider (HTTP API)
+  - **Functionality**: Automatically creates A records and TXT metadata for ingresses
+- [x] **cert-manager webhook**: Automatic SSL certificates via PowerDNS DNS-01 challenges
+  - **Status**: DEPLOYED ✅
   - **Webhook**: cert-manager-webhook-powerdns for DNS-01 validation
+  - **Configuration**: ClusterIssuer `letsencrypt-prod-dns` using PowerDNS webhook
+- [x] **DNS Architecture - AXFR Secondary Zone**:
+  - **Decision**: VPS PowerDNS acts as secondary nameserver for `test-cluster.agentydragon.com`
+  - **Primary**: Cluster PowerDNS (10.0.3.3) - authoritative source of truth
+  - **Secondary**: VPS PowerDNS - public-facing nameserver with AXFR replication
+  - **Rationale**: VPS runs PowerDNS authoritative server (not recursor), requires AXFR not forwarding
+  - **Zone Transfer**: Automatic AXFR from cluster to VPS over Tailscale VPN
+  - **Public Resolution**: Let's Encrypt and external clients query VPS (Route 53 delegation)
+  - **Connectivity**: Tailscale mesh with route advertisement (10.0.3.0/27)
+- [x] **Tailscale Route Advertisement**: VPS→Cluster connectivity for DNS AXFR
+  - **Routes Advertised**: `10.0.3.0/27` (covers all VIPs: API, Ingress, DNS, Services pool)
+  - **Configuration**: Control plane nodes advertise routes via Tailscale extension
+  - **Tags**: `tag:cluster-router` for route advertisement
+  - **Fix Applied**: Corrected invalid CIDR `10.0.3.4/28` → `10.0.3.0/27` (was causing Tailscale crash)
+  - **Status**: Routes enabled in Headscale, VPS can reach cluster DNS at 10.0.3.3 ✅
+- [x] **VPS PowerDNS Secondary Configuration**:
+  - **File**: `~/code/ducktape/ansible/roles/powerdns/templates/pdns.conf.j2`
+  - **Change**: Added `secondary=yes` to enable automatic zone transfers
+  - **Deployment**: Ansible role `powerdns` with tag `--tags powerdns`
+  - **Verification**: `pdnsutil list-zone test-cluster.agentydragon.com` shows all cluster records
+  - **Status**: Zone replication working, public DNS queries resolved ✅
 - [ ] **PowerDNS Operator Evaluation**: Reconsider PowerDNS Operator vs current external-dns + Helm chart approach
-  - **Current**: external-dns + cdwv/powerdns-helm chart (fixed YAML bug locally)
-  - **Alternative**: PowerDNS Operator (34⭐, Aug 2024) for zone/record management only (still need PowerDNS server deployment)
+  - **Current**: external-dns + custom PowerDNS Helm chart
+  - **Alternative**: PowerDNS Operator (34⭐, Aug 2024) for zone/record management only
   - **Limitation**: Operator doesn't deploy PowerDNS servers - only manages zones/records via API
   - **Evaluate**: Whether zone-only management offers advantages over external-dns direct integration
 - [ ] **Technitium DNS Evaluation**: Alternative to PowerDNS for authoritative DNS
@@ -98,17 +116,9 @@ This document tracks project roadmap and strategic architecture decisions for th
   - **Integration**: Would require RFC2136 for both external-dns and cert-manager (vs PowerDNS native providers)
   - **Evaluate**: Whether advanced features justify integration complexity vs PowerDNS simplicity
 - [ ] PARTIAL **SNI Passthrough**: Port 8443 SNI from VPS to cluster (enables end-to-end SSL)
-- [x] **VPS PowerDNS Zone Automation**: DNS delegation VPS→cluster (10.0.3.3)
-- [ ] **CRITICAL: Tailscale Route Auto-Approval**: VPS cannot reach cluster DNS VIP (10.0.3.3)
-  - **Current Issue**: Controller nodes advertise routes (10.0.0.0/16) but VPS cannot access cluster
-  - **Root Cause**: Headscale routes require manual approval - breaks PRIME DIRECTIVE
-  - **Required Fix**: Declarative auto-approval of routes from cluster controller nodes
-  - **Impact**: DNS resolution fails for `git.test-cluster.agentydragon.com` and all cluster services
-  - **Solutions**:
-    - Headscale auto-approve configuration for specific users/tags
-    - Terraform external data source for automated route approval
-    - VPS Ansible task to approve routes during bootstrap
-  - **Blocking**: All external access to cluster services until resolved
+- [ ] **Let's Encrypt Certificate Validation**: Verify DNS-01 challenges complete successfully
+  - **Status**: DNS infrastructure ready, testing certificate issuance
+  - **Test Cases**: harbor-tls, test-web-server-tls certificates
 
 ## TODO
 
