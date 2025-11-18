@@ -1,4 +1,4 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources: []
-# Matrix SSO configuration is handled by services-config.yaml in harbor/
+# Matrix OIDC/SSO configuration is handled by k8s/sso/matrix/ (matrix-sso Terraform)
