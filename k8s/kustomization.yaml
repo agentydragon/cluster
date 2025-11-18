@@ -10,6 +10,8 @@ resources:
   - cert-manager-config/flux-kustomization.yaml
   - ingress-nginx/flux-kustomization.yaml
   - powerdns/flux-kustomization.yaml
+  - powerdns-operator/flux-kustomization.yaml
+  - powerdns-zones/flux-kustomization.yaml
   - vault-operator/flux-kustomization.yaml
   - vault/flux-kustomization.yaml
   - vault-config/flux-kustomization.yaml
