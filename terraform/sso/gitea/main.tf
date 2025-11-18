@@ -31,11 +31,7 @@ resource "authentik_provider_oauth2" "gitea" {
     "${var.gitea_url}/user/oauth2/authentik/callback"
   ]
 
-  property_mappings = [
-    data.authentik_scope_mapping.openid.id,
-    data.authentik_scope_mapping.email.id,
-    data.authentik_scope_mapping.profile.id,
-  ]
+  property_mappings = data.authentik_property_mapping_provider_scope.scopes.ids
 
   signing_algorithm = "RS256"
 }
@@ -45,14 +41,10 @@ data "authentik_flow" "default_authorization_flow" {
   slug = "default-authentication-flow"
 }
 
-data "authentik_scope_mapping" "openid" {
-  scope_name = "openid"
-}
-
-data "authentik_scope_mapping" "email" {
-  scope_name = "email"
-}
-
-data "authentik_scope_mapping" "profile" {
-  scope_name = "profile"
+data "authentik_property_mapping_provider_scope" "scopes" {
+  managed_list = [
+    "goauthentik.io/providers/oauth2/scope-openid",
+    "goauthentik.io/providers/oauth2/scope-email",
+    "goauthentik.io/providers/oauth2/scope-profile",
+  ]
 }
