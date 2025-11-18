@@ -1,0 +1,36 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(direnv exec . kubectl delete pod:*)",
+      "Bash(direnv exec . flux reconcile:*)",
+      "Bash(direnv exec . kubectl get:*)",
+      "Bash(direnv exec . kubectl logs:*)",
+      "Bash(direnv exec . kubectl describe:*)",
+      "Bash(direnv exec . kubectl wait:*)",
+      "Bash(kubectl get:*)",
+      "Bash(kubectl logs:*)",
+      "Bash(kubectl describe:*)",
+      "Bash(kubectl wait:*)",
+      "Bash(git log:*)",
+      "Bash(tree:*)",
+      "Bash(dig:*)",
+      "Bash(echo:*)",
+      "Bash(direnv exec . cilium status:*)",
+      "Bash(direnv exec /home/agentydragon/code/cluster kubectl logs -n csi-proxmox deployment/proxmox-csi-plugin-controller --tail=100)",
+      "Bash(helm get:*)",
+      "Bash(talosctl get:*)",
+      "Bash(terraform:*)",
+      "Bash(direnv exec . flux get:*)",
+      "Bash(pre-commit run:*)",
+      "WebSearch",
+      "WebFetch(domain:docs.siderolabs.com)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:registry.terraform.io)",
+      "WebFetch(domain:docs.cilium.io)",
+      "WebFetch(domain:registry.hub.docker.com)",
+      "mcp__github__search_code",
+      "mcp__github__get_file_contents",
+      "mcp__github__search_issues"
+    ]
+  }
+}
