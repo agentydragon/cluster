@@ -1,0 +1,11 @@
+---
+# Create the DNS zone for the cluster
+apiVersion: dns.cav.enablers.ob/v1alpha2
+kind: ClusterZone
+metadata:
+  name: test-cluster.agentydragon.com
+spec:
+  kind: Native
+  nameservers:
+    - ns1.test-cluster.agentydragon.com
+    - ns2.test-cluster.agentydragon.com

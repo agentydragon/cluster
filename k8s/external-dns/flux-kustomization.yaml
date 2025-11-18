@@ -17,3 +17,5 @@ spec:
       namespace: flux-system
     - name: powerdns
       namespace: flux-system
+    - name: powerdns-operator
+      namespace: flux-system
