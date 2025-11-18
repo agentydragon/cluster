@@ -10,6 +10,7 @@ spec:
     privateKeySecretRef:
       name: letsencrypt-prod-key
     solvers:
+      # DNS-01 solver for wildcard domains
       - dns01:
           webhook:
             groupName: acme.syself.com
@@ -22,6 +23,10 @@ spec:
         selector:
           dnsNames:
             - "*.test-cluster.agentydragon.com"
+      # HTTP-01 solver for non-wildcard domains
+      - http01:
+          ingress:
+            class: nginx
 ---
 apiVersion: cert-manager.io/v1
 kind: ClusterIssuer
@@ -34,6 +39,7 @@ spec:
     privateKeySecretRef:
       name: letsencrypt-staging-key
     solvers:
+      # DNS-01 solver for wildcard domains
       - dns01:
           webhook:
             groupName: acme.syself.com
@@ -46,3 +52,7 @@ spec:
         selector:
           dnsNames:
             - "*.test-cluster.agentydragon.com"
+      # HTTP-01 solver for non-wildcard domains
+      - http01:
+          ingress:
+            class: nginx
