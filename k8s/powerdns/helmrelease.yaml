@@ -15,6 +15,12 @@ spec:
         namespace: dns-system
       interval: 15m
   values:
+    # Image configuration
+    image:
+      repository: powerdns/pdns-auth-49
+      tag: "latest"
+      pullPolicy: IfNotPresent
+
     # Service configuration with MetalLB
     service:
       dns:
