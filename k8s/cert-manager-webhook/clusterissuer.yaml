@@ -19,8 +19,9 @@ spec:
               ttl: 120
               timeout: 30
               apiKeySecretRef:
-                name: powerdns-api-key # Reflector copies from dns-system
+                name: powerdns-api-key
                 key: PDNS_API_KEY
+                namespace: cert-manager # Webhook looks here, not in challenge namespace
         selector:
           dnsZones:
             - test-cluster.agentydragon.com
