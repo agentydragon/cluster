@@ -202,6 +202,14 @@ This document tracks project roadmap and strategic architecture decisions for th
   - **Challenge**: Designed for desktop/local use, not centralized server deployments
   - **Use Case**: Track development time and activity patterns
   - **Status**: Researched, requires custom chart work
+- [ ] **Google Drive Sync/Backup**: Headless Google Drive client for cloud backup
+  - **Implementation**: Custom deployment using existing binary (borrowed from Jupyter images)
+  - **Binary Location**: Already available in user's infrastructure
+  - **History**: Proven working implementation on personal computers
+  - **Helm Chart**: Requires custom chart creation with existing binary
+  - **Use Case**: Automated backup and sync of cluster data to Google Drive
+  - **Authentication**: Will need service account or OAuth token management via Vault/ESO
+  - **Status**: Binary available, ready for containerization and deployment
 - [ ] **Cross-integration**: Vault OIDC auth + Authentik-Vault secrets management
 
 ### 🔒 HTTPS & Certificate Automation
