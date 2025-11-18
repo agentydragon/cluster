@@ -101,7 +101,6 @@ securityContext:
   runAsNonRoot: true
   runAsUser: 953
   runAsGroup: 953
-  fsGroup: 953
 
 # Pod security context
 podSecurityContext:
