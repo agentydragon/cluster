@@ -66,11 +66,12 @@ When spawning agents, provide:
 2. **Current state**: What we know so far
 3. **Expected deliverable**: What information to report back
 4. **Constraints**: Any restrictions or requirements
-5. **Reference code location**: Inform agents about `/code` (mounted at `/mnt/tankshare/code`)
+5. **Reference code location**: Inform agents about `/code`
+6. **CLAUDE.md compliance**: Instruct agents to read and follow CLAUDE.md, especially PRIMARY DIRECTIVE
 
 **IMPORTANT**: Always inform subagents about the reference code convention:
 
-**Reference Code Location**: `/mnt/tankshare/code` using `domain.tld/org/repo` pattern
+**Reference Code Location**: `/code` using `domain.tld/org/repo` pattern
 
 Examples:
 
@@ -79,6 +80,19 @@ Examples:
 - `github.com/goauthentik/terraform-provider-authentik` - Authentik provider docs
 
 Agents should check these repositories for implementation patterns, API schemas, and troubleshooting before searching web.
+
+**Agent Context Template:**
+
+When spawning agents, include this context in your prompt:
+
+```text
+IMPORTANT CONTEXT:
+- Reference code available at /code using domain.tld/org/repo structure
+- Read and follow /home/agentydragon/code/cluster/CLAUDE.md
+- PRIMARY DIRECTIVE: All fixes must be declarative, committed configuration changes
+- No manual kubectl patches as solutions - only for debugging to understand issues
+- All work confined to /home/agentydragon/code/cluster repository only
+```
 
 ## PRIMARY DIRECTIVE: DECLARATIVE TURNKEY BOOTSTRAP
 
