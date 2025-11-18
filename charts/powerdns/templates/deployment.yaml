@@ -75,7 +75,7 @@ spec:
         imagePullPolicy: {{ .Values.image.pullPolicy }}
 
         # Start PowerDNS with custom config
-        command: ["/usr/sbin/pdns_server"]
+        command: ["/usr/local/sbin/pdns_server"]
         args: ["--config-dir=/etc/powerdns", "--daemon=no", "--guardian=no", "--control-console", "--loglevel=3"]
 
         env:

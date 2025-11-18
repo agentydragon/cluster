@@ -261,3 +261,37 @@ kubectl get nodes
 | **Ingress** | 10.0.3.2 | ingress-pool | NGINX Ingress LoadBalancer |
 | **PowerDNS** | 10.0.3.3 | dns-pool | DNS server LoadBalancer |
 | **Services** | 10.0.3.4-20 | services-pool | Harbor, Gitea, etc. |
+
+## Security Configuration
+
+### Privileged Ports (Port < 1024)
+
+Services that need to bind to privileged ports (e.g., DNS on port 53) require the `NET_BIND_SERVICE` capability when
+running as non-root user to comply with Pod Security Standards "restricted" policy.
+
+**Example Configuration**:
+
+```yaml
+securityContext:
+  runAsNonRoot: true
+  runAsUser: 953
+  runAsGroup: 953
+  allowPrivilegeEscalation: false
+  capabilities:
+    add: ["NET_BIND_SERVICE"]  # Required for ports < 1024
+    drop: ["ALL"]
+  seccompProfile:
+    type: RuntimeDefault
+```
+
+**Common Services Requiring This**:
+
+- DNS servers (port 53): PowerDNS, CoreDNS, Unbound
+- HTTP servers (port 80): Only when not using LoadBalancer/Ingress
+- HTTPS servers (port 443): Only when not using LoadBalancer/Ingress
+
+**Troubleshooting**:
+
+- **Symptom**: Pod stuck in `Init:0/1` or container won't start
+- **Check**: `kubectl describe pod <pod-name>` for permission errors
+- **Solution**: Add `NET_BIND_SERVICE` capability to container securityContext

@@ -118,6 +118,7 @@ This document tracks project roadmap and strategic architecture decisions for th
     1. Create ESO secret for PowerDNS API key
     2. Deploy custom chart via GitRepository
     3. Verify PowerDNS API and LoadBalancer
+  - **TODO**: Pin PowerDNS image to specific version instead of using 'latest' tag
 - [ ] **PowerDNS API Key via ESO**: Generate PowerDNS API key using External Secrets Operator
   - **Current State**: Chart ready for ESO integration, need Vault secret + ExternalSecret
   - **Implementation**: `vault kv put kv/powerdns apikey="$(openssl rand -base64 32)"`

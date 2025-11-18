@@ -18,7 +18,7 @@ spec:
     # Image configuration
     image:
       repository: powerdns/pdns-auth-49
-      tag: "latest"
+      tag: "sha256:69e0e8ce5671f5f18e19c86746783ff6990555884cb9673b9845959fe05cdb46"
       pullPolicy: IfNotPresent
 
     # Service configuration with MetalLB
