@@ -99,14 +99,19 @@ spec:
         {{- end }}
         {{- end }}
 
-        # No volume mounts needed - pschiffe/pdns-mysql is stateless with MySQL backend
+        volumeMounts:
+        - name: config
+          mountPath: /etc/pdns
 
         {{- with .Values.resources }}
         resources:
           {{- toYaml . | nindent 10 }}
         {{- end }}
 
-      # No volumes needed - stateless with MySQL backend
+      volumes:
+      # pschiffe/pdns-mysql entrypoint writes config to /etc/pdns
+      - name: config
+        emptyDir: {}
 
       {{- with .Values.nodeSelector }}
       nodeSelector:
