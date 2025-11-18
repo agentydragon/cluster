@@ -31,6 +31,15 @@ spec:
       initContainers:
       - name: config-init
         image: busybox:1.35
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 953
+          runAsGroup: 953
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop: ["ALL"]
+          seccompProfile:
+            type: RuntimeDefault
         command:
         - sh
         - -c
