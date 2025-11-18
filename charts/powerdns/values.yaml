@@ -2,8 +2,8 @@
 replicaCount: 1
 
 image:
-  repository: powerdns/pdns-auth-47
-  tag: "4.7.3"
+  repository: powerdns/pdns-auth-49
+  tag: "latest"
   pullPolicy: IfNotPresent
 
 # PowerDNS configuration
