@@ -14,33 +14,26 @@ provider "authentik" {
 resource "authentik_application" "matrix" {
   name              = "Matrix"
   slug              = "matrix"
-  protocol_provider = authentik_provider_saml.matrix.id
+  protocol_provider = authentik_provider_oauth2.matrix.id
   meta_description  = "Matrix Synapse Homeserver"
   meta_publisher    = "Matrix.org"
   open_in_new_tab   = true
 }
 
-# Create SAML provider for Matrix
-resource "authentik_provider_saml" "matrix" {
-  name               = "matrix-saml"
+# Create OAuth2 provider for Matrix
+resource "authentik_provider_oauth2" "matrix" {
+  name               = "matrix-oauth2"
+  client_id          = "matrix"
+  client_secret      = var.client_secret
   authorization_flow = data.authentik_flow.default_authorization_flow.id
 
-  acs_url    = "${var.matrix_url}/_synapse/client/saml2/authn_response"
-  issuer     = "https://auth.test-cluster.agentydragon.com"
-  sp_binding = "post"
-
-  property_mappings = [
-    data.authentik_property_mapping_saml.email.id,
-    data.authentik_property_mapping_saml.name.id,
-    data.authentik_property_mapping_saml.username.id,
+  redirect_uris = [
+    "${var.matrix_url}/_synapse/client/oidc/callback"
   ]
 
-  signing_algorithm = "http://www.w3.org/2001/04/xmldsig-more#rsa-sha256"
-  digest_algorithm  = "http://www.w3.org/2001/04/xmlenc#sha256"
+  property_mappings = data.authentik_property_mapping_provider_scope.scopes.ids
 
-  # Use client secret for SAML signing key if needed
-  # Currently not used but kept for future SAML configuration
-  # client_secret = var.client_secret
+  signing_algorithm = "RS256"
 }
 
 # Data sources for default flows and mappings
@@ -48,14 +41,10 @@ data "authentik_flow" "default_authorization_flow" {
   slug = "default-authentication-flow"
 }
 
-data "authentik_property_mapping_saml" "email" {
-  name = "authentik default SAML Mapping: Email"
-}
-
-data "authentik_property_mapping_saml" "name" {
-  name = "authentik default SAML Mapping: Name"
-}
-
-data "authentik_property_mapping_saml" "username" {
-  name = "authentik default SAML Mapping: Username"
+data "authentik_property_mapping_provider_scope" "scopes" {
+  managed_list = [
+    "goauthentik.io/providers/oauth2/scope-openid",
+    "goauthentik.io/providers/oauth2/scope-email",
+    "goauthentik.io/providers/oauth2/scope-profile",
+  ]
 }

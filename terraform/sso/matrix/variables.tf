@@ -10,6 +10,12 @@ variable "authentik_token" {
   sensitive   = true
 }
 
+variable "client_secret" {
+  description = "OAuth2 client secret for Matrix"
+  type        = string
+  sensitive   = true
+}
+
 variable "matrix_url" {
   description = "Matrix server URL"
   type        = string

@@ -36,3 +36,8 @@ spec:
       varsKeys:
         - authentik_token
       optional: false
+    - kind: Secret
+      name: matrix-oauth-client-secret
+      varsKeys:
+        - client_secret
+      optional: false
