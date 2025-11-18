@@ -27,162 +27,6 @@ spec:
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
 
-      # Init containers
-      initContainers:
-      # Initialize SQLite database if it doesn't exist
-      - name: init-db
-        image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
-        imagePullPolicy: {{ .Values.image.pullPolicy }}
-        securityContext:
-          runAsNonRoot: true
-          runAsUser: 953
-          runAsGroup: 953
-          allowPrivilegeEscalation: false
-          capabilities:
-            drop: ["ALL"]
-          seccompProfile:
-            type: RuntimeDefault
-        command:
-        - sh
-        - -c
-        - |
-          if [ ! -f /var/lib/powerdns/pdns.sqlite3 ]; then
-            echo "Creating PowerDNS SQLite database..."
-            # Create empty database and initialize schema
-            sqlite3 /var/lib/powerdns/pdns.sqlite3 <<'EOF'
-          CREATE TABLE domains (
-            id                    INTEGER PRIMARY KEY,
-            name                  VARCHAR(255) NOT NULL COLLATE NOCASE,
-            master                VARCHAR(128) DEFAULT NULL,
-            last_check            INTEGER DEFAULT NULL,
-            type                  VARCHAR(8) NOT NULL,
-            notified_serial       INTEGER DEFAULT NULL,
-            account               VARCHAR(40) DEFAULT NULL,
-            options               VARCHAR(65535) DEFAULT NULL,
-            catalog               VARCHAR(255) DEFAULT NULL
-          );
-
-          CREATE UNIQUE INDEX name_index ON domains(name);
-          CREATE INDEX catalog_idx ON domains(catalog);
-
-          CREATE TABLE records (
-            id                    INTEGER PRIMARY KEY,
-            domain_id             INTEGER DEFAULT NULL,
-            name                  VARCHAR(255) DEFAULT NULL,
-            type                  VARCHAR(10) DEFAULT NULL,
-            content               VARCHAR(65535) DEFAULT NULL,
-            ttl                   INTEGER DEFAULT NULL,
-            prio                  INTEGER DEFAULT NULL,
-            disabled              BOOLEAN DEFAULT 0,
-            ordername             VARCHAR(255),
-            auth                  BOOL DEFAULT 1,
-            FOREIGN KEY(domain_id) REFERENCES domains(id) ON DELETE CASCADE ON UPDATE CASCADE
-          );
-
-          CREATE INDEX rec_name_index ON records(name);
-          CREATE INDEX nametype_index ON records(name,type);
-          CREATE INDEX domain_id ON records(domain_id);
-          CREATE INDEX orderindex ON records(ordername);
-
-          CREATE TABLE supermasters (
-            ip                    VARCHAR(64) NOT NULL,
-            nameserver            VARCHAR(255) NOT NULL COLLATE NOCASE,
-            account               VARCHAR(40) NOT NULL
-          );
-
-          CREATE UNIQUE INDEX ip_nameserver_pk ON supermasters(ip, nameserver);
-
-          CREATE TABLE comments (
-            id                    INTEGER PRIMARY KEY,
-            domain_id             INTEGER NOT NULL,
-            name                  VARCHAR(255) NOT NULL,
-            type                  VARCHAR(10) NOT NULL,
-            modified_at           INT NOT NULL,
-            account               VARCHAR(40) DEFAULT NULL,
-            comment               VARCHAR(65535) NOT NULL,
-            FOREIGN KEY(domain_id) REFERENCES domains(id) ON DELETE CASCADE ON UPDATE CASCADE
-          );
-
-          CREATE INDEX comments_domain_id_index ON comments (domain_id);
-          CREATE INDEX comments_nametype_index ON comments (name, type);
-          CREATE INDEX comments_order_idx ON comments (domain_id, modified_at);
-
-          CREATE TABLE domainmetadata (
-           id                     INTEGER PRIMARY KEY,
-           domain_id              INT NOT NULL,
-           kind                   VARCHAR(32) COLLATE NOCASE,
-           content                TEXT,
-           FOREIGN KEY(domain_id) REFERENCES domains(id) ON DELETE CASCADE ON UPDATE CASCADE
-          );
-
-          CREATE INDEX domainmetaidindex ON domainmetadata(domain_id);
-
-          CREATE TABLE cryptokeys (
-           id                     INTEGER PRIMARY KEY,
-           domain_id              INT NOT NULL,
-           flags                  INT NOT NULL,
-           active                 BOOL,
-           published              BOOL DEFAULT 1,
-           content                TEXT,
-           FOREIGN KEY(domain_id) REFERENCES domains(id) ON DELETE CASCADE ON UPDATE CASCADE
-          );
-
-          CREATE INDEX domainidindex ON cryptokeys(domain_id);
-
-          CREATE TABLE tsigkeys (
-           id                     INTEGER PRIMARY KEY,
-           name                   VARCHAR(255) COLLATE NOCASE,
-           algorithm              VARCHAR(50) COLLATE NOCASE,
-           secret                 VARCHAR(255)
-          );
-
-          CREATE UNIQUE INDEX namealgoindex ON tsigkeys(name, algorithm);
-          EOF
-            echo "Database schema created successfully"
-          else
-            echo "Database already exists, skipping initialization"
-          fi
-        volumeMounts:
-        - name: data
-          mountPath: /var/lib/powerdns
-
-      # Substitute API key in config
-      - name: config-init
-        image: busybox:1.35
-        securityContext:
-          runAsNonRoot: true
-          runAsUser: 953
-          runAsGroup: 953
-          allowPrivilegeEscalation: false
-          capabilities:
-            drop: ["ALL"]
-          seccompProfile:
-            type: RuntimeDefault
-        command:
-        - sh
-        - -c
-        - |
-          # Copy base config and substitute API key placeholder
-          cp /etc/powerdns-base/pdns.conf /tmp/runtime-config/pdns.conf
-          {{- if .Values.powerdns.api.enabled }}
-          # Replace API key placeholder with actual value from secret
-          API_KEY=$(cat /var/run/secrets/api-key/{{ .Values.powerdns.api.secretKey }})
-          sed -i "s/__API_KEY_PLACEHOLDER__/$API_KEY/" /tmp/runtime-config/pdns.conf
-          {{- end }}
-          # Set correct permissions
-          chmod 644 /tmp/runtime-config/pdns.conf
-        volumeMounts:
-        - name: config
-          mountPath: /etc/powerdns-base
-          readOnly: true
-        - name: runtime-config
-          mountPath: /tmp/runtime-config
-        {{- if .Values.powerdns.api.enabled }}
-        - name: api-key
-          mountPath: /var/run/secrets/api-key
-          readOnly: true
-        {{- end }}
-
       containers:
       - name: {{ .Chart.Name }}
         {{- with .Values.securityContext }}
@@ -192,17 +36,44 @@ spec:
         image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
         imagePullPolicy: {{ .Values.image.pullPolicy }}
 
-        # Start PowerDNS with custom config
-        command: ["/usr/local/sbin/pdns_server"]
-        args: ["--config-dir=/etc/powerdns", "--daemon=no", "--guardian=no", "--control-console", "--loglevel=3"]
-
+        # pschiffe/pdns-mysql configures via environment variables
         env:
+        # MySQL backend configuration
+        - name: PDNS_gmysql_host
+          value: {{ .Release.Name }}-mariadb
+        - name: PDNS_gmysql_port
+          value: "3306"
+        - name: PDNS_gmysql_user
+          value: {{ .Values.mariadb.auth.username }}
+        - name: PDNS_gmysql_password
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Release.Name }}-mariadb
+              key: mariadb-password
+        - name: PDNS_gmysql_dbname
+          value: {{ .Values.mariadb.auth.database }}
+
+        # API configuration
         {{- if .Values.powerdns.api.enabled }}
-        - name: PDNS_API_KEY
+        - name: PDNS_api
+          value: "yes"
+        - name: PDNS_api_key
           valueFrom:
             secretKeyRef:
               name: {{ .Values.powerdns.api.secretName }}
               key: {{ .Values.powerdns.api.secretKey }}
+        {{- end }}
+
+        # Webserver configuration
+        {{- if .Values.powerdns.webserver.enabled }}
+        - name: PDNS_webserver
+          value: "yes"
+        - name: PDNS_webserver_address
+          value: {{ .Values.powerdns.webserver.address | quote }}
+        - name: PDNS_webserver_port
+          value: {{ .Values.powerdns.webserver.port | quote }}
+        - name: PDNS_webserver_allow_from
+          value: {{ .Values.powerdns.webserver.allowFrom | quote }}
         {{- end }}
 
         ports:
@@ -229,36 +100,14 @@ spec:
         {{- end }}
         {{- end }}
 
-        volumeMounts:
-        - name: runtime-config
-          mountPath: /etc/powerdns
-          readOnly: true
-        - name: data
-          mountPath: /var/lib/powerdns
+        # No volume mounts needed - pschiffe/pdns-mysql is stateless with MySQL backend
 
         {{- with .Values.resources }}
         resources:
           {{- toYaml . | nindent 10 }}
         {{- end }}
 
-      volumes:
-      - name: config
-        configMap:
-          name: {{ include "powerdns.fullname" . }}-config
-      - name: runtime-config
-        emptyDir: {}
-      {{- if .Values.powerdns.api.enabled }}
-      - name: api-key
-        secret:
-          secretName: {{ .Values.powerdns.api.secretName }}
-      {{- end }}
-      - name: data
-        {{- if .Values.persistence.enabled }}
-        persistentVolumeClaim:
-          claimName: {{ if .Values.persistence.existingClaim }}{{ .Values.persistence.existingClaim }}{{ else }}{{ include "powerdns.fullname" . }}-data{{ end }}
-        {{- else }}
-        emptyDir: {}
-        {{- end }}
+      # No volumes needed - stateless with MySQL backend
 
       {{- with .Values.nodeSelector }}
       nodeSelector:
