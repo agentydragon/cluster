@@ -102,6 +102,8 @@ spec:
         volumeMounts:
         - name: config
           mountPath: /etc/pdns
+        - name: run
+          mountPath: /var/run/pdns
 
         {{- with .Values.resources }}
         resources:
@@ -111,6 +113,9 @@ spec:
       volumes:
       # pschiffe/pdns-mysql entrypoint writes config to /etc/pdns
       - name: config
+        emptyDir: {}
+      # PowerDNS creates control socket in /var/run/pdns
+      - name: run
         emptyDir: {}
 
       {{- with .Values.nodeSelector }}
