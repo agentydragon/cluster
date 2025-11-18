@@ -27,6 +27,55 @@ explicit user authorization.**
 - Sealed secrets keypair (required for secret decryption)
 - These survive VM teardown by design to prevent git commit churn and maintain storage continuity
 
+## ⚠️ CRITICAL: COMMIT BEFORE RECONCILE
+
+**NEVER attempt to reconcile Flux resources (HelmRelease, Kustomization, etc.) until changes are committed AND
+pushed to origin.**
+
+**MANDATORY WORKFLOW:**
+
+1. Make changes to chart/manifest files
+2. `git add -A && git commit -m "..." && git push`
+3. ONLY THEN: `flux reconcile source git ...` followed by `flux reconcile helmrelease ...`
+
+**WHY THIS MATTERS:**
+
+- Flux fetches configuration from the git repository, not your local filesystem
+- Reconciling before push = Flux uses OLD configuration = changes don't apply
+- This wastes time trying to debug "why isn't my change working" when it simply hasn't been pushed yet
+
+**SYMPTOMS OF FORGETTING TO PUSH:**
+
+- Pods still show old errors after "fixing" them
+- Environment variables not updated in deployment
+- Template changes not reflected in rendered manifests
+- Repeated reconciliation attempts with no effect
+
+**CORRECT SEQUENCE:**
+
+```bash
+# 1. Edit files
+vim charts/powerdns/templates/deployment.yaml
+
+# 2. Commit and push FIRST
+git add -A
+git commit -m "fix: add missing environment variable"
+git push
+
+# 3. ONLY NOW reconcile Flux
+flux reconcile source git powerdns-chart -n dns-system
+flux reconcile helmrelease powerdns -n dns-system
+```
+
+**NEVER DO THIS:**
+
+```bash
+# ❌ WRONG: Reconciling before push
+vim charts/powerdns/templates/deployment.yaml
+flux reconcile helmrelease powerdns -n dns-system  # This uses OLD code!
+git add -A && git commit && git push  # Too late, already tried to deploy
+```
+
 ### Objective
 
 Achieve a committed repository state such that:
