@@ -44,6 +44,7 @@ spec:
     persistence:
       enabled: true
       size: 1Gi
+      storageClass: proxmox-csi-retain
 
     # External Secret integration - use our chart's built-in ESO support
     externalSecret:
