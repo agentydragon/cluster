@@ -6,4 +6,4 @@ metadata:
   namespace: powerdns-operator
 spec:
   interval: 24h
-  url: https://powerdns-operator.github.io/PowerDNS-Operator
+  url: https://powerdns-operator.github.io/PowerDNS-Operator-helm-chart
