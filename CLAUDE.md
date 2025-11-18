@@ -66,6 +66,19 @@ When spawning agents, provide:
 2. **Current state**: What we know so far
 3. **Expected deliverable**: What information to report back
 4. **Constraints**: Any restrictions or requirements
+5. **Reference code location**: Inform agents about `/code` (mounted at `/mnt/tankshare/code`)
+
+**IMPORTANT**: Always inform subagents about the reference code convention:
+
+**Reference Code Location**: `/mnt/tankshare/code` using `domain.tld/org/repo` pattern
+
+Examples:
+
+- `github.com/flux-iac/tofu-controller` - Tofu/Terraform controller source
+- `github.com/rgl/terraform-proxmox-talos` - Reference Talos config
+- `github.com/goauthentik/terraform-provider-authentik` - Authentik provider docs
+
+Agents should check these repositories for implementation patterns, API schemas, and troubleshooting before searching web.
 
 ## PRIMARY DIRECTIVE: DECLARATIVE TURNKEY BOOTSTRAP
 
