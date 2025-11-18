@@ -18,6 +18,55 @@
 
 **EXCEPTION:** Only edit/commit/push to other repositories when user explicitly instructs you to do so.
 
+## TASK DELEGATION AND PARALLELIZATION
+
+**Use the Task tool proactively to delegate complex subtasks to specialized agents.**
+
+### When to Delegate to Agents
+
+**ALWAYS delegate these to agents:**
+
+- Complex diagnostics: "diagnose why X is broken"
+- Multi-step investigations: "check status of Y and diagnose if broken"
+- Research tasks: "find and analyze all occurrences of Z"
+- Independent workstreams that can run in parallel
+- Tasks requiring deep exploration of unfamiliar codebases
+
+**Examples:**
+
+- ❌ DON'T: Manually grep/search for nginx config issues
+- ✅ DO: `Task: "diagnose VPS nginx SNI routing - wildcard pattern not matching"`
+
+- ❌ DON'T: Manually check multiple Terraform resources sequentially
+- ✅ DO: `Task: "investigate why SSO Terraform resources stuck in reconciliation"`
+
+### Parallelization Strategy
+
+**When you have multiple independent workstreams, spawn agents in PARALLEL using a single message with multiple Task calls.**
+
+Example:
+
+```text
+User: "we have 3 issues: SNI routing broken, Terraform stuck, and need Matrix SSO"
+Assistant: *spawns 3 Task agents in parallel in ONE message*
+```
+
+**Benefits:**
+
+- Maximize throughput and efficiency
+- Work on multiple problems simultaneously
+- Reduce context window usage by offloading to specialized agents
+- Each agent has full context and autonomy for its specific task
+
+### Agent Task Specifications
+
+When spawning agents, provide:
+
+1. **Clear objective**: What needs to be accomplished
+2. **Current state**: What we know so far
+3. **Expected deliverable**: What information to report back
+4. **Constraints**: Any restrictions or requirements
+
 ## PRIMARY DIRECTIVE: DECLARATIVE TURNKEY BOOTSTRAP
 
 **The primary goal is to achieve a committed repo state where the bootstrap script → everything works.**
