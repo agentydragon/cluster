@@ -118,12 +118,14 @@ This document tracks project roadmap and strategic architecture decisions for th
 - [ ] PARTIAL **SNI Passthrough**: Port 8443 SNI from VPS to cluster (enables end-to-end SSL)
 - [ ] **Let's Encrypt Certificate Validation**: Waiting for DNS cache expiry
   - **Status**: DNS infrastructure 100% complete and operational ✅
+  - **DNS Configuration**: All A records point to VPS IP (172.235.48.86) ✅
+  - **ACME Challenges**: TXT records present and replicated via AXFR ✅
   - **Authoritative DNS**: Both cluster and VPS PowerDNS serving correct NS records (`ns1.agentydragon.com`)
-  - **Blocking Issue**: Public DNS cache still returning old NS records (TTL 3600s)
-  - **Resolution**: Automatic in ~50 minutes when cache expires
+  - **Blocking Issue**: Public DNS cache still returning old NS records (TTL: ~23 minutes remaining)
   - **Root Cause**: NS records were changed from `ns1/ns2.test-cluster.agentydragon.com` → `ns1.agentydragon.com`
   - **Current Behavior**: cert-manager propagation checks fail looking up non-existent old NS names
-  - **Expected Outcome**: Certificates will auto-issue once DNS cache clears (~13:18 UTC)
+  - **Expected Outcome**: Certificates will auto-issue once DNS cache expires
+  - **Service Status**: Gitea accessible and working ✅
 
 ## TODO
 
