@@ -176,6 +176,32 @@ This document tracks project roadmap and strategic architecture decisions for th
   - **Ready for**: Authentik OIDC integration
 - [ ] **Harbor**: Container registry with Authentik OIDC authentication
 - [ ] **Matrix/Synapse**: Chat platform with Authentik SSO integration
+- [ ] **InvenTree**: Open-source inventory management system
+  - **Helm Chart**: Available from TrueCharts (v9.0.12)
+  - **Chart Location**: <https://artifacthub.io/packages/helm/truecharts/inventree>
+  - **Integration**: Will use Authentik OIDC for authentication
+  - **Status**: Researched, ready for deployment
+- [ ] **Syncthing**: Continuous file synchronization
+  - **Helm Chart**: Community charts available (TrueCharts, k8s-home-lab-repo)
+  - **Recommended Chart**: TrueCharts `oci://oci.trueforge.org/truecharts/syncthing`
+  - **Note**: Port configuration challenge (Syncthing port 22000 vs K8s NodePort 32000+)
+  - **Use Case**: File sync between cluster and external systems
+  - **Status**: Researched, ready for deployment
+- [ ] **Bazel Remote Cache**: Distributed build cache for Bazel builds
+  - **Helm Chart**: Available from slamdev (v0.0.6)
+  - **Chart Location**: <https://artifacthub.io/packages/helm/slamdev/bazel-remote>
+  - **Alternative**: Official kubernetes.yml in buchgr/bazel-remote repo
+  - **Images**: buchgr/bazel-remote-cache, quay.io/bazel-remote/bazel-remote
+  - **Warning**: Don't name deployment "bazel-remote" (env var conflicts)
+  - **Use Case**: Speed up Bazel builds across development team
+  - **Status**: Researched, ready for deployment
+- [ ] **ActivityWatch Server**: Open-source automated time tracker
+  - **Helm Chart**: ❌ No official or community Helm chart available
+  - **Docker Images**: ephillipe/activitywatch-server-docker (community)
+  - **Implementation**: Requires custom Helm chart creation
+  - **Challenge**: Designed for desktop/local use, not centralized server deployments
+  - **Use Case**: Track development time and activity patterns
+  - **Status**: Researched, requires custom chart work
 - [ ] **Cross-integration**: Vault OIDC auth + Authentik-Vault secrets management
 
 ### 🔒 HTTPS & Certificate Automation
