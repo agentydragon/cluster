@@ -2,6 +2,70 @@
 
 Quick diagnostic commands for common cluster issues.
 
+## Known Issues
+
+### Zombie Kubelet (Containerd Crash Recovery Failure)
+
+**Symptoms**:
+
+- Node shows Ready in `kubectl get nodes` but pods stuck in Pending
+- `talosctl service kubelet status` shows: `STATE: Failed`, `HEALTH: Fail`, `service not running`
+- Error: "cannot delete running task kubelet: failed precondition"
+- Some pods (cilium, sealed-secrets) running but new pods cannot start
+- CSI volume attachment succeeds but mount operations never happen
+
+**Root Cause**:
+
+- Containerd crashes (exit status 2) while kubelet is running
+- Kubelet process and containerd-shim survive as orphaned processes
+- Containerd restarts but loses tracking of the old kubelet container
+- Talos service manager cannot delete the orphaned kubelet container to start new one
+
+**Diagnosis**:
+
+```bash
+# Check service status
+talosctl -n <node-ip> service kubelet status
+
+# Look for zombie kubelet process
+talosctl -n <node-ip> ps | grep kubelet
+
+# Check events for failure pattern
+talosctl -n <node-ip> events | grep kubelet
+
+# Look for: "PREPARING: Creating service runner" → "FAILED: cannot delete running task"
+```
+
+**Resolution**:
+
+1. **Reboot the affected node** (cleanest recovery):
+
+   ```bash
+   talosctl -n <node-ip> reboot
+   ```
+
+2. **Alternative** (riskier - may disrupt running pods):
+
+   ```bash
+   # Find zombie kubelet PID
+   talosctl -n <node-ip> ps | grep kubelet
+
+   # Force kill the process and shim
+   talosctl -n <node-ip> kill <kubelet-pid>
+   talosctl -n <node-ip> kill <shim-pid>
+   ```
+
+**Prevention**:
+
+- Unknown - containerd crash cause needs further investigation
+- Monitor containerd logs for warning signs
+- Consider containerd log retention increase for crash analysis
+
+**Historical Occurrence**:
+
+- 2025-11-17: worker0 - containerd crashed with exit status 2, left kubelet PID 89823 orphaned
+- Logs rotated before crash investigation possible
+
 ## 🚨 Fast Path Health Checks
 
 ### Core Cluster Health

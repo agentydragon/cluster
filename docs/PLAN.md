@@ -26,6 +26,9 @@ This document tracks project roadmap and strategic architecture decisions for th
   - **Primary Directive Achieved**: `./bootstrap.sh` → everything works declaratively
   - **No Manual Intervention Required**: Single terraform apply with proper module dependencies
   - **Proper Module Structure**: PVE-AUTH → INFRASTRUCTURE → STORAGE + GITOPS + DNS
+  - **Infrastructure Layout**: Layered terraform in numbered directories (00-persistent-auth, 01-infrastructure,
+    02-services, 03-configuration)
+  - **Cleanup**: Removed zombie `terraform/infrastructure/` directory (post-refactor remnant with empty state)
 
 ### Storage Infrastructure - COMPLETE
 
@@ -52,13 +55,31 @@ This document tracks project roadmap and strategic architecture decisions for th
 - [x] **NGINX Ingress**: HA deployment using MetalLB LoadBalancer
 - [x] **External Connectivity**: VPS proxy via Tailscale to cluster ingress
 
-### DNS & Certificates - BLOCKED
+### DNS & Certificates - IN PROGRESS
 
 - [x] **DNS Delegation**: Route 53 → VPS PowerDNS → Cluster PowerDNS (10.0.3.3)
 - [ ] **PowerDNS Deployment**: In-cluster authoritative DNS server with LoadBalancer service
-  - **Status**: BLOCKED - cdwv/powerdns-helm chart has YAML parsing bug (duplicate value keys)
-  - **Solution**: Created custom PowerDNS Helm chart with modern features (ESO integration, official images)
-  - **Next**: Deploy custom chart with ESO-generated API key
+  - **Status**: Chart developed but deployment blocked by infrastructure issue
+  - **Progress**:
+    - [x] Created custom PowerDNS Helm chart (charts/powerdns/)
+    - [x] Fixed binary paths: `/usr/local/sbin/pdns_server` (official image location)
+    - [x] Image pinning: `powerdns/pdns-auth-49:4.9.11` (verified via Docker Hub API)
+    - [x] Proxmox CSI storage integration with explicit storageClass
+    - [x] External Secrets Operator integration for API key
+    - [x] Pod Security Standards "restricted" compliance
+    - [ ] Deployment blocked: Worker node kubelet zombie process
+  - **Infrastructure Issue Discovered**:
+    - **Root Cause**: Containerd crashed on worker0 (~9 hours before teardown), leaving kubelet process (PID 89823) orphaned
+    - **Zombie State**: Old kubelet still running but Talos service manager cannot restart it
+    - **Error**: "cannot delete running task kubelet: failed precondition"
+    - **Impact**: PowerDNS pods stuck in Pending - kubelet never called CSI to mount volumes
+    - **Resolution**: Cluster destroyed for clean rebuild
+  - **Containerd Crash Analysis**:
+    - Containerd exited with status 2 while kubelet was running
+    - Kubelet process and shim survived the crash as orphans
+    - No OOM or kernel errors found in logs (logs rotated after 9 hours)
+    - Exact crash cause unknown - logs from failure point unavailable
+  - **Next**: Redeploy cluster and test PowerDNS with working kubelet
 - [ ] **external-dns**: Automatic DNS record creation for ingresses
   - **Status**: Configuration created but not deployed (blocked by PowerDNS)
   - **Provider**: PowerDNS native provider (better than RFC2136)
