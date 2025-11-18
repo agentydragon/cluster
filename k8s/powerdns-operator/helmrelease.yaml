@@ -17,16 +17,15 @@ spec:
       interval: 12h
   values:
     # PowerDNS API configuration
-    env:
-      - name: PDNS_API_URL
-        value: "http://powerdns-api.dns-system:8081"
-      - name: PDNS_API_VHOST
-        value: "localhost"
-      - name: PDNS_API_KEY
-        valueFrom:
-          secretKeyRef:
-            name: powerdns-api-key
-            key: PDNS_API_KEY
+    api:
+      url: "http://powerdns-api.dns-system:8081"
+      vhost: "localhost"
+      tls:
+        insecure: false
+
+    # Use existing secret for API key (created by Reflector from dns-system)
+    credentials:
+      existingSecret: "powerdns-api-key"
 
     # Resource limits
     resources:
