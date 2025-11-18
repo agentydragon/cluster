@@ -33,7 +33,9 @@ powerdns:
 
   # Additional PowerDNS configuration
   config:
-    {}
+    # Enable AXFR for VPS secondary zone
+    allow-axfr-ips: "10.0.0.0/8,100.64.0.3" # Allow cluster network and VPS Tailscale IP
+    disable-axfr: "no"
     # Example:
     # local-port: 5353
     # local-address: "0.0.0.0"
