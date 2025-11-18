@@ -66,10 +66,11 @@ spec:
         trivy:
           size: 5Gi
 
-    # Admin password from Vault via ExternalSecret
+    # Admin password from Password generator (bootstrap phase)
+    # TODO: Migrate to Vault-backed harbor-secrets once SSO is configured
     harborAdminPassword: "" # Will be set via existingSecret
-    existingSecretAdminPassword: "harbor-secrets"
-    existingSecretAdminPasswordKey: "admin-password"
+    existingSecretAdminPassword: "harbor-admin-initial"
+    existingSecretAdminPasswordKey: "HARBOR_ADMIN_PASSWORD"
 
     # Core services
     core:
