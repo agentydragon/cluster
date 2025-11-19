@@ -42,4 +42,4 @@ spec:
       name: vault-oauth-client-secret
       varsKeys:
         - client_secret:vault_client_secret
-      optional: false
+      optional: true

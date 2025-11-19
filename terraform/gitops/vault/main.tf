@@ -15,8 +15,10 @@ provider "vault" {
   address = var.vault_address
 }
 
-# Enable OIDC auth method
+# Enable OIDC auth method (only when client secret is provided)
 resource "vault_jwt_auth_backend" "oidc" {
+  count = var.vault_client_secret != "" ? 1 : 0
+
   path               = "oidc"
   type               = "oidc"
   description        = "OIDC authentication with Authentik"
@@ -32,9 +34,11 @@ resource "vault_jwt_auth_backend" "oidc" {
   }
 }
 
-# Create OIDC role for Authentik users
+# Create OIDC role for Authentik users (only when OIDC backend is created)
 resource "vault_jwt_auth_backend_role" "authentik_users" {
-  backend   = vault_jwt_auth_backend.oidc.path
+  count = var.vault_client_secret != "" ? 1 : 0
+
+  backend   = vault_jwt_auth_backend.oidc[0].path
   role_name = "authentik-users"
   role_type = "oidc"
 

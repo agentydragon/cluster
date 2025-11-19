@@ -19,4 +19,5 @@ variable "vault_client_secret" {
   description = "OIDC client secret for Vault"
   type        = string
   sensitive   = true
+  default     = ""
 }
