@@ -38,6 +38,21 @@ Execute tools like these with the direnv loaded, or use `direnv exec .`.
   - cert-manager provisions Let's Encrypt certs
 - HTTPS chain: Internet → VPS nginx reads CNI → Tailscale VPN → HA VIP → NGINX Ingress terminates TLS → app
 
+## Services
+
+Deployed services accessible via `*.test-cluster.agentydragon.com`:
+
+- **Authentik (SSO)**: <https://auth.test-cluster.agentydragon.com>
+- **Gitea (Git)**: <https://git.test-cluster.agentydragon.com>
+- **Harbor (Registry)**: <https://registry.test-cluster.agentydragon.com>
+- **Vault (Secrets)**: <https://vault.test-cluster.agentydragon.com>
+- **Matrix (Chat)**: <https://chat.test-cluster.agentydragon.com>
+- **Grafana (Monitoring)**: <https://grafana.test-cluster.agentydragon.com> (if exposed)
+- **Test App**: <https://test.test-cluster.agentydragon.com>
+
+All traffic routes: Internet (443) → VPS nginx (SNI passthrough) → Tailscale VPN →
+MetalLB VIP (10.0.3.2:443) → NGINX Ingress → Services
+
 ## Secret Management Strategy
 
 **Stable SealedSecret Keypair**: Uses pre-generated keypair stored in libsecret to ensure SealedSecrets always

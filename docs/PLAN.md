@@ -104,7 +104,8 @@ This document tracks project roadmap and strategic architecture decisions for th
   - **Deployment**: Ansible role `powerdns` with tag `--tags powerdns`
   - **Verification**: `pdnsutil list-zone test-cluster.agentydragon.com` shows all cluster records
   - **Status**: Zone replication working, public DNS queries resolved ✅
-- [ ] **PowerDNS Operator Evaluation**: Reconsider PowerDNS Operator vs current external-dns + Helm chart approach
+- [x] **PowerDNS Operator**: DEPLOYED AND WORKING ✅ - Created test-cluster.agentydragon.com zone
+  (ClusterZone CRD successful). external-dns uses HTTP API for record management.
   - **Current**: external-dns + custom PowerDNS Helm chart
   - **Alternative**: PowerDNS Operator (34⭐, Aug 2024) for zone/record management only
   - **Limitation**: Operator doesn't deploy PowerDNS servers - only manages zones/records via API
@@ -115,7 +116,8 @@ This document tracks project roadmap and strategic architecture decisions for th
   - **Cons**: RFC2136-only integration (no native external-dns provider), TSIG key complexity, newer K8s ecosystem
   - **Integration**: Would require RFC2136 for both external-dns and cert-manager (vs PowerDNS native providers)
   - **Evaluate**: Whether advanced features justify integration complexity vs PowerDNS simplicity
-- [ ] **SNI Passthrough on Port 443**: VPS nginx SNI routing to cluster for native HTTPS (not 8443)
+- [x] **SNI Passthrough on Port 443**: IMPLEMENTED ✅ - Stream-level SNI routing on port 443 via
+  nginx-streams/https-sni-router.j2 (L358 verified, `listen 443; ssl_preread on`)
   - **Current**: VPS nginx configured with TLS stream SNI router to cluster ingress VIP (10.0.3.2:443)
   - **Configuration**: `nginx-streams/https-sni-router.j2` routes `*.test-cluster.agentydragon.com` to cluster
   - **Limitation**: Public endpoint on port 8443, not 443 (requires SNI setup on VPS nginx for port 443)
@@ -153,7 +155,8 @@ This document tracks project roadmap and strategic architecture decisions for th
   - **Working**: Admin interface accessible, ESO provides all secrets (admin password, secret key, postgres)
   - **Fixed**: envFrom pattern for secret injection, separated core deployment from SSO configuration
   - **Ready for**: Blueprint-based configuration and service integration
-- [ ] **PowerDNS Custom Chart Deployment**: Deploy custom PowerDNS Helm chart to replace buggy cdwv chart
+- [x] **PowerDNS Custom Chart Deployment**: DEPLOYED ✅ - Custom PowerDNS Helm chart operational with
+  ESO integration, official images, modern security
   - **Status**: Custom chart created with ESO integration, official images, modern security
   - **Next Steps**:
     1. Create ESO secret for PowerDNS API key
@@ -210,6 +213,48 @@ This document tracks project roadmap and strategic architecture decisions for th
   - **Use Case**: Automated backup and sync of cluster data to Google Drive
   - **Authentication**: Will need service account or OAuth token management via Vault/ESO
   - **Status**: Binary available, ready for containerization and deployment
+- [ ] **Vault SSO Integration**: Configure Vault with Authentik OIDC authentication
+  - **Current State**: Vault deployed and operational with root token auth only
+  - **Goal**: Enable human access to Vault via Authentik SSO
+  - **Implementation**: Configure `auth/oidc/config` pointing to Authentik, create `authentik-users` role
+  - **Benefit**: Centralized authentication, audit trail, group-based Vault policies
+- [ ] **User Management Automation**: Automated user provisioning in Authentik
+  - **Requirement**: Create <agentydragon@gmail.com> user with password
+  - **Acceptable Solution**: One-time command/script for user creation (doesn't need to be fully automated)
+  - **Integration**: Use Authentik bootstrap blueprints or direct API calls
+  - **Status**: Needs implementation
+- [ ] **Fix SSO Terraform Integration**: Resolve 403/503 errors in gitea-sso and matrix-sso terraform resources
+  - **Current Issue**: Terraform runners getting HTTP 403 "Token invalid/expired" and 503 "Service Temporarily Unavailable"
+  - **Root Cause**: API token or Authentik ingress issues (auth.test-cluster.agentydragon.com shows 503 at 00:21)
+  - **Status**: Connectivity fixed (using HTTPS URL), authentication/availability issues remain
+  - **Impact**: Blocks Gitea and Matrix SSO configuration
+- [ ] **Firecrawl**: AI-powered web scraping and content extraction service
+  - **Reference**: <https://github.com/firecrawl/firecrawl/tree/main/examples/kubernetes/cluster-install>
+  - **Helm Chart**: <https://github.com/firecrawl/firecrawl/blob/main/examples/kubernetes/firecrawl-helm/README.md>
+  - **Components**: Firecrawl service + MCP (Model Context Protocol) server integration
+  - **Purpose**: Provide web scraping/extraction for AI agents (Claude, etc.)
+  - **Use Case**: AI-powered research, documentation scraping, content analysis
+  - **Status**: Researched, ready for deployment
+- [ ] **Harbor as Cluster Registry**: Use Harbor for all cluster container images with fallback to public registries
+  - **Goal**: Pull all images from internal Harbor registry for reliability and caching
+  - **Challenge**: Bootstrap story - how to deploy Harbor before Harbor can serve its own images
+  - **Solution Options**:
+    - Bootstrap phase using public registries, then switch to Harbor
+    - Harbor pulls from public → cluster pulls from Harbor (cache proxy)
+    - Image mirroring automation (sync public images to Harbor)
+  - **Benefit**: Faster deployments, offline capability, vulnerability scanning
+  - **Status**: Needs architecture design
+- [ ] **MCP Servers Deployment**: Run Model Context Protocol servers for AI agent integration
+  - **Example**: GitHub MCP server instance for repository access
+  - **Purpose**: Enable Claude Code and other AI tools to interact with services via MCP protocol
+  - **Integration**: Connect to Firecrawl, GitHub, cluster APIs, documentation
+  - **Use Case**: AI-assisted development, automated documentation, cluster management
+  - **Status**: Needs deployment plan
+
+- [ ] **Investigate PowerDNS Operator Restarts**: Operator has 33 restarts over 22h uptime
+  - **Status**: Operator IS working (ClusterZone successfully created), but restart count suggests instability
+  - **Goal**: Determine if restarts are normal, configuration issue, or resource constraint
+  - **Impact**: Low priority - operator functional despite restarts
 - [ ] **Cross-integration**: Vault OIDC auth + Authentik-Vault secrets management
 
 ### 🔒 HTTPS & Certificate Automation
@@ -246,13 +291,15 @@ This document tracks project roadmap and strategic architecture decisions for th
 
 ### 📊 Observability & Monitoring
 
-- [ ] **metrics-server**: Kubernetes Metrics API provider for resource utilization
+- [x] **metrics-server**: Kubernetes Metrics API provider - DEPLOYED AND WORKING ✅ (kubectl top nodes functional, 4h+ uptime)
   - **Purpose**: Enable `kubectl top nodes/pods`, Horizontal Pod Autoscaler (HPA), resource-based scheduling
   - **Status**: Currently missing - Metrics API returns "not available"
   - **Deployment**: Official kubernetes-sigs/metrics-server Helm chart
   - **Requirement**: Foundation for autoscaling and resource monitoring
 
-- [ ] **Prometheus Stack**: Complete metrics collection and alerting platform
+- [x] **Prometheus Stack**: Complete metrics collection - FULLY DEPLOYED ✅
+  (kube-prometheus-stack: Prometheus, Grafana, Alertmanager, node-exporter on all 6 nodes,
+  kube-state-metrics. 4h+ uptime, all healthy)
   - **Recommended**: kube-prometheus-stack (all-in-one Helm chart)
   - **Components Included**:
     - **Prometheus**: Time-series metrics database with PromQL query language
@@ -491,6 +538,27 @@ Solution: **Temporal separation** with phased deployment.
    - Certificate management via Vault integration
 
 ### Domain Strategy
+
+### Current Service Status (2025-11-19)
+
+**Operational:**
+
+- ✅ git.test-cluster.agentydragon.com - Gitea (accessible)
+- ✅ vault.test-cluster.agentydragon.com - Vault (operational, root token auth)
+- ✅ registry.test-cluster.agentydragon.com - Harbor (deployed)
+
+**Issues:**
+
+- ⚠️ auth.test-cluster.agentydragon.com - Authentik (503 Service Unavailable at 00:21)
+- ❌ chat.test-cluster.agentydragon.com - Matrix Synapse (404 Not Found)
+
+**SSO Integration Status:**
+
+- ✅ vault-config terraform: Working
+- ✅ authentik-config terraform: Working
+- ✅ sso-secrets terraform: Working
+- ❌ gitea-sso terraform: Failing (403/503 errors)
+- ❌ matrix-sso terraform: Failing (403/503 errors)
 
 - **Identity**: `auth.test-cluster.agentydragon.com`
 - **Git**: `git.test-cluster.agentydragon.com`
