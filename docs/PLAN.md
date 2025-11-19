@@ -240,12 +240,19 @@ This document tracks project roadmap and strategic architecture decisions for th
   - **Acceptable Solution**: One-time command/script for user creation (doesn't need to be fully automated)
   - **Integration**: Use Authentik bootstrap blueprints or direct API calls
   - **Status**: Needs implementation
-- [ ] **Fix SSO Terraform Integration**: Resolve 403/503 errors in gitea-sso and matrix-sso terraform resources
-  - **Current Issue**: Terraform runners getting HTTP 403 "Token invalid/expired" and 503 "Service Temporarily Unavailable"
-  - **Root Cause**: API token or Authentik ingress issues (auth.test-cluster.agentydragon.com shows 503 at 00:21)
-  - **Status**: Connectivity fixed (using HTTPS URL), authentication/availability issues remain
-  - **Impact**: Blocks Gitea and Matrix SSO configuration
-- [ ] **Firecrawl**: AI-powered web scraping and content extraction service
+- [x] **Fix SSO Terraform Integration**: RESOLVED - Fixed Authentik flow slug references
+  - **Root Cause**: Terraform code using incorrect flow slugs for Authentik 2025.10.1
+  - **Solution**: Updated all SSO Terraform modules to use correct flow slugs:
+    - Authorization: `default-provider-authorization-implicit-consent` (was `default-authorization-flow`)
+    - Invalidation: `default-provider-invalidation-flow` (was `default-invalidation-flow`)
+  - **Verification**: grafana-sso working successfully with correct flows
+  - **Commit**: defbcec "fix(sso): update Authentik flow slugs to match v2025.10.1"
+  - **Status**: OPERATIONAL - SSO integrations can now proceed
+- [x] **Firecrawl**: AI-powered web scraping and content extraction service - DEPLOYED
+  - **Status**: FULLY OPERATIONAL
+  - **Components**: API, PostgreSQL, Redis, Worker, Nuq-Worker, Playwright
+  - **Fixed**: Health probe configuration (playwright service doesn't implement probe endpoints)
+  - **Deployment**: HelmRelease via Flux, namespace firecrawl
   - **Reference**: <https://github.com/firecrawl/firecrawl/tree/main/examples/kubernetes/cluster-install>
   - **Helm Chart**: <https://github.com/firecrawl/firecrawl/blob/main/examples/kubernetes/firecrawl-helm/README.md>
   - **Components**: Firecrawl service + MCP (Model Context Protocol) server integration
@@ -276,9 +283,16 @@ This document tracks project roadmap and strategic architecture decisions for th
 
 ### 🔒 HTTPS & Certificate Automation
 
-- [ ] **Vault HTTPS Configuration**: Enable TLS for Vault with cert-manager integration
+- [x] **Vault HTTPS Configuration**: Enable TLS for Vault with cert-manager integration - CONFIGURED
+  - **Status**: CONFIGURED (pending DNS resolution for certificate issuance)
   - **External URL**: `vault.test-cluster.agentydragon.com`
-  - **Implementation**: Certificate resource + TLS listener configuration
+  - **Implementation**:
+    - Certificate resource with Let's Encrypt HTTP-01 challenge
+    - Vault TLS listener enabled with cert-manager certificate
+    - HTTPS ingress with backend protocol configuration
+    - All internal URLs updated to HTTPS
+  - **Commits**: adabfe5, cbe8b68
+  - **Pending**: DNS resolution for vault.test-cluster.agentydragon.com (cert-manager waiting to complete ACME challenge)
   - **Benefits**: Secure API access, proper certificate trust chain
 - [ ] **Universal HTTPS Auto-Transformer**: Create Kustomization transformer for automatic HTTPS enablement
   - **Goal**: Add HTTPS to any service with just 1 line (transformer reference)
