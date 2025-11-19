@@ -69,17 +69,8 @@ When spawning agents, provide:
 5. **Reference code location**: Inform agents about `/code`
 6. **CLAUDE.md compliance**: Instruct agents to read and follow CLAUDE.md, especially PRIMARY DIRECTIVE
 
-**IMPORTANT**: Always inform subagents about the reference code convention:
-
-**Reference Code Location**: `/code` using `domain.tld/org/repo` pattern
-
-Examples:
-
-- `github.com/flux-iac/tofu-controller` - Tofu/Terraform controller source
-- `github.com/rgl/terraform-proxmox-talos` - Reference Talos config
-- `github.com/goauthentik/terraform-provider-authentik` - Authentik provider docs
-
-Agents should check these repositories for implementation patterns, API schemas, and troubleshooting before searching web.
+**IMPORTANT**: Always inform subagents about the reference code convention (see "Reference Code Location"
+section below for details).
 
 **Agent Context Template:**
 
@@ -174,7 +165,7 @@ git add -A && git commit && git push  # Too late, already tried to deploy
 
 Achieve a committed repository state such that:
 
-1. `./terraform/infrastructure/bootstrap.sh` (the ONLY supported bootstrap method)
+1. `./bootstrap.sh` (the ONLY supported bootstrap method)
 2. **Everything works**
 
 Where "everything" means everything currently in PLAN.md scope as specified by user.
@@ -188,19 +179,7 @@ Where "everything" means everything currently in PLAN.md scope as specified by u
 - **v2**: Add service Y, iterate until reliable and turnkey, commit when working
 - **v∞**: Eventually migrate services from other infrastructure
 
-**Core Services (minimum viable scope):**
-
-- Authentik SSO
-- Gitea with SSO
-- Harbor with SSO
-- Matrix with SSO
-
-**Future Services:**
-
-- CI in Gitea
-- Services from ducktape VPS (Inventree, Grocy, PowerDNS, agentydragon.com)
-- Ember agent + turnkey evals + RBAC
-- Host GPU LLMs
+@docs/PLAN.md
 
 **Principle**: Whatever subset of PLAN.md is "currently in scope" must be turnkey deployable before expanding scope.
 
@@ -208,13 +187,13 @@ Where "everything" means everything currently in PLAN.md scope as specified by u
 
 **You are NOT done unless:**
 
-1. You have turnkey `./terraform/infrastructure/bootstrap.sh` (the ONLY supported method)
+1. You have turnkey `./bootstrap.sh` (the ONLY supported method)
 2. That **reliably** results in everything in-scope functioning
 3. **Without needing ANY further manual tweaks**
 
 **Completion criteria:**
 
-- `terraform destroy` → `./terraform/infrastructure/bootstrap.sh` → run all health checks
+- `terraform destroy` → `./bootstrap.sh` → run all health checks
 - **If ANY component is unhealthy, it does NOT work by definition**
 - No declaring "good enough" or aborting work on broken turnkey flow
 
@@ -237,13 +216,13 @@ Where "everything" means everything currently in PLAN.md scope as specified by u
 ```bash
 # Primary loop for all changes:
 terraform destroy --auto-approve
-./terraform/infrastructure/bootstrap.sh
+./bootstrap.sh
 # Verify: does it work end-to-end declaratively?
 ```
 
 ## Bootstrap Script - ONLY Supported Method
 
-**CRITICAL**: The cluster MUST only be bootstrapped using `./terraform/infrastructure/bootstrap.sh`
+**CRITICAL**: The cluster MUST only be bootstrapped using `./bootstrap.sh`
 
 ### Why Bootstrap Script (Not Direct Terraform)
 
@@ -313,8 +292,12 @@ Use `ssh root@atlas` to access the Proxmox host. No password required (SSH keys 
 
 ## Working Directory
 
-- Infrastructure terraform config: `/home/agentydragon/code/cluster/terraform/infrastructure/`
-- GitOps terraform config: `/home/agentydragon/code/cluster/terraform/gitops/`
+- Terraform layers:
+  - `terraform/00-persistent-auth/` - Proxmox credentials, CSI tokens, sealed secrets keypair
+  - `terraform/01-infrastructure/` - VMs, Talos, Cilium CNI
+  - `terraform/02-services/` - Flux, core services, applications
+  - `terraform/03-configuration/` - DNS, SSO configuration
+- GitOps terraform: `terraform/gitops/` (tofu-controller managed)
 - VM IDs: 1500-1502 (controlplane0-2), 2000-2001 (worker0-1)
 - Node IPs: 10.0.1.x (controllers), 10.0.2.x (workers), 10.0.3.x (VIPs)
 
@@ -350,7 +333,7 @@ Use cloned repos as implementation ground truth.
 
 - Step-by-step instructions for cold-starting the Talos cluster from nothing
 - Complete deployment procedures (terraform, CNI, applications, external connectivity)
-- Basic verification steps only (run `terraform/infrastructure/health-check.sh`)
+- Basic verification steps only (see docs/TROUBLESHOOTING.md for health checks)
 - **NO troubleshooting** (would be too verbose - half a megabyte)
 
 **Maintenance**: Continuously update to reflect current state. Changes require BOOTSTRAP.md updates.
@@ -441,72 +424,9 @@ This ensures the documentation serves both as operational procedures (docs/BOOTS
 
 ## Common Issues and Resolutions
 
-### cert-manager Webhook Secret Namespace Issue
+@docs/TROUBLESHOOTING.md
 
-**Problem**: cert-manager DNS-01 challenges failing with "Unauthorized" or "secret not found" errors when using
-webhook solvers (e.g., PowerDNS webhook).
-
-**Root Cause**: When ClusterIssuer `apiKeySecretRef` doesn't specify a namespace, cert-manager defaults to looking
-in the Certificate resource's namespace (e.g., `monitoring` for Grafana certificate), not the webhook's namespace
-(`cert-manager`) where the secret actually exists.
-
-**Resolution**: Always explicitly specify namespace in ClusterIssuer webhook configuration:
-
-```yaml
-# k8s/cert-manager-config/clusterissuer.yaml
-apiVersion: cert-manager.io/v1
-kind: ClusterIssuer
-metadata:
-  name: letsencrypt-prod-dns
-spec:
-  acme:
-    solvers:
-      - dns01:
-          webhook:
-            config:
-              apiKeySecretRef:
-                name: powerdns-api-key
-                key: PDNS_API_KEY
-                namespace: cert-manager  # REQUIRED! Otherwise uses Certificate's namespace
-```
-
-**Why This Works**: Secrets are typically created in service's namespace (e.g., `dns-system`) and reflected to
-`cert-manager` namespace via reflector. Explicitly specifying `namespace: cert-manager` ensures cert-manager
-looks in the correct location regardless of where the Certificate resource is created.
-
-### ESO Password Generator Secret Desynchronization
-
-**Problem**: Applications failing with authentication errors after running for hours/days. Symptoms include:
-
-- PowerDNS webhook: "401 Unauthorized"
-- Authentik API: "403 Token invalid/expired"
-- PostgreSQL: "FATAL: password authentication failed"
-
-**Root Cause**: ESO Password generators regenerate values on `refreshInterval` (1h, 24h), updating Kubernetes Secrets.
-But applications that already consumed and persisted those passwords don't automatically update:
-
-1. Application reads secret at startup → writes to DB or persistent config
-2. ESO refreshes secret after interval → new password in Kubernetes Secret
-3. Application still running with old password → **desynchronized**
-4. New consumers read new password → authentication fails against app with old password
-
-**Critical Examples**:
-
-- PowerDNS: DB password set on init (empty PVC), never updated. Secret changes break DB auth.
-- Authentik: Bootstrap token written to DB by Job. Secret refresh breaks API auth.
-
-**Resolution**: Use stable refresh intervals (8760h = 1 year) instead of volatile intervals (1h, 24h).
-See `docs/SECRET_SYNCHRONIZATION_ANALYSIS.md` for detailed analysis.
-
-**Files Changed**:
-
-- `charts/powerdns/templates/external-secret.yaml`: `refreshInterval: 1h` → `8760h`
-- `k8s/authentik/bootstrap-external-secret.yaml`: `refreshInterval: 24h` → `8760h`
-- `k8s/authentik/postgres-external-secret.yaml`: `refreshInterval: 1h` → `8760h`
-- `k8s/authentik/admin-password-external-secret.yaml`: `refreshInterval: 24h` → `8760h`
-
-**Long-term Solution**: Migrate to Vault-backed secrets where generated passwords persist in Vault, eliminating
-regeneration volatility. See `docs/SECRET_SYNCHRONIZATION_ANALYSIS.md` Phase 2.
+@docs/archive/SECRET_SYNCHRONIZATION_ANALYSIS.md
 
 ## Troubleshooting Priority
 
