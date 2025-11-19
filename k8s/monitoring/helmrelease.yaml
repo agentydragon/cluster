@@ -108,6 +108,30 @@ spec:
       # Datasources - use default Prometheus datasource from chart
       # No need to override - chart provides correct datasource by default
 
+      # Authentik SSO configuration
+      grafana.ini:
+        server:
+          root_url: https://grafana.test-cluster.agentydragon.com
+        auth.generic_oauth:
+          enabled: true
+          name: Authentik
+          client_id: grafana
+          client_secret: $__file{/etc/secrets/oauth/client_secret}
+          scopes: openid email profile
+          auth_url: https://auth.test-cluster.agentydragon.com/application/o/authorize/
+          token_url: https://auth.test-cluster.agentydragon.com/application/o/token/
+          api_url: https://auth.test-cluster.agentydragon.com/application/o/userinfo/
+          role_attribute_path: contains(groups[*], 'Grafana Admins') && 'Admin' || 'Viewer'
+          allow_sign_up: true
+
+      # Mount OAuth client secret
+      extraSecretMounts:
+        - name: oauth-client-secret
+          secretName: grafana-oauth-client-secret
+          defaultMode: 0440
+          mountPath: /etc/secrets/oauth
+          readOnly: true
+
     # Prometheus Operator configuration
     prometheusOperator:
       enabled: true
