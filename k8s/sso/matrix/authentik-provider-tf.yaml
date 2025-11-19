@@ -25,7 +25,7 @@ spec:
   # Variables for Terraform
   vars:
     - name: authentik_url
-      value: "http://authentik-server.authentik.svc.cluster.local"
+      value: "https://auth.test-cluster.agentydragon.com"
     - name: matrix_url
       value: "https://matrix.test-cluster.agentydragon.com"
 
