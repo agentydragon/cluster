@@ -238,6 +238,11 @@ This document tracks project roadmap and strategic architecture decisions for th
 ### 🤖 AI/ML Platform Services
 
 - [ ] **Firecrawl**: Web scraping and content extraction service for AI agents
+  - **Components**: Firecrawl service + MCP (Model Context Protocol) server integration
+  - **Purpose**: Provide web scraping and content extraction capabilities for AI agents
+  - **MCP Integration**: Enable Claude and other AI tools to crawl and extract web content
+  - **Deployment**: Kubernetes deployment with MCP server for agent access
+  - **Use Case**: AI-powered web research, documentation scraping, content analysis
 
 ### Storage & Infrastructure Tasks - COMPLETED MIGRATION
 
@@ -291,7 +296,10 @@ Through systematic diagnosis of Bank-Vaults storage failures, discovered critica
 
 ### Other Storage & Infrastructure Tasks
 
-- [ ] PARTIAL **Stream-level SNI Implementation**: SNI passthrough configured on port 8443, cluster handles SSL certificates
+- [x] **Stream-level SNI Implementation**: SNI passthrough configured on port 443, cluster handles SSL certificates
+  - **Configuration**: nginx stream module with ssl_preread for SNI inspection
+  - **Routing**: `*.test-cluster.agentydragon.com` → cluster ingress (10.0.3.2:443)
+  - **Status**: VPS nginx properly configured with SNI passthrough
 - [ ] **VPS proxy resilience**: Test ingress HA - VPS nginx → MetalLB VIP pod failure handling
 - [x] **Storage Evaluation COMPLETE**: Proxmox CSI selected and implemented
   - **Selected**: Proxmox CSI for native ZFS integration and resource efficiency
