@@ -68,16 +68,15 @@ spec:
       job:
         enabled: true
 
-    # OIDC configuration via extraConfig
-    extraConfig:
-      # OIDC provider configuration for Authentik
+    # OIDC configuration via extraSecrets (sensitive values)
+    extraSecrets:
       oidc_providers:
         - idp_id: authentik
           idp_name: "Authentik SSO"
           discover: true
           issuer: "https://auth.test-cluster.agentydragon.com/application/o/matrix/"
           client_id: "matrix"
-          client_secret_path: /synapse/secrets/oidc/client_secret
+          client_secret: "5JAVc6643E4KOVTyfAt5cPtC1gLZ4vr5"
           scopes:
             - "openid"
             - "profile"
@@ -90,17 +89,6 @@ spec:
           allow_existing_users: true
           # Enable users to log in with both OIDC and password
           enable_registration: true
-
-    # Extra volumes for secrets
-    extraVolumes:
-      - name: oidc-secret
-        secret:
-          secretName: matrix-oauth-client-secret
-
-    extraVolumeMounts:
-      - name: oidc-secret
-        mountPath: /synapse/secrets/oidc
-        readOnly: true
 
     # Service configuration
     service:
