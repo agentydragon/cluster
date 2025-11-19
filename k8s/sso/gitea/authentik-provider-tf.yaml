@@ -13,6 +13,7 @@ spec:
 
   # Use in-cluster service account
   serviceAccountName: tf-runner
+  approvePlan: "auto"
 
   # Store Terraform state in Kubernetes secret
   backendConfig:
