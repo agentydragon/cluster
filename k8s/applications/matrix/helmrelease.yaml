@@ -48,7 +48,7 @@ spec:
     # Persistence for media store
     persistence:
       enabled: true
-      storageClass: "proxmox-data-xfs"
+      storageClass: "proxmox-csi-retain"
       size: 20Gi
       accessMode: ReadWriteOnce
 
@@ -162,7 +162,7 @@ spec:
       primary:
         persistence:
           enabled: true
-          storageClass: "proxmox-data-xfs"
+          storageClass: "proxmox-csi-retain"
           size: 10Gi
         # Required PostgreSQL settings for Synapse
         initdb:
