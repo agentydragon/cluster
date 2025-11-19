@@ -27,8 +27,8 @@ data "authentik_flow" "default_authorization_flow" {
   slug = "default-provider-authorization-implicit-consent"
 }
 
-data "authentik_group" "users" {
-  name = "users"
+data "authentik_group" "admins" {
+  name = "authentik Admins"
 }
 
 # Kagent Proxy Provider for Forward Auth
@@ -53,10 +53,10 @@ resource "authentik_application" "kagent" {
   open_in_new_tab   = true
 }
 
-# Policy Binding - Allow users group
+# Policy Binding - Allow admins group
 resource "authentik_policy_binding" "kagent_access" {
   target = authentik_application.kagent.uuid
-  group  = data.authentik_group.users.id
+  group  = data.authentik_group.admins.id
   order  = 0
 }
 
