@@ -106,7 +106,16 @@ spec:
         - grafana-clock-panel
 
       # Datasources - use default Prometheus datasource from chart
-      # No need to override - chart provides correct datasource by default
+      # Add Loki datasource for log aggregation
+      additionalDataSources:
+        - name: Loki
+          type: loki
+          access: proxy
+          url: http://loki-stack.loki.svc.cluster.local:3100
+          jsonData:
+            maxLines: 1000
+          isDefault: false
+          editable: true
 
       # Authentik SSO configuration
       grafana.ini:

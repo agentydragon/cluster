@@ -6,6 +6,7 @@ resources:
   - storage/flux-kustomization.yaml
   - metrics-server/flux-kustomization.yaml
   - monitoring/flux-kustomization.yaml
+  - loki/flux-kustomization.yaml
   - metallb/flux-kustomization.yaml
   - metallb/config-flux-kustomization.yaml
   - cert-manager/flux-kustomization.yaml
