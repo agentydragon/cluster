@@ -3,4 +3,7 @@ kind: Kustomization
 resources:
   - secrets.yaml
   - helmrelease.yaml
-# Gitea OIDC/SSO configuration is handled by k8s/authentik-blueprint/gitea/ (Terraform)
+  - admin-token-job.yaml
+  - oauth-config-job.yaml
+# Gitea OIDC/SSO configuration via Jobs: admin-token-job creates admin token, oauth-config-job configures Authentik OAuth
+# Authentik provider is configured via k8s/authentik-blueprint/gitea/ (Terraform)

@@ -120,7 +120,8 @@ gitea admin user generate-access-token \
   --raw
 ```
 
-**Rejected Reason**: Requires complex volume mounts and file system access, making it less portable and harder to maintain than API approach.
+**Rejected Reason**: Requires complex volume mounts and file system access, making it less portable and harder to
+maintain than API approach.
 
 ### Option 3: Gitea Operator
 
@@ -258,6 +259,8 @@ Terraform requires these scopes for full Gitea configuration:
 
 Full scope specification in API call:
 
+<!-- markdownlint-disable MD040 -->
+
 ```json
 {
   "name": "terraform-admin-token",
@@ -269,6 +272,8 @@ Full scope specification in API call:
   ]
 }
 ```
+
+<!-- markdownlint-enable MD040 -->
 
 ### Idempotency Handling
 
@@ -284,7 +289,7 @@ Alternative: Use token UUID/timestamp suffix for uniqueness, always create new t
 
 **Current**: Token created once during bootstrap, no automatic rotation.
 
-**Future Enhancement** (Phase 2 - see docs/SECRET_SYNCHRONIZATION_ANALYSIS.md):
+**Future Enhancement** (Phase 2 - see SECRET_SYNCHRONIZATION_ANALYSIS.md):
 
 - CronJob pattern: Periodically create new token, update secret, delete old token
 - Overlapping validity: Keep both old and new tokens valid during rotation window
