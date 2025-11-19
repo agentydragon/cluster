@@ -100,23 +100,12 @@ spec:
           cpu: 200m
           memory: 256Mi
 
-      # Enable useful plugins
+      # Enable useful plugins (no Angular plugins)
       plugins:
-        - grafana-piechart-panel
         - grafana-clock-panel
 
-      # Datasources
-      datasources:
-        datasources.yaml:
-          apiVersion: 1
-          datasources:
-            - name: Prometheus
-              type: prometheus
-              url: http://kube-prometheus-stack-prometheus:9090
-              access: proxy
-              isDefault: true
-              jsonData:
-                timeInterval: 30s
+      # Datasources - use default Prometheus datasource from chart
+      # No need to override - chart provides correct datasource by default
 
     # Prometheus Operator configuration
     prometheusOperator:
