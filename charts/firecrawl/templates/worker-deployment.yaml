@@ -22,7 +22,8 @@ spec:
         - name: worker
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
-          args: [ "pnpm", "run", "workers" ]
+          command: [ "node" ]
+          args: [ "--max-old-space-size=3072", "dist/src/services/queue-worker.js" ]
           env:
             - name: FLY_PROCESS_GROUP
               value: "worker"
