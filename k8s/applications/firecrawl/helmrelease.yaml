@@ -66,6 +66,8 @@ spec:
       repository: ghcr.io/firecrawl/playwright-service
       tag: "latest"
       pullPolicy: Always
+      healthCheck:
+        enabled: false # Current image doesn't support /health/liveness and /health/readiness endpoints
 
     # Redis configuration
     redis:

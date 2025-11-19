@@ -27,6 +27,7 @@ spec:
           envFrom:
             - configMapRef:
                 name: {{ include "firecrawl.fullname" . }}-playwright-config
+          {{- if .Values.playwright.healthCheck.enabled }}
           livenessProbe:
             httpGet:
               path: /health/liveness
@@ -45,3 +46,4 @@ spec:
             timeoutSeconds: 5
             successThreshold: 1
             failureThreshold: 3
+          {{- end }}

@@ -39,6 +39,8 @@ playwright:
   repository: ghcr.io/firecrawl/playwright-service
   tag: "latest"
   pullPolicy: Always
+  healthCheck:
+    enabled: false # The current playwright-service image doesn't support /health endpoints
 
 redis:
   image: redis:alpine

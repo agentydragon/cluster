@@ -50,11 +50,11 @@ resource "authentik_provider_oauth2" "grafana" {
 
 # Data sources for default flows and mappings
 data "authentik_flow" "default_authorization_flow" {
-  slug = "default-authorization-flow"
+  slug = "default-provider-authorization-implicit-consent"
 }
 
 data "authentik_flow" "default_invalidation_flow" {
-  slug = "default-invalidation-flow"
+  slug = "default-provider-invalidation-flow"
 }
 
 data "authentik_property_mapping_provider_scope" "scopes" {
