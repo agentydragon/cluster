@@ -14,3 +14,16 @@ data "terraform_remote_state" "services" {
     path = "../02-services/terraform.tfstate"
   }
 }
+
+# Authentik data sources for SSO configuration
+data "authentik_flow" "default_provider_authorization_implicit_consent" {
+  slug = "default-provider-authorization-implicit-consent"
+}
+
+data "authentik_group" "users" {
+  name = "users"
+}
+
+data "authentik_outpost" "embedded" {
+  name = "authentik Embedded Outpost"
+}
