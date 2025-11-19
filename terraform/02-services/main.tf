@@ -48,8 +48,11 @@ resource "kubernetes_namespace" "test" {
 
 # FLUX BOOTSTRAP: Initialize GitOps engine
 resource "flux_bootstrap_git" "cluster" {
-  path       = "k8s"
-  depends_on = [kubernetes_namespace.test]
+  path = "k8s"
+  depends_on = [
+    kubernetes_namespace.test,
+    vault_kv_secret_v2.harbor_admin_password, # Ensure Vault secrets exist before Flux deploys apps
+  ]
 }
 
 # NOTE: Service configuration moved to Layer 3 after services are deployed

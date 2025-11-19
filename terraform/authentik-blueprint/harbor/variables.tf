@@ -13,7 +13,7 @@ variable "authentik_token" {
 variable "harbor_url" {
   description = "Harbor server URL"
   type        = string
-  default     = "https://harbor.test-cluster.agentydragon.com"
+  default     = "https://registry.test-cluster.agentydragon.com"
 }
 
 variable "client_secret" {
