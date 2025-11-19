@@ -28,7 +28,7 @@ spec:
     - name: authentik_url
       value: "https://auth.test-cluster.agentydragon.com"
     - name: harbor_url
-      value: "https://harbor.test-cluster.agentydragon.com"
+      value: "https://registry.test-cluster.agentydragon.com"
 
   # Get secrets from Kubernetes secrets
   varsFrom:
