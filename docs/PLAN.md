@@ -203,6 +203,7 @@ This document tracks project roadmap and strategic architecture decisions for th
 - [ ] **Syncthing**: Continuous file synchronization
   - **Helm Chart**: Community charts available (TrueCharts, k8s-home-lab-repo)
   - **Recommended Chart**: TrueCharts `oci://oci.trueforge.org/truecharts/syncthing`
+  - **Reference**: [Syncthing on K3s guide](https://steffenmueller4.github.io/2024/04/28/syncthing-on-k3s.html)
   - **Note**: Port configuration challenge (Syncthing port 22000 vs K8s NodePort 32000+)
   - **Use Case**: File sync between cluster and external systems
   - **Status**: Researched, ready for deployment
@@ -330,15 +331,16 @@ This document tracks project roadmap and strategic architecture decisions for th
     - VictoriaMetrics (lighter, faster, better long-term storage)
     - Thanos (multi-cluster federation and long-term storage)
 
-- [ ] **Loki Stack**: Log aggregation and analysis
+- [x] **Loki Stack**: Log aggregation and analysis - DEPLOYED ✅
+  - **Status**: Fully operational with Promtail DaemonSet collecting logs from all 6 nodes
   - **Components**:
-    - **Loki**: Log aggregation backend (like Prometheus but for logs)
-    - **Promtail**: DaemonSet log shipper (collects logs from all nodes)
-    - **Grafana Integration**: Unified logs + metrics visualization
-  - **Alternative**: Grafana Alloy (newer unified agent replacing Promtail)
-  - **Chart**: grafana/loki-stack or grafana/loki-distributed (HA deployment)
-  - **Storage**: Proxmox CSI for log retention
-  - **Benefits**: LogQL query language, label-based indexing, cost-effective vs ELK stack
+    - **Loki**: Log aggregation backend with boltdb-shipper and filesystem storage
+    - **Promtail**: DaemonSet log shipper (collects logs from all nodes via /var/log/pods)
+    - **Grafana Integration**: Loki datasource configured in existing Grafana instance
+  - **Chart**: grafana/loki-stack@2.10.2
+  - **Storage**: Proxmox CSI persistent storage (20Gi with proxmox-csi-retain)
+  - **Configuration**: 7-day retention, LogQL query interface, label-based indexing
+  - **Verified**: Logs flowing from 19 namespaces, Grafana queries working via datasource proxy
 
 - [ ] **OpenTelemetry**: Distributed tracing and observability
   - **Purpose**: Trace requests across microservices, identify bottlenecks
@@ -376,36 +378,46 @@ This document tracks project roadmap and strategic architecture decisions for th
 - ✅ **Simplified Architecture**: Direct Proxmox API integration
 - ✅ **Proven Reliability**: Uses existing ZFS infrastructure
 
+### Future: Rook-Ceph with OIDC-Authenticated POSIX Mounts
+
+**Vision**: RWX storage accessible from both K8s pods and external VMs with OIDC authentication
+
+**Use Case**: Syncthing shared storage mounted read-write across cluster + external systems with per-user identity
+
+**Architecture Options:**
+
+1. **Ceph RGW S3 + OIDC** (Native, but S3 API only - not POSIX filesystem)
+   - Rook CephObjectStore with sso config pointing to Authentik
+   - Users get temporary S3 credentials via STS
+   - Limitation: S3 tools only (s3cmd, rclone), not direct mount
+
+2. **Web File Manager + OIDC** (Simple, but not native mount)
+   - FileBrowser/Nextcloud with Authentik OIDC
+   - Backend mounts CephFS with service account keys
+   - Users access via web UI/WebDAV
+   - Per-user permissions at app level
+
+3. **NFS Gateway + Kerberos Bridge** (Complex, true POSIX with user identity) ✨
+   - Ceph NFS Gateway exports CephFS
+   - FreeIPA/Keycloak bridges OIDC → Kerberos tickets
+   - Client VMs mount via NFS with Kerberos auth
+   - Per-user UID mapping from OIDC identity
+   - True POSIX filesystem semantics with authenticated user context
+   - **Requirements**:
+     - Identity management infrastructure (FreeIPA)
+     - Kerberos KDC
+     - SSSD on client systems
+     - OIDC → Kerberos ticket translation
+
+**Status**: Future exploration - current Proxmox CSI meets immediate needs (RWO only)
+
 ## 🚨 OpenEBS LocalPV Talos Incompatibility (Archived Discovery)
 
-Through systematic diagnosis of Bank-Vaults storage failures, discovered critical incompatibility:
+**Issue**: OpenEBS LocalPV creates directories at `/var/lib/openebs/local/pvc-*`, but Talos kubelet runs in
+container with only `/var/lib/kubelet` mounted. Result: PVCs show "Bound" but pods fail with "path does not exist".
 
-**Root Cause Analysis:**
-
-- ✅ OpenEBS LocalPV provisioner correctly creates PV objects and directories on host filesystem (`/var/lib/openebs/local/pvc-*`)
-- ✅ Helper pods (`init-pvc-*`) run successfully and create directories with proper permissions
-- ❌ **Kubelet cannot access OpenEBS directories** - kubelet runs in container with limited mounts
-- ❌ In Talos kubelet.go:159, only `/var/lib/kubelet` is mounted, NOT `/var/lib/openebs`
-- Result: PVC shows "Bound" but pods fail with "path does not exist" errors
-
-**Diagnostic Process Used:**
-
-1. Created minimal test PVC → tight feedback loop (PVC status → helper pod → directory creation → mount failure)
-2. Deployed privileged debug pod → verified directories exist on host filesystem
-3. Examined Talos kubelet source → confirmed kubelet container mount restrictions
-4. **Conclusion**: OpenEBS creates directories kubelet cannot see due to Talos containerized kubelet design
-
-**Solutions Required:**
-
-- [ ] **Add OpenEBS mount to Talos machine config**: Modify kubelet extraMounts to include `/var/lib/openebs`
-- [ ] **Alternative**: Switch to Longhorn or Proxmox CSI with proper Talos integration
-- [ ] **Temporary**: Use hostPath volumes directly (not production-suitable)
-
-**Lessons:**
-
-- Talos kubelet containerization requires explicit mount configuration for storage providers
-- Always test storage with actual pod mounting, not just PV provisioning
-- Tight diagnostic feedback loops (test PVC → debug pod → source analysis) are essential
+**Solution**: Requires Talos machine config `kubelet.extraMounts` to include `/var/lib/openebs`, or use storage
+with native Talos support (Proxmox CSI, Longhorn).
 
 ### Other Storage & Infrastructure Tasks
 
