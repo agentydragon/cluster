@@ -12,5 +12,5 @@ spec:
     name: flux-system
   dependsOn:
     - name: authentik
-    - name: external-secrets
+    - name: external-secrets-operator
     - name: monitoring
