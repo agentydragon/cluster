@@ -50,24 +50,22 @@ Deployed services accessible via `*.test-cluster.agentydragon.com`:
 - **Grafana (Monitoring)**: <https://grafana.test-cluster.agentydragon.com> (if exposed)
 - **Test App**: <https://test.test-cluster.agentydragon.com>
 
-All traffic routes: Internet (443) → VPS nginx (SNI passthrough) → Tailscale VPN →
+All traffic routes: Internet (443) → VPS nginx (SNI passthrough) → Tailscale →
 MetalLB VIP (10.0.3.2:443) → NGINX Ingress → Services
 
 ### User Management
 
-**Declarative User Provisioning**: Users are managed via tofu-controller with ESO-generated passwords.
+Users are declaratively provisioned via tofu-controller with ESO-generated passwords.
 
 **Retrieve user password:**
 
 ```bash
-# Get agentydragon@gmail.com password
 kubectl get secret agentydragon-user-password -n flux-system -o jsonpath='{.data.user_password}' | base64 -d
 ```
 
 **User Details:**
 
-- Username: `agentydragon@gmail.com`
-- Name: Rai
+- Username: `agentydragon`
 - Email: <agentydragon@gmail.com>
 - Group: authentik Admins (admin permissions)
 - Password: ESO-generated (32 chars, see command above)
@@ -128,7 +126,8 @@ cluster/
 │       ├── authentik/     # Authentik SSO provider configuration
 │       ├── vault/         # Vault configuration
 │       ├── secrets/       # Secret generation
-│       └── services/      # Service integration configs
+│       ├── services/      # Service integration configs
+│       └── users/         # User provisioning via Terraform
 ├── k8s/                   # Kubernetes manifests (Flux-managed applications only)
 │   ├── core/              # CRDs and controllers (sealed-secrets, tofu-controller)
 │   ├── metallb/           # Load balancer
@@ -137,6 +136,8 @@ cluster/
 │   ├── powerdns/          # DNS server (external)
 │   ├── vault/, external-secrets/  # Secret synchronization
 │   ├── authentik/         # Identity and SSO provider
+│   ├── sso/               # SSO integrations and user management
+│   │   └── users/         # User provisioning manifests
 │   ├── services-config/   # Authentik SSO config for services, via Terraform
 │   └── applications/
 │       ├── harbor/        # Container registry

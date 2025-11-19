@@ -45,6 +45,40 @@ kubeseal --cert <(secret-tool lookup service sealed-secrets key public_key) \
 - `gh auth login` completed for GitHub access
 - Stable SealedSecret keypair in libsecret (Step 0)
 
+#### Bootstrap Layer Architecture
+
+The bootstrap process is organized into distinct layers, each providing essential infrastructure for subsequent layers:
+
+**Layer 0: Persistent Authentication** (`terraform/00-persistent-auth/`)
+
+- Proxmox API credentials for VM provisioning
+- Proxmox CSI tokens for persistent storage
+- Sealed secrets cluster keypair (persists across cluster rebuilds)
+- Exists independently of cluster lifecycle - survives `terraform destroy` of VMs
+
+**Layer 1: Infrastructure** (`terraform/01-infrastructure/`)
+
+- VM provisioning via Proxmox (5 nodes: 3 controllers, 2 workers)
+- Disk images with baked Talos configuration
+- Tailscale machine keys and VPN registration
+- Cilium CNI deployment with kube-proxy replacement
+- Kubernetes cluster bootstrap and kubeconfig generation
+
+**Layer 2: Services** (`terraform/02-services/`)
+
+- Flux GitOps engine initialization
+- Core Kubernetes services (MetalLB, cert-manager, ingress-nginx)
+- Storage providers (Proxmox CSI)
+- Secret management (Vault, External Secrets Operator)
+- Identity provider (Authentik)
+- Platform services (Harbor, Gitea, Matrix, PowerDNS)
+
+**Layer 3: Configuration** (`terraform/03-configuration/`)
+
+- DNS zone and record provisioning (PowerDNS API)
+- SSO provider configuration (Authentik, Harbor, Gitea)
+- Application integration and service wiring
+
 This **single command** executes a **3-phase layered deployment**:
 
 #### Phase 0: Preflight Validation

@@ -5,7 +5,7 @@ data "authentik_group" "admins" {
 
 # Create agentydragon user
 resource "authentik_user" "agentydragon" {
-  username = "agentydragon@gmail.com"
+  username = "agentydragon"
   name     = "Rai"
   email    = "agentydragon@gmail.com"
   password = var.user_password
