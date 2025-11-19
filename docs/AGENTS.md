@@ -10,37 +10,42 @@ environments) where agents can execute arbitrary long-running tasks with full co
 ```text
 ┌─────────────────────────────────────────────────────────┐
 │ Chat UI (Kagent or LibreChat)                           │
-│  - User conversations with agents                       │
-│  - Multi-agent support                                  │
-│  - Session persistence                                  │
 └────────────────────┬────────────────────────────────────┘
-                     │ Queries LLM (OpenAI/Anthropic)
-                     │ LLM decides to use tools
+                     │ User chats with agent
                      ▼
 ┌─────────────────────────────────────────────────────────┐
-│ Kagent Agent (Deployment)                               │
-│  - Agent CRD with system prompt                         │
-│  - Orchestrates tool calls                              │
-│  - References MCP servers                               │
+│ Kagent Agent CRD                                        │
+│  - System prompt                                        │
+│  - References: devbot-computer-control (RemoteMCPServer)│
 └────────────────────┬────────────────────────────────────┘
-                     │ MCP Protocol
+                     │ HTTP calls to MCP server
                      ▼
 ┌─────────────────────────────────────────────────────────┐
-│ MCP Server (Deployment)                                 │
-│  - computer-control-mcp (AB498)                         │
-│  - Atomic tools: screenshot, click, type, key_press     │
-│  - Connects to agent's desktop via X11                  │
-└────────────────────┬────────────────────────────────────┘
-                     │ X11 Display / VNC
-                     ▼
-┌─────────────────────────────────────────────────────────┐
-│ Agent's Private Desktop (Pod with PVC)                  │
-│  - Persistent 20Gi workspace                            │
-│  - VNC server (optional monitoring)                     │
-│  - Desktop environment                                  │
-│  - Agent's credentials (Gitea, Harbor, etc.)            │
-│  - Development tools                                    │
+│ Per-Agent Pod: devbot-desktop                           │
+│                                                         │
+│  ┌──────────────────────────────────────────────────┐  │
+│  │ MCP Server (Sidecar Container)                   │  │
+│  │  - Port 8080                                     │  │
+│  │  - DISPLAY=localhost:0                           │  │
+│  └────────────┬─────────────────────────────────────┘  │
+│               │ X11 (localhost)                        │
+│               ▼                                         │
+│  ┌──────────────────────────────────────────────────┐  │
+│  │ Desktop Container                                │  │
+│  │  - Ubuntu + Xfce                                 │  │
+│  │  - X11 server :0                                 │  │
+│  │  - VNC :5900                                     │  │
+│  │  - Workspace PVC                                 │  │
+│  └──────────────────────────────────────────────────┘  │
 └─────────────────────────────────────────────────────────┘
+
+Resources created per agent:
+1. Agent CRD (defines agent behavior)
+2. RemoteMCPServer CRD (points to desktop service)
+3. Deployment (desktop + MCP sidecar)
+4. Service (exposes VNC + MCP ports)
+5. PVCs (workspace + config)
+6. ExternalSecret (credentials from Vault)
 ```
 
 ## Component Breakdown
@@ -92,14 +97,13 @@ spec:
           name: devbot-computer-control
           kind: RemoteMCPServer
           apiGroup: kagent.dev
+          # Note: toolNames can be omitted to use all available tools
           toolNames:
-            - screenshot
-            - mouse_click
-            - mouse_move
+            - take_screenshot
+            - click_screen
+            - move_mouse
             - type_text
             - press_key
-            - key_down
-            - key_up
             - get_screen_size
 
     deployment:
@@ -138,6 +142,47 @@ spec:
 
 **Repository:** <https://github.com/AB498/computer-control-mcp>
 
+#### Architecture: 2 Containers Pattern
+
+```text
+┌─────────────────────────────────┐
+│ MCP Server Container            │  Runs computer-control-mcp
+│  - Python 3.12 + dependencies   │  Exposes MCP tools over SSE
+│  - computer-control-mcp code    │  Connects to Desktop via X11
+│  - Connects to DISPLAY=:0       │
+└────────────┬────────────────────┘
+             │ X11 protocol (localhost network)
+             ▼
+┌─────────────────────────────────┐
+│ Desktop Container               │  Runs the actual desktop
+│  - Ubuntu + Xfce + VNC          │  Agent's workspace & applications
+│  - X11 server (DISPLAY=:0)      │  What the agent "sees" and controls
+│  - VNC server (port 5900)       │  Optional human monitoring
+│  - Workspace PVC mounted        │
+└─────────────────────────────────┘
+```
+
+**Why 2 containers?**
+
+- **Separation of concerns:** Desktop environment vs control interface
+- **Independent scaling:** Can restart MCP server without killing desktop
+- **Easier updates:** Update computer-control-mcp without rebuilding desktop image
+- **Debugging:** Can connect to desktop via VNC while MCP server runs
+
+**How they communicate:**
+
+- Desktop container runs X11 server on DISPLAY=:0
+- MCP container sets DISPLAY=localhost:0 to connect via X11 protocol
+- Both in same pod → share localhost network → low latency
+
+**Transport Configuration:**
+
+- **Kagent supports:** SSE and STREAMABLE_HTTP
+- **FastMCP (computer-control-mcp) supports:** stdio, SSE, HTTP
+- **Selected:** STREAMABLE_HTTP (Kagent's default)
+- **Important:** Default `computer-control-mcp` CLI uses stdio which doesn't work over network!
+- **Solution:** Explicitly run with `mcp.run(transport='http')` in container
+
 **Tools Provided:**
 
 - `screenshot` - Capture screen
@@ -152,68 +197,97 @@ spec:
 - `get_screen_size()` - Display resolution
 - Window management tools
 
-**Deployment:**
+**Container Image (`computer-control-mcp:latest`):**
+
+```dockerfile
+FROM python:3.12-slim
+
+# Install X11 client libraries (NOT the X server itself)
+RUN apt-get update && apt-get install -y \
+    libx11-6 libxext6 libxrandr2 libxfixes3 \
+    libxinerama1 libxcursor1 libxtst6 \
+    gcc g++ \
+    && rm -rf /var/lib/apt/lists/*
+
+# Clone and install computer-control-mcp
+WORKDIR /app
+RUN pip install --no-cache-dir \
+    pyautogui==0.9.54 \
+    mcp[cli]==1.13.0 \
+    pillow==11.3.0 \
+    opencv-python==4.12.0.88 \
+    rapidocr==3.3.1 \
+    onnxruntime==1.22.0 \
+    mss>=7.0.0 \
+    numpy \
+    pygetwindow \
+    fuzzywuzzy \
+    python-Levenshtein
+
+# Copy computer-control-mcp code
+COPY computer-control-mcp/ /app/
+
+# Install package
+RUN pip install -e .
+
+# Expose HTTP port
+EXPOSE 8080
+
+# Run MCP server with STREAMABLE_HTTP transport
+# Note: Default "computer-control-mcp" uses stdio which doesn't work over network
+CMD ["python", "-c", "from computer_control_mcp.core import mcp; mcp.run(transport='http', host='0.0.0.0', port=8080)"]
+```
+
+**Build:**
+
+```bash
+cd /code/github.com/AB498/computer-control-mcp
+docker build -t computer-control-mcp:latest -f Dockerfile.mcp .
+```
+
+**RemoteMCPServer CRD (per-agent):**
 
 ```yaml
-apiVersion: apps/v1
-kind: Deployment
+apiVersion: kagent.dev/v1alpha2
+kind: RemoteMCPServer
 metadata:
-  name: devbot-mcp-server
+  name: devbot-computer-control
   namespace: agents
 spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app: devbot-mcp
-      agent: devbot
-  template:
-    metadata:
-      labels:
-        app: devbot-mcp
-        agent: devbot
-    spec:
-      containers:
-      - name: mcp-server
-        image: computer-control-mcp:latest
-        env:
-        - name: DISPLAY
-          value: "devbot-desktop:0"  # Connect to desktop's X11
-        - name: MCP_TRANSPORT
-          value: "sse"  # Server-Sent Events for K8s
-        - name: MCP_PORT
-          value: "8080"
-        ports:
-        - name: mcp
-          containerPort: 8080
-        resources:
-          requests:
-            cpu: "250m"
-            memory: "512Mi"
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: devbot-mcp
-  namespace: agents
-spec:
-  selector:
-    app: devbot-mcp
-    agent: devbot
-  ports:
-  - name: mcp
-    port: 8080
-    targetPort: 8080
+  description: "Computer control MCP server for devbot agent (private instance)"
+  protocol: STREAMABLE_HTTP
+  url: "http://devbot-desktop.agents.svc.cluster.local:8080"  # Points to desktop service
+  timeout: 30s
 ```
+
+**Note:** Each agent gets its own RemoteMCPServer CRD pointing to that agent's desktop service.
+The MCP server runs as a sidecar in the desktop pod (see section 4 below).
 
 ### 4. Agent's Private Desktop
 
-**Current Plan:** Simple Pod with PVC (not StatefulSet)
+**Current Plan:** Simple Pod with PVC (not StatefulSet) + MCP Server sidecar
 
 **⚠️ Known Limitation:**
 
 - Pod restarts = potential data loss for in-memory state
 - Workspace files persist (PVC), but running processes don't
 - **Trade-off:** Simpler to start with, can upgrade to StatefulSet later
+
+**Architecture:** Both containers in same pod sharing localhost network
+
+```text
+┌──────────────────────────────────────────────────────────┐
+│ Pod: devbot-desktop                                      │
+│                                                          │
+│  ┌────────────────────┐  ┌──────────────────────────┐  │
+│  │ MCP Server         │  │ Desktop                  │  │
+│  │                    │  │                          │  │
+│  │ Port 8080          │  │ X11 Server :0            │  │
+│  │ DISPLAY=localhost:0│←→│ VNC Server 5900          │  │
+│  └────────────────────┘  │ /workspace → PVC         │  │
+│                          └──────────────────────────┘  │
+└──────────────────────────────────────────────────────────┘
+```
 
 **Deployment:**
 
@@ -266,8 +340,9 @@ spec:
           mountPath: /workspace
 
       containers:
+      # Desktop container with X11 + VNC
       - name: desktop
-        image: devbot-desktop:latest  # Custom image (see below)
+        image: devbot-desktop:latest
         env:
         - name: VNC_PASSWORD
           valueFrom:
@@ -293,6 +368,20 @@ spec:
           limits:
             cpu: "2"
             memory: "4Gi"
+
+      # MCP server sidecar
+      - name: mcp-server
+        image: computer-control-mcp:latest
+        env:
+        - name: DISPLAY
+          value: "localhost:0"  # Connect to desktop container
+        ports:
+        - name: mcp
+          containerPort: 8080
+        resources:
+          requests:
+            cpu: "250m"
+            memory: "512Mi"
 
       volumes:
       - name: workspace
@@ -341,10 +430,17 @@ spec:
   - name: vnc
     port: 5900
     targetPort: 5900
-  - name: x11
-    port: 6000
-    targetPort: 6000
+  - name: mcp
+    port: 8080
+    targetPort: 8080
 ```
+
+**Key points:**
+
+- MCP server is a **sidecar** in the desktop pod, not a separate deployment
+- Each agent has its own private MCP server instance
+- Service exposes both VNC (5900) and MCP (8080) from the same pod
+- RemoteMCPServer CRD points to `http://devbot-desktop:8080` (not a separate service)
 
 **Desktop Image (`devbot-desktop:latest`):**
 
@@ -362,6 +458,9 @@ RUN apt-get update && apt-get install -y \
     nodejs npm \
     build-essential \
     vim nano \
+    # X11 libraries required by computer-control-mcp
+    libx11-6 libxext6 libxrandr2 libxfixes3 \
+    libxinerama1 libxcursor1 libxtst6 \
     && rm -rf /var/lib/apt/lists/*
 
 # Create agent user
@@ -577,8 +676,18 @@ helm install databot ./charts/kagent-agent \
 
 - [x] Research Kagent architecture
 - [x] Find MCP servers with atomic computer control
+- [x] Verify computer-control-mcp works on local system
 - [x] Design architecture
 - [x] Document plan
+
+**computer-control-mcp Verification (2025-11-19):**
+
+- ✅ Successfully tested on Pop!_OS with home-manager
+- ✅ Confirmed all tools work: screenshot, mouse, keyboard, OCR
+- ✅ Working setup documented in `/code/github.com/AB498/computer-control-mcp/`
+- ✅ Dependencies: Python 3.12, numpy, opencv4, tkinter, xlib, X11 libraries
+- ✅ Runs in nix-shell with proper LD_LIBRARY_PATH and DISPLAY configuration
+- ✅ Ready for containerization with desktop environment
 
 ### Phase 1: CLI-Only Prototype
 
@@ -592,9 +701,15 @@ helm install databot ./charts/kagent-agent \
 
 ### Phase 2: Add Visual Capabilities
 
-- [ ] Clone computer-control-mcp repository
+- [x] Clone computer-control-mcp repository ✅
+- [x] Verify computer-control-mcp works locally ✅
 - [ ] Build desktop container image (Ubuntu + Xfce + VNC)
+  - Include X11 libraries: libx11-6, libxext6, libxrandr2, libxfixes3, libxinerama1, libxcursor1, libxtst6
 - [ ] Containerize computer-control-mcp as MCP server
+  - Base on Python 3.12 image
+  - Install: numpy, opencv-python, pillow, pyautogui, rapidocr, mss
+  - Set LD_LIBRARY_PATH for X11 libraries
+  - Configure SSE transport for K8s (not stdio)
 - [ ] Deploy agent with desktop + MCP server
 - [ ] Test: Agent takes screenshots, clicks, types
 - [ ] Validate X11 connectivity between MCP server and desktop
@@ -739,7 +854,10 @@ helm install databot ./charts/kagent-agent \
 
 - **Kagent:** `/code/github.com/kagent-dev/kagent`
 - **vnc-use:** `/code/github.com/mayflower/vnc-use`
-- **computer-control-mcp:** (TODO: clone)
+- **computer-control-mcp:** `/code/github.com/AB498/computer-control-mcp` ✅
+  - Verified working setup with nix-shell
+  - See `shell.nix` and `RUN_ME.sh` for quick start
+  - Test script: `simple_mcp_test.py`
 - **Anthropic quickstarts:** (TODO: clone reference patterns)
 
 ### Documentation
