@@ -32,3 +32,4 @@ resources:
   - sso/matrix/flux-kustomization.yaml
   - sso/harbor/flux-kustomization.yaml
   - sso/vault/flux-kustomization.yaml
+  - sso/users/flux-kustomization.yaml

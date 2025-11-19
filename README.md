@@ -53,6 +53,25 @@ Deployed services accessible via `*.test-cluster.agentydragon.com`:
 All traffic routes: Internet (443) → VPS nginx (SNI passthrough) → Tailscale VPN →
 MetalLB VIP (10.0.3.2:443) → NGINX Ingress → Services
 
+### User Management
+
+**Declarative User Provisioning**: Users are managed via tofu-controller with ESO-generated passwords.
+
+**Retrieve user password:**
+
+```bash
+# Get agentydragon@gmail.com password
+kubectl get secret agentydragon-user-password -n flux-system -o jsonpath='{.data.user_password}' | base64 -d
+```
+
+**User Details:**
+
+- Username: `agentydragon@gmail.com`
+- Name: Rai
+- Email: <agentydragon@gmail.com>
+- Group: authentik Admins (admin permissions)
+- Password: ESO-generated (32 chars, see command above)
+
 ## Secret Management Strategy
 
 **Stable SealedSecret Keypair**: Uses pre-generated keypair stored in libsecret to ensure SealedSecrets always
