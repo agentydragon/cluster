@@ -195,6 +195,54 @@ kubectl get nodes
    - **Solution**: Remove duplicate configurations
    - **Fix**: Keep only one ingress configuration, clean up old namespaces
 
+### tofu-controller Terraform Resources Stuck Reconciling
+
+**Symptoms**: Terraform resources show "Reconciliation in progress" for hours, tf-runner pods stuck in
+Terminating state
+
+**Root Cause**: tofu-controller doesn't fail-fast on provider authentication errors (e.g., expired Authentik
+API tokens). Instead of marking resources as Failed, it retries indefinitely with "Reconciliation in progress"
+status.
+
+**Impact**: Provider auth failures (403, invalid credentials) appear as normal reconciliation, blocking
+dependent resources via dependency chains without clear error indication.
+
+**Diagnosis**:
+
+```bash
+# Check Terraform resource status
+kubectl get terraform -n flux-system
+
+# Check tf-runner pod logs for auth errors
+kubectl logs -n flux-system -l tf.contrib.fluxcd.io/run-id=<run-id> --tail=100
+
+# Look for "403 Token invalid/expired" or similar auth errors
+```
+
+**Solution**:
+
+```bash
+# 1. Fix the underlying authentication issue (regenerate tokens, update secrets)
+
+# 2. Remove finalizers from stuck Terraform resources
+kubectl patch terraform <name> -n flux-system -p '{"metadata":{"finalizers":[]}}' --type=merge
+
+# 3. Force delete stuck tf-runner pods
+kubectl delete pod -n flux-system <pod-name> --force --grace-period=0
+
+# 4. Reconcile kustomizations to recreate with fresh credentials
+flux reconcile kustomization <name> --with-source
+```
+
+**Prevention**:
+
+- Monitor Terraform resource age: resources "Reconciling" > 10 minutes likely stuck
+- Check tf-runner pod logs periodically for auth errors
+- Consider implementing automated alerts on long-running Terraform reconciliations
+
+**Future Improvement**: tofu-controller should distinguish between retryable transient errors and terminal
+authentication failures. Consider filing upstream issue if this becomes frequent operational burden.
+
 ### Flux Controllers Not Starting
 
 **Symptoms**: Flux pods stuck in ContainerCreating, GitOps not working

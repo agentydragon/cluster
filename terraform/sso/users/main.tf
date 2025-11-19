@@ -1,3 +1,21 @@
+terraform {
+  required_providers {
+    authentik = {
+      source = "goauthentik/authentik"
+    }
+  }
+
+  backend "kubernetes" {
+    secret_suffix = "authentik-users"
+    namespace     = "flux-system"
+  }
+}
+
+provider "authentik" {
+  url   = var.authentik_url
+  token = var.authentik_token
+}
+
 # Data source for authentik Admins group
 data "authentik_group" "admins" {
   name = "authentik Admins"

@@ -1,4 +1,10 @@
 terraform {
+  required_providers {
+    authentik = {
+      source = "goauthentik/authentik"
+    }
+  }
+
   backend "kubernetes" {
     secret_suffix = "vault-sso"
     namespace     = "flux-system"

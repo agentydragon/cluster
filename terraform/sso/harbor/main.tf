@@ -1,4 +1,10 @@
 terraform {
+  required_providers {
+    authentik = {
+      source = "goauthentik/authentik"
+    }
+  }
+
   backend "kubernetes" {
     secret_suffix = "harbor-sso"
     namespace     = "flux-system"
