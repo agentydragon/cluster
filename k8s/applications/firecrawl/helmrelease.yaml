@@ -4,20 +4,6 @@ kind: Namespace
 metadata:
   name: firecrawl
 ---
-apiVersion: source.toolkit.fluxcd.io/v1
-kind: GitRepository
-metadata:
-  name: firecrawl-chart
-  namespace: firecrawl
-spec:
-  interval: 10m
-  url: https://github.com/firecrawl/firecrawl
-  ref:
-    branch: main
-  ignore: |
-    /*
-    !/examples/kubernetes/firecrawl-helm
----
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
@@ -28,11 +14,11 @@ spec:
   timeout: 10m
   chart:
     spec:
-      chart: ./examples/kubernetes/firecrawl-helm
+      chart: ./charts/firecrawl
       sourceRef:
         kind: GitRepository
-        name: firecrawl-chart
-        namespace: firecrawl
+        name: flux-system
+        namespace: flux-system
   values:
     # Replicas
     replicaCount: 1
