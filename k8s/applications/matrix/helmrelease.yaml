@@ -182,9 +182,21 @@ spec:
           max_connections = 200
           shared_buffers = 256MB
 
-    # Disable Redis (not needed for basic setup)
+    # Enable Redis (required by chart even for single-instance setup)
     redis:
-      enabled: false
+      enabled: true
+      auth:
+        enabled: false
+      master:
+        persistence:
+          enabled: false
+        resources:
+          requests:
+            cpu: 50m
+            memory: 64Mi
+          limits:
+            cpu: 200m
+            memory: 128Mi
 
     # Synapse workers (disabled for now, can be enabled for scaling)
     workers:
