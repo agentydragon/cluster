@@ -1,7 +1,7 @@
 variable "authentik_url" {
   description = "Authentik server URL"
   type        = string
-  default     = "http://authentik-server.authentik.svc.cluster.local"
+  # No default - must be provided by caller
 }
 
 variable "authentik_token" {
