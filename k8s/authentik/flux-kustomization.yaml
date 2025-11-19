@@ -17,6 +17,8 @@ spec:
       namespace: flux-system
     - name: external-secrets-config
       namespace: flux-system
+    - name: sso-secrets # Wait for API token generation in Vault
+      namespace: flux-system
     - name: cert-manager # Wait for cert-manager for TLS certificates
       namespace: flux-system
     - name: ingress-nginx # Wait for ingress controller for external access
