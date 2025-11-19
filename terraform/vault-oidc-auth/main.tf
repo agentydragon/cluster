@@ -13,6 +13,7 @@ terraform {
 
 provider "vault" {
   address = var.vault_address
+  token   = var.vault_token
 }
 
 # Enable OIDC auth method (only when client secret is provided)
