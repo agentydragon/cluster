@@ -244,6 +244,56 @@ This document tracks project roadmap and strategic architecture decisions for th
   - **Deployment**: Kubernetes deployment with MCP server for agent access
   - **Use Case**: AI-powered web research, documentation scraping, content analysis
 
+### 📊 Observability & Monitoring
+
+- [ ] **metrics-server**: Kubernetes Metrics API provider for resource utilization
+  - **Purpose**: Enable `kubectl top nodes/pods`, Horizontal Pod Autoscaler (HPA), resource-based scheduling
+  - **Status**: Currently missing - Metrics API returns "not available"
+  - **Deployment**: Official kubernetes-sigs/metrics-server Helm chart
+  - **Requirement**: Foundation for autoscaling and resource monitoring
+
+- [ ] **Prometheus Stack**: Complete metrics collection and alerting platform
+  - **Recommended**: kube-prometheus-stack (all-in-one Helm chart)
+  - **Components Included**:
+    - **Prometheus**: Time-series metrics database with PromQL query language
+    - **Grafana**: Visualization dashboards with pre-configured K8s dashboards
+    - **Alertmanager**: Alert routing, grouping, and notification (Slack, email, PagerDuty)
+    - **kube-state-metrics**: Kubernetes resource state metrics (pod status, deployments, etc.)
+    - **node-exporter**: Node-level system metrics (CPU, memory, disk, network)
+    - **Prometheus Operator**: CRD-based management (ServiceMonitor, PodMonitor, PrometheusRule)
+  - **Chart**: prometheus-community/kube-prometheus-stack
+  - **Storage**: Proxmox CSI for persistent metrics retention
+  - **Alternatives**:
+    - VictoriaMetrics (lighter, faster, better long-term storage)
+    - Thanos (multi-cluster federation and long-term storage)
+
+- [ ] **Loki Stack**: Log aggregation and analysis
+  - **Components**:
+    - **Loki**: Log aggregation backend (like Prometheus but for logs)
+    - **Promtail**: DaemonSet log shipper (collects logs from all nodes)
+    - **Grafana Integration**: Unified logs + metrics visualization
+  - **Alternative**: Grafana Alloy (newer unified agent replacing Promtail)
+  - **Chart**: grafana/loki-stack or grafana/loki-distributed (HA deployment)
+  - **Storage**: Proxmox CSI for log retention
+  - **Benefits**: LogQL query language, label-based indexing, cost-effective vs ELK stack
+
+- [ ] **OpenTelemetry**: Distributed tracing and observability
+  - **Purpose**: Trace requests across microservices, identify bottlenecks
+  - **Components**:
+    - **OpenTelemetry Operator**: Deploy and manage collectors
+    - **OpenTelemetry Collector**: Receive, process, and export traces/metrics/logs
+    - **Jaeger** or **Tempo**: Trace storage and visualization backends
+  - **Integration**: Export to Prometheus (metrics) + Loki (logs) + Tempo (traces)
+  - **Use Case**: Essential for complex service mesh debugging
+
+- [ ] **Recommended Stack Priority**:
+  1. **metrics-server** (immediate - fixes kubectl top)
+  2. **kube-prometheus-stack** (core monitoring and alerting)
+  3. **Loki + Promtail/Alloy** (log aggregation)
+  4. **OpenTelemetry** (later - when microservices complexity warrants tracing)
+
+- [ ] **Authentik Integration**: Configure Grafana OIDC with Authentik for SSO access to dashboards
+
 ### Storage & Infrastructure Tasks - COMPLETED MIGRATION
 
 ## ✅ Proxmox CSI Successfully Implemented
