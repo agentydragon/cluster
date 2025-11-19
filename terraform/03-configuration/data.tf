@@ -23,7 +23,3 @@ data "authentik_flow" "default_provider_authorization_implicit_consent" {
 data "authentik_group" "users" {
   name = "users"
 }
-
-data "authentik_outpost" "embedded" {
-  name = "authentik Embedded Outpost"
-}

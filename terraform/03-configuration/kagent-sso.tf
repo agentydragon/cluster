@@ -1,11 +1,17 @@
 # Kagent SSO Configuration
 # Creates Authentik proxy provider for Kagent UI authentication
 
+# Data source for invalidation flow (required in provider ~> 2025.10.0)
+data "authentik_flow" "default_invalidation" {
+  slug = "default-provider-invalidation-flow"
+}
+
 resource "authentik_provider_proxy" "kagent" {
   name               = "kagent"
   external_host      = "https://kagent.test-cluster.agentydragon.com:8443"
   mode               = "forward_single"
   authorization_flow = data.authentik_flow.default_provider_authorization_implicit_consent.id
+  invalidation_flow  = data.authentik_flow.default_invalidation.id
 
   # Forward auth doesn't need internal host or intercept headers
   access_token_validity = "hours=1"
@@ -26,8 +32,4 @@ resource "authentik_policy_binding" "kagent_access" {
   order  = 0
 }
 
-# Assign to Proxy Outpost
-resource "authentik_outpost_binding" "kagent" {
-  outpost = data.authentik_outpost.embedded.id
-  target  = authentik_provider_proxy.kagent.id
-}
+# Note: No need to bind to embedded outpost - it automatically serves all proxy providers
