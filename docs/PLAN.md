@@ -41,8 +41,8 @@
 - [x] ~~metrics-server~~ (DONE - kubectl top working)
 - [x] ~~Prometheus stack~~ (DONE - kube-prometheus-stack deployed)
 - [x] ~~Loki + Promtail~~ (DONE - log aggregation operational)
+- [x] ~~Grafana SSO via Authentik OIDC~~ (DONE - OAuth login working)
 - [ ] OpenTelemetry (distributed tracing - later when complexity warrants)
-- [ ] Grafana SSO via Authentik OIDC
 
 ### Medium Priority - Platform Services
 
