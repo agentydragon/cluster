@@ -5,6 +5,12 @@ terraform {
     authentik = {
       source = "goauthentik/authentik"
     }
+    harbor = {
+      source = "goharbor/harbor"
+    }
+    kubernetes = {
+      source = "hashicorp/kubernetes"
+    }
   }
 
   backend "kubernetes" {

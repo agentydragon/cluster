@@ -21,3 +21,9 @@ variable "client_secret" {
   type        = string
   sensitive   = true
 }
+
+variable "harbor_admin_password" {
+  description = "Harbor admin password for initial configuration"
+  type        = string
+  sensitive   = true
+}

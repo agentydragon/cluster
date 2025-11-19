@@ -42,3 +42,9 @@ spec:
       varsKeys:
         - client_secret
       optional: false
+    - kind: Secret
+      name: harbor-admin-initial
+      namespace: harbor
+      varsKeys:
+        - harbor_admin_password: password
+      optional: false

@@ -47,6 +47,22 @@
 ### Medium Priority - Platform Services
 
 - [ ] **Matrix/Synapse** - Chat platform with Authentik SSO
+- [ ] **Jellyfin** - Media streaming server (Netflix alternative)
+  - Hardware transcoding support
+  - Mobile apps, web interface
+  - Authentik SSO integration
+- [ ] **Media Automation Stack** - Automated media management
+  - **Radarr** (movies), **Sonarr** (TV shows)
+  - **Prowlarr** (indexer management)
+  - **Bazarr** (subtitles)
+  - **Overseerr** (request management UI)
+- [ ] **qBittorrent** - Torrent client with web UI
+  - VPN integration via Gluetun sidecar
+  - Automatic integration with *arr stack
+- [ ] **agentydragon.com** - Migrate personal website to cluster
+  - Static site or SSG deployment
+  - HTTPS via cert-manager
+  - DNS via external-dns
 - [ ] **InvenTree** - Inventory management (TrueCharts v9.0.12)
 - [ ] **Syncthing** - File synchronization (TrueCharts chart available)
 - [ ] **Bazel Remote Cache** - Distributed build cache (slamdev/bazel-remote)
@@ -76,6 +92,12 @@
   - Target: Browser-based VNC/RDP to Proxmox VMs (wyrm)
   - Value: Zero-click SSO graphical access
   - Status: Architecture defined, ready for deployment
+
+- [ ] **Paperless-ngx** - Document management system
+  - OCR, tagging, full-text search
+  - Scan → automatic organization
+  - Good for going paperless
+  - Authentik SSO integration
 
 - [ ] **Persistent AI Agents Platform** - Long-running agents with compute resources
   - Architecture: Kagent + MCP servers + per-agent containers
