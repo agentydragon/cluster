@@ -274,6 +274,20 @@ This document tracks project roadmap and strategic architecture decisions for th
   - **Integration**: Connect to Firecrawl, GitHub, cluster APIs, documentation
   - **Use Case**: AI-assisted development, automated documentation, cluster management
   - **Status**: Needs deployment plan
+- [ ] **Persistent AI Agents Platform**: Long-running agents with own computing resources
+  - **Vision**: Deploy AI agents with persistent storage, credentials, and isolated compute environments
+  - **Architecture**: Kagent (orchestration) + MCP servers (tools) + Per-agent desktops/containers
+  - **Computer Control**: computer-control-mcp (AB498) for screenshot/mouse/keyboard atomic tools
+  - **Phases**:
+    1. CLI-only prototype (shell access, no desktop)
+    2. Add visual capabilities (desktop + VNC + computer-control-mcp)
+    3. Multi-agent deployment via Helm charts
+    4. Production hardening (monitoring, isolation, quotas)
+  - **Per-Agent Resources**: ~3.75 CPU, ~7.5Gi RAM (with desktop), 20Gi storage
+  - **Known Limitation**: Pod restart = process loss (workspace persists, running processes don't)
+  - **Future Enhancements**: Agent Sandbox, StatefulSets, Proxmox VM backend
+  - **Detailed Plan**: See [docs/AGENTS.md](./AGENTS.md)
+  - **Status**: Architecture designed, ready for Phase 1 prototype
 - [ ] **Guacamole + Authentik RAC**: Clientless remote desktop access with SSO
   - **Purpose**: Browser-based graphical desktop access (RDP, VNC) to existing VMs with zero-click SSO
   - **Architecture**: Authentik RAC Provider → Apache Guacamole → Proxmox VMs (separate from cluster)
@@ -610,9 +624,9 @@ Solution: **Temporal separation** with phased deployment.
 
 **Operational:**
 
-- ✅ git.test-cluster.agentydragon.com - Gitea (accessible)
-- ✅ vault.test-cluster.agentydragon.com - Vault (operational, root token auth)
-- ✅ registry.test-cluster.agentydragon.com - Harbor (deployed)
+- git.test-cluster.agentydragon.com
+- vault.test-cluster.agentydragon.com
+- registry.test-cluster.agentydragon.com
 
 **Issues:**
 
@@ -646,8 +660,6 @@ Solution: **Temporal separation** with phased deployment.
 - Git-managed user and permission definitions
 - Zero direct Vault integration in application services
 - Seamless secret rotation via External Secrets Operator
-
-This design modernizes the platform while maintaining simplicity through proven ducktape patterns.
 
 ## GitOps Representation: Multi-Stage Dependencies
 

@@ -56,6 +56,16 @@ resource "random_password" "vault_client_secret" {
   }
 }
 
+# Generate Authentik API/Bootstrap token (single token for both bootstrap and API access)
+resource "random_password" "authentik_api_token" {
+  length  = 64
+  special = false
+
+  lifecycle {
+    ignore_changes = [length, special]
+  }
+}
+
 # Store all SSO client secrets in Vault for retrieval by applications
 resource "vault_generic_secret" "sso_client_secrets" {
   path = "kv/sso/client-secrets"
@@ -65,6 +75,7 @@ resource "vault_generic_secret" "sso_client_secrets" {
     gitea_client_secret  = random_password.gitea_client_secret.result
     matrix_client_secret = random_password.matrix_client_secret.result
     vault_client_secret  = random_password.vault_client_secret.result
+    authentik_api_token  = random_password.authentik_api_token.result
   })
 
   lifecycle {

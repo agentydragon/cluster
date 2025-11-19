@@ -3,6 +3,7 @@ kind: Kustomization
 resources:
   - helmrelease.yaml
   - bootstrap-external-secret.yaml
+  - api-token-external-secret.yaml
   - secret-key-external-secret.yaml
   - admin-password-external-secret.yaml
   - token-secret.yaml
