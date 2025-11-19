@@ -26,6 +26,14 @@
 4. **User Management** - Automated user provisioning
    - Create <agentydragon@gmail.com> user via Authentik API/blueprints
 
+5. **Validate SSO Login Flows** - Once automation/agent UI access is ready
+   - [ ] Test Harbor OIDC login via browser (agent or manual)
+   - [ ] Test Gitea OIDC login via browser
+   - [ ] Test Vault OIDC login via browser
+   - [ ] Test Matrix/Synapse OIDC login via browser
+   - [ ] Verify auto-onboarding creates users correctly
+   - [ ] Verify group-based authorization (admin groups)
+
 ### Needs Investigation (Lower Priority)
 
 - [ ] **PowerDNS Operator Restarts** - 33 restarts over 22h (functional but stable enough)
