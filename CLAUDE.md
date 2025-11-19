@@ -282,7 +282,37 @@ running state.
 
 ## SSH Access
 
-Use `ssh root@atlas` to access the Proxmox host. No password required (SSH keys configured).
+**Proxmox Host:** `ssh root@atlas` - No password required (SSH keys configured)
+
+**VPS (Public DNS):** `ssh root@agentydragon.com` - Runs PowerDNS secondary for public DNS
+
+### VPS PowerDNS Access
+
+The VPS runs PowerDNS in a Docker container as a secondary DNS server via AXFR from the cluster.
+
+**Check zone contents:**
+
+```bash
+ssh root@agentydragon.com "docker exec powerdns pdnsutil list-zone test-cluster.agentydragon.com"
+```
+
+**Grep for specific records:**
+
+```bash
+ssh root@agentydragon.com "docker exec powerdns pdnsutil list-zone test-cluster.agentydragon.com | grep loki"
+```
+
+**Check container status:**
+
+```bash
+ssh root@agentydragon.com "docker ps | grep pdns"
+```
+
+**View container logs:**
+
+```bash
+ssh root@agentydragon.com "docker logs powerdns --tail 50"
+```
 
 ## Talos CLI Access
 
