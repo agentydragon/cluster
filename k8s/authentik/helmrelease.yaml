@@ -78,13 +78,22 @@ spec:
       # Service configuration
       service:
         enabled: true
-        type: NodePort
+        type: ClusterIP
         port: 80
-        nodePort: 30300
 
-      # Ingress disabled (using NodePort)
+      # Ingress configuration
       ingress:
-        enabled: false
+        enabled: true
+        ingressClassName: nginx
+        annotations:
+          cert-manager.io/cluster-issuer: "letsencrypt-prod-dns"
+          nginx.ingress.kubernetes.io/ssl-redirect: "true"
+        hosts:
+          - auth.test-cluster.agentydragon.com
+        tls:
+          - secretName: authentik-tls
+            hosts:
+              - auth.test-cluster.agentydragon.com
 
       # Resources
       resources:
