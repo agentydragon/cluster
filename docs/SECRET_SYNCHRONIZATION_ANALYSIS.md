@@ -208,20 +208,81 @@ Cons:
 - Requires Vault Terraform resources for each secret
 - More complex than Option 1
 
-### Option 3: Add Restart Triggers (Incomplete Solution)
+### Option 3: Stakater Reloader (Proper Pod Restart Automation)
 
-#### Use Reloader or similar to restart pods when secrets change
+#### Use Reloader to automatically restart pods when secrets change
+
+**Stakater Reloader** is the industry-standard Kubernetes controller that watches Secrets/ConfigMaps and triggers
+rolling restarts of Deployments/StatefulSets/DaemonSets when values change.
+
+Installation:
+
+```yaml
+# k8s/core/reloader.yaml
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: HelmRepository
+metadata:
+  name: stakater
+  namespace: flux-system
+spec:
+  interval: 24h
+  url: https://stakater.github.io/stakater-charts
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: reloader
+  namespace: kube-system
+spec:
+  chart:
+    spec:
+      chart: reloader
+      sourceRef:
+        kind: HelmRepository
+        name: stakater
+  values:
+    reloader:
+      watchGlobally: true
+```
+
+Usage - add annotation to deployments:
+
+```yaml
+metadata:
+  annotations:
+    reloader.stakater.com/auto: "true"  # Watch all referenced secrets
+    # OR
+    secret.reloader.stakater.com/reload: "powerdns-api-key"  # Watch specific secret
+```
+
+**What This Solves:**
+
+- ✅ Pod-level secret consumption (environment variables, volume mounts)
+- ✅ Applications that reload config dynamically
+- ✅ Most service-to-service authentication
+
+**What This DOESN'T Solve:**
+
+- ❌ **Init-time persistence**: Applications that write secrets to DB on first boot
+- ❌ **Immutable Jobs**: Kubernetes Jobs that can't be updated after creation
+- ❌ **Database passwords**: PostgreSQL sets password on init, restart doesn't help
+
+**Examples of Layer 2 Problems:**
+
+1. **PowerDNS API Key**: Written to PostgreSQL on DB init → restarting pod doesn't update DB
+2. **Authentik Bootstrap Token**: Job writes to Authentik DB once → Job is immutable
+3. **PostgreSQL Password**: Set on DB creation → restart doesn't ALTER USER password
 
 Pros:
 
-- Keeps passwords rotating
-- Pods automatically pick up new values
+- Industry-standard solution (10k+ GitHub stars)
+- Handles 90% of rotation cases
+- Zero-downtime rolling restarts
+- Works with GitOps (doesn't modify manifests)
 
 Cons:
 
-- **Doesn't solve DB init problem**: Restarting pod doesn't re-run init scripts
-- **Service disruption**: Constant restarts every 1-24 hours
-- Still breaks for init-once patterns (Job, DB schema)
+- Doesn't solve init-time persistence pattern (requires architectural changes)
 
 ### Option 4: Remove Init-Time Password Applications
 
@@ -241,39 +302,112 @@ Cons:
 
 ## Recommended Solution
 
-**Hybrid Approach:**
+**Three-Phase Approach:**
 
-1. **Short term (immediate fix)**: Change refresh intervals to `never` or `8760h` (1 year)
-   - Stops ongoing authentication failures
-   - Achieves stable turnkey bootstrap
+### Phase 0: Immediate Stabilization (Current)
 
-2. **Long term (proper architecture)**: Migrate to Vault-backed secrets
-   - Use Terraform to generate initial passwords and store in Vault
-   - Configure ESO to pull from Vault (stable values)
-   - Enable controlled rotation when needed
+#### Change refresh intervals to 8760h (1 year)
+
+- Stops ongoing authentication failures
+- Achieves stable turnkey bootstrap
+- Buys time for proper architecture
+
+**Status**: ✅ Implemented in commit eaaf4b1
+
+### Phase 1: Proper Pod Restart Automation (Medium-term)
+
+#### Deploy Stakater Reloader + reasonable refresh intervals
+
+1. Deploy Reloader controller to cluster
+2. Add `reloader.stakater.com/auto: "true"` annotations to all deployments
+3. Change refresh intervals back to reasonable values (24h-168h)
+4. Test rotation: ESO updates secret → Reloader restarts pod → pod uses new value
+
+**This solves**: 90% of rotation cases (service-to-service auth, API keys consumed by pods)
+
+**Doesn't solve**: Init-time persistence patterns (requires Phase 2)
+
+### Phase 2: Fix Init-Time Persistence Patterns (Long-term)
+
+**Architecture changes for applications that persist secrets:**
+
+#### PowerDNS API Key
+
+**Current**: API key written to PostgreSQL on init, never updated
+
+**Solution Options**:
+
+1. **Multiple valid keys**: Support array of API keys in DB, rotate by adding new + pruning old
+2. **Dynamic update**: Add sidecar/cronjob that runs `UPDATE pdns_config SET api_key = $NEW_KEY`
+3. **Overlapping validity**: Keep old key valid while new key rolls out
+
+#### Authentik Bootstrap Token
+
+**Current**: Immutable Job writes token to DB once
+
+**Solution Options**:
+
+1. **Overlapping tokens**: Support multiple valid tokens, prune after rotation window
+2. **Token refresh endpoint**: API to add new tokens without Job restart
+3. **CronJob pattern**: Replace immutable Job with CronJob that runs periodically
+
+#### PostgreSQL Passwords
+
+**Current**: Password set on DB init via env var, never changed
+
+**Solution Options**:
+
+1. **Accept manual rotation**: Destroy/recreate for password changes (acceptable for infrequent rotation)
+2. **ALTER USER automation**: Sidecar that detects secret change and runs `ALTER USER ... PASSWORD`
+3. **Vault Database Secrets Engine**: Dynamic credentials with automatic rotation
+
+### Phase 3: Vault-Backed Persistence (Future)
+
+#### Migrate from ESO Password generators to Vault KV storage
+
+**Why**: ESO Password generators are stateless (regenerate on sync). Vault KV persists values.
+
+**Implementation**:
+
+1. Terraform generates passwords and stores in Vault KV (one-time)
+2. ESO reads from Vault KV (stable values across syncs)
+3. Rotation: Update Vault value → ESO syncs → Reloader restarts pods
+
+**Benefit**: Enables controlled rotation while maintaining stability
 
 ## Implementation Plan
 
-### Phase 1: Immediate Stabilization (This PR)
+### Implementation Roadmap
 
-Change all volatile password generators to stable intervals:
+#### Stage 0: Stabilization (DONE ✅)
 
-```yaml
-# Before
-spec:
-  refreshInterval: 1h  # or 24h
+Changed refresh intervals to 8760h to prevent spontaneous auth failures.
 
-# After
-spec:
-  refreshInterval: never  # or 8760h for annual rotation
-```
+Files updated:
 
-Files to update:
+- `charts/powerdns/templates/external-secret.yaml`
+- `k8s/authentik/bootstrap-external-secret.yaml`
+- `k8s/authentik/postgres-external-secret.yaml`
+- `k8s/authentik/admin-password-external-secret.yaml`
 
-- `charts/powerdns/templates/externalsecret.yaml` (powerdns-api-key)
-- `charts/authentik/templates/externalsecret.yaml` (bootstrap token, postgres password)
+#### Stage 1: Reloader Deployment (TODO)
 
-### Phase 2: Vault Migration (Future Work)
+1. Add Reloader HelmRelease to `k8s/core/reloader.yaml`
+
+2. Add annotations to deployments:
+
+   ```yaml
+   # Example: k8s/powerdns/helmrelease.yaml
+   values:
+     podAnnotations:
+       reloader.stakater.com/auto: "true"
+   ```
+
+3. Change refresh intervals to reasonable values (24h-168h)
+
+4. Test rotation workflow
+
+#### Stage 2: Vault KV Migration (TODO)
 
 1. Create Terraform module for secret generation:
 
@@ -288,7 +422,9 @@ Files to update:
 
 3. Remove Password generator resources
 
-4. Document rotation procedure in OPERATIONS.md
+#### Stage 3: Fix Init-Time Patterns (TODO)
+
+Address PowerDNS, Authentik, PostgreSQL persistence patterns per Phase 2 solutions above.
 
 ## Webhook Namespace Issue (Separate Problem)
 

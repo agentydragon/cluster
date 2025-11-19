@@ -147,6 +147,22 @@ This document tracks project roadmap and strategic architecture decisions for th
   - **Status**: ClusterSecretStore configured with Vault backend, operator+config phases separated
   - **Working**: ESO can generate passwords and sync secrets from Vault to Kubernetes
   - **Fixed**: Chicken-and-egg problem resolved via phased deployment (operator → config)
+  - **Stabilization**: Changed refresh intervals to 8760h (1 year) to prevent auth desync (see below)
+- [ ] **Secret Rotation Infrastructure**: Proper secret rotation without service disruption
+  - **Problem**: ESO Password generators regenerate on refresh → applications desynchronize → auth failures
+  - **Root Cause**: Apps persist secrets (DB init, Job writes) → ESO refresh changes secret →
+    app still has old value
+  - **Current Fix**: Extended refresh intervals to 8760h (stopgap)
+  - **Proper Solution** (3 phases):
+    1. **Deploy Stakater Reloader**: Auto-restart pods when secrets change (solves 90% of cases)
+    2. **Fix Init-Time Patterns**: Architecture changes for apps that persist secrets
+       - PowerDNS: Support multiple valid API keys or dynamic DB updates
+       - Authentik: Overlapping token validity or CronJob pattern
+       - PostgreSQL: Accept manual rotation or ALTER USER automation
+    3. **Migrate to Vault KV**: Store generated passwords in Vault (persistent) vs ESO generators
+       (ephemeral)
+  - **Reference**: See `docs/SECRET_SYNCHRONIZATION_ANALYSIS.md` for full analysis
+  - **Status**: Phase 0 complete (stabilization), Phases 1-3 TODO
 - [x] **Authentik Bootstrap**: ESO password generator provides bootstrap token (no circular dependency)
   - **Architecture**: Vault Stage 1 (unsealed) enables ESO → ESO generates Authentik bootstrap token
   - **No Circular Dependency**: Vault doesn't require SSO initially, Authentik gets secrets from ESO
