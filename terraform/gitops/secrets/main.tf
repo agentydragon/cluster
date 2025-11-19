@@ -78,7 +78,8 @@ resource "vault_generic_secret" "sso_client_secrets" {
     authentik_api_token  = random_password.authentik_api_token.result
   })
 
-  lifecycle {
-    ignore_changes = [data_json]
-  }
+  # Temporarily commented to allow adding authentik_api_token to existing secret
+  # lifecycle {
+  #   ignore_changes = [data_json]
+  # }
 }

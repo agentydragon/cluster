@@ -1,14 +1,11 @@
-# Home Proxmox → Talos Cluster Plan
-
-This document tracks project roadmap and strategic architecture decisions for the Talos cluster implementation.
+# Roadmap and decisions
 
 ## Done
 
 ### Core Infrastructure
 
-- [x] **Talos Cluster**: 5-node HA cluster (3 controllers, 2 workers) with GitOps
-- [x] **Networking**: Clean IP scheme (10.0.1.x controllers, 10.0.2.x workers, 10.0.3.x VIPs)
-- [x] **CNI Architecture Decision**: Cilium managed by Terraform (infrastructure layer), not Flux (GitOps layer)
+- [x] 5-node Talos Cluster; 10.0.1.x controllers, 10.0.2.x workers, 10.0.3.x VIPs
+- [x] CNI: Cilium managed by Terraform (infra layer), not Flux (GitOps layer)
   - **Rationale**: Prevents circular dependency where GitOps tools manage their own networking infrastructure
   - **Why Flux Cannot Manage CNI**: When Flux tries to update Terraform-installed Cilium, worker nodes become permanently
     NotReady. During CNI transition gaps, nodes cannot pull container images (no networking), creating deadlock where
@@ -30,7 +27,7 @@ This document tracks project roadmap and strategic architecture decisions for th
     02-services, 03-configuration)
   - **Cleanup**: Removed zombie `terraform/infrastructure/` directory (post-refactor remnant with empty state)
 
-### Storage Infrastructure - COMPLETE
+### Storage - COMPLETE
 
 - [x] **Proxmox CSI**: Native ZFS storage integration with proper credential management
   - **SSH-based Token Generation**: Ephemeral credential creation via SSH for security
@@ -38,8 +35,8 @@ This document tracks project roadmap and strategic architecture decisions for th
   - **Proper ACL Permissions**: Full Proxmox permissions (Datastore.*, SDN.Use, VM.*)
   - **JSON Boolean Handling**: Correct data type preservation for CSI configuration
   - **Talos Integration**: Node topology labels and container runtime compatibility
-- [x] **Vault with Raft Storage**: Deployed using Proxmox CSI for persistent storage
-  - **3-node HA Cluster**: Full Raft consensus with automatic leader election
+- [x] **Vault with Raft**: Deployed using Proxmox CSI
+  - 3-node HA, Raft
   - **Bank-Vaults Operator**: Automatic initialization, unsealing, and configuration
   - **Pod-specific Addressing**: Each pod gets its own service (instance-0, instance-1, instance-2)
   - **Persistent Storage**: 10Gi Proxmox CSI volumes per pod for Raft data
@@ -63,8 +60,6 @@ This document tracks project roadmap and strategic architecture decisions for th
   - **Backend**: MariaDB (switched from SQLite for automatic schema initialization)
   - **Deployment**:
     - [x] Custom PowerDNS Helm chart (charts/powerdns/)
-    - [x] Binary paths: `/usr/local/sbin/pdns_server` (official image location)
-    - [x] Image: `powerdns/pdns-auth-49:4.9.11` (Docker Hub verified)
     - [x] Proxmox CSI storage integration for MariaDB data
     - [x] External Secrets Operator integration for API key
     - [x] Pod Security Standards "restricted" compliance
@@ -77,11 +72,9 @@ This document tracks project roadmap and strategic architecture decisions for th
     - PowerDNS pods stuck Pending - CSI mount operations blocked
     - Fixed via cluster rebuild
 - [x] **external-dns**: Automatic DNS record creation for ingresses
-  - **Status**: DEPLOYED AND WORKING ✅
   - **Provider**: PowerDNS native provider (HTTP API)
   - **Functionality**: Automatically creates A records and TXT metadata for ingresses
 - [x] **cert-manager webhook**: Automatic SSL certificates via PowerDNS DNS-01 challenges
-  - **Status**: DEPLOYED ✅
   - **Webhook**: cert-manager-webhook-powerdns for DNS-01 validation
   - **Configuration**: ClusterIssuer `letsencrypt-prod-dns` using PowerDNS webhook
 - [x] **DNS Architecture - AXFR Secondary Zone**:
@@ -97,18 +90,16 @@ This document tracks project roadmap and strategic architecture decisions for th
   - **Configuration**: Control plane nodes advertise routes via Tailscale extension
   - **Tags**: `tag:cluster-router` for route advertisement
   - **Fix Applied**: Corrected invalid CIDR `10.0.3.4/28` → `10.0.3.0/27` (was causing Tailscale crash)
-  - **Status**: Routes enabled in Headscale, VPS can reach cluster DNS at 10.0.3.3 ✅
+  - **Status**: Routes enabled in Headscale, VPS can reach cluster DNS at 10.0.3.3
 - [x] **VPS PowerDNS Secondary Configuration**:
   - **File**: `~/code/ducktape/ansible/roles/powerdns/templates/pdns.conf.j2`
   - **Change**: Added `secondary=yes` to enable automatic zone transfers
   - **Deployment**: Ansible role `powerdns` with tag `--tags powerdns`
   - **Verification**: `pdnsutil list-zone test-cluster.agentydragon.com` shows all cluster records
-  - **Status**: Zone replication working, public DNS queries resolved ✅
-- [x] **PowerDNS Operator**: DEPLOYED AND WORKING ✅ - Created test-cluster.agentydragon.com zone
+- [x] **PowerDNS Operator**: - Created test-cluster.agentydragon.com zone
   (ClusterZone CRD successful). external-dns uses HTTP API for record management.
   - **Current**: external-dns + custom PowerDNS Helm chart
-  - **Alternative**: PowerDNS Operator (34⭐, Aug 2024) for zone/record management only
-  - **Limitation**: Operator doesn't deploy PowerDNS servers - only manages zones/records via API
+  - **Limitation**: doesn't deploy PowerDNS servers - only manages zones/records via API
   - **Evaluate**: Whether zone-only management offers advantages over external-dns direct integration
 - [ ] **Technitium DNS Evaluation**: Alternative to PowerDNS for authoritative DNS
   - **Alternative**: Technitium DNS Server (4.6k⭐, active development, excellent API)
@@ -116,28 +107,27 @@ This document tracks project roadmap and strategic architecture decisions for th
   - **Cons**: RFC2136-only integration (no native external-dns provider), TSIG key complexity, newer K8s ecosystem
   - **Integration**: Would require RFC2136 for both external-dns and cert-manager (vs PowerDNS native providers)
   - **Evaluate**: Whether advanced features justify integration complexity vs PowerDNS simplicity
-- [x] **SNI Passthrough on Port 443**: IMPLEMENTED ✅ - Stream-level SNI routing on port 443 via
-  nginx-streams/https-sni-router.j2 (L358 verified, `listen 443; ssl_preread on`)
-  - **Current**: VPS nginx configured with TLS stream SNI router to cluster ingress VIP (10.0.3.2:443)
+- [x] **SNI Passthrough on :443**: Stream SNI routing on port 443 via
+  nginx-streams/https-sni-router.j2 (`listen 443; ssl_preread on`)
+  - VPS nginx configured with TLS stream SNI router to cluster ingress VIP (10.0.3.2:443)
   - **Configuration**: `nginx-streams/https-sni-router.j2` routes `*.test-cluster.agentydragon.com` to cluster
   - **Limitation**: Public endpoint on port 8443, not 443 (requires SNI setup on VPS nginx for port 443)
   - **Impact**: HTTP-01 ACME challenges fail (Let's Encrypt only supports ports 80/443, not 8443)
-- [x] **Let's Encrypt Certificates**: Automatic TLS certificates via cert-manager - WORKING ✅
+- [x] **Let's Encrypt Certificates**: via cert-manager
   - **Status**: DNS infrastructure and cert-manager fully operational
-  - **DNS Configuration**: All A records point to VPS IP (172.235.48.86) ✅
-  - **Authoritative DNS**: PowerDNS serving from `ns1.agentydragon.com` ✅
+  - **DNS Configuration**: All A records point to VPS IP (172.235.48.86)
+  - Authoritative PowerDNS serving from `ns1.agentydragon.com`
   - **Challenge Solvers**:
     - **DNS-01** (PowerDNS webhook): Works for wildcard domains (*.test-cluster.agentydragon.com) ✅
     - **HTTP-01** (nginx ingress): Configured but blocked by port 8443 limitation ⚠️
   - **Current Workaround**: Use DNS-01 solver (wildcard certs) until port 443 SNI is configured
-  - **Services**: Gitea, Vault, Harbor, Authentik all accessible ✅
+  - **Services**: Gitea, Vault, Harbor, Authentik all accessible
 
 ## TODO
 
 ### 📋 Platform Services
 
-- [x] **Vault**: Secret management with Raft storage deployed via GitOps - FULLY OPERATIONAL
-  - **Status**: 3-node HA cluster successfully deployed with proper Raft consensus
+- [x] **Vault**: Secret management with Raft
   - **Fixed**: cluster_addr now uses pod-specific service names (instance-0, instance-1, instance-2)
   - **Working**: Full HA with 1 leader + 2 standby replicas, automatic failover, data replication
   - **Storage**: Proxmox CSI volumes with 10Gi per pod for Raft data persistence
@@ -530,28 +520,9 @@ The goal is to test and refine SSO integration before potentially switching from
 
 Existing ducktape k3s cluster (`~/code/ducktape/k8s/helm/`) contains:
 
-#### Core SSO Components
-
-- **Authentik**: Central identity provider with blueprint-based declarative configuration
-- **Vault**: Secret storage with External Secrets Operator integration (Kubernetes auth)
-- **External Secrets**: Vault → K8s secrets bridge, eliminating direct service Vault integration
-- **Reflector**: Cross-namespace secret sharing for OAuth client credentials
-
-#### User Management Patterns
-
-- **Declarative users**: Git-managed blueprints defining users and group memberships
-- **Group-based access**: `gitea-users`, `gitea-admins`, `rspcache-admins` groups
-- **Auto-provisioning**: OIDC claims automatically create users in downstream services
-
-#### Secret Distribution Architecture
+#### Secret Distribution
 
 Vault KV Store → External Secrets Operator → K8s Secrets → Application Pods
-
-#### Service Integration Examples
-
-- **Gitea**: OIDC with auto-registration, group-based permissions, shared OAuth secrets
-- **Matrix/Synapse**: OIDC integration with signing certificates via Vault
-- **Harbor**: OIDC provider integration (referenced in terraform config)
 
 ### Migration Strategy for Testing Cluster
 
@@ -655,7 +626,7 @@ Solution: **Temporal separation** with phased deployment.
 
 ### Success Metrics
 
-- Single sign-on across all platform services
+- SSO across all platform services
 - Auto-provisioning of users in Gitea, Harbor, Matrix from central identity
 - Git-managed user and permission definitions
 - Zero direct Vault integration in application services
