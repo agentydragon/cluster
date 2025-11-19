@@ -439,6 +439,75 @@ Never use the `timeout` command prefix - use the tool's built-in timeout paramet
 
 This ensures the documentation serves both as operational procedures (docs/BOOTSTRAP.md) and project management (docs/PLAN.md).
 
+## Common Issues and Resolutions
+
+### cert-manager Webhook Secret Namespace Issue
+
+**Problem**: cert-manager DNS-01 challenges failing with "Unauthorized" or "secret not found" errors when using
+webhook solvers (e.g., PowerDNS webhook).
+
+**Root Cause**: When ClusterIssuer `apiKeySecretRef` doesn't specify a namespace, cert-manager defaults to looking
+in the Certificate resource's namespace (e.g., `monitoring` for Grafana certificate), not the webhook's namespace
+(`cert-manager`) where the secret actually exists.
+
+**Resolution**: Always explicitly specify namespace in ClusterIssuer webhook configuration:
+
+```yaml
+# k8s/cert-manager-config/clusterissuer.yaml
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-prod-dns
+spec:
+  acme:
+    solvers:
+      - dns01:
+          webhook:
+            config:
+              apiKeySecretRef:
+                name: powerdns-api-key
+                key: PDNS_API_KEY
+                namespace: cert-manager  # REQUIRED! Otherwise uses Certificate's namespace
+```
+
+**Why This Works**: Secrets are typically created in service's namespace (e.g., `dns-system`) and reflected to
+`cert-manager` namespace via reflector. Explicitly specifying `namespace: cert-manager` ensures cert-manager
+looks in the correct location regardless of where the Certificate resource is created.
+
+### ESO Password Generator Secret Desynchronization
+
+**Problem**: Applications failing with authentication errors after running for hours/days. Symptoms include:
+
+- PowerDNS webhook: "401 Unauthorized"
+- Authentik API: "403 Token invalid/expired"
+- PostgreSQL: "FATAL: password authentication failed"
+
+**Root Cause**: ESO Password generators regenerate values on `refreshInterval` (1h, 24h), updating Kubernetes Secrets.
+But applications that already consumed and persisted those passwords don't automatically update:
+
+1. Application reads secret at startup → writes to DB or persistent config
+2. ESO refreshes secret after interval → new password in Kubernetes Secret
+3. Application still running with old password → **desynchronized**
+4. New consumers read new password → authentication fails against app with old password
+
+**Critical Examples**:
+
+- PowerDNS: DB password set on init (empty PVC), never updated. Secret changes break DB auth.
+- Authentik: Bootstrap token written to DB by Job. Secret refresh breaks API auth.
+
+**Resolution**: Use stable refresh intervals (8760h = 1 year) instead of volatile intervals (1h, 24h).
+See `docs/SECRET_SYNCHRONIZATION_ANALYSIS.md` for detailed analysis.
+
+**Files Changed**:
+
+- `charts/powerdns/templates/external-secret.yaml`: `refreshInterval: 1h` → `8760h`
+- `k8s/authentik/bootstrap-external-secret.yaml`: `refreshInterval: 24h` → `8760h`
+- `k8s/authentik/postgres-external-secret.yaml`: `refreshInterval: 1h` → `8760h`
+- `k8s/authentik/admin-password-external-secret.yaml`: `refreshInterval: 24h` → `8760h`
+
+**Long-term Solution**: Migrate to Vault-backed secrets where generated passwords persist in Vault, eliminating
+regeneration volatility. See `docs/SECRET_SYNCHRONIZATION_ANALYSIS.md` Phase 2.
+
 ## Troubleshooting Priority
 
 **Always use docs/TROUBLESHOOTING.md first** when cluster components aren't working:
