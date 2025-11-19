@@ -5,6 +5,10 @@ metadata:
   namespace: flux-system
 spec:
   interval: 15m
+  install:
+    crds: Create
+  upgrade:
+    crds: CreateReplace
   chart:
     spec:
       chart: tf-controller
