@@ -4,5 +4,6 @@ resources:
   # Bank-Vaults Vault instance (operator deployed separately)
   - rbac.yaml
   - instance.yaml
-  - certificate.yaml
-  - ingress.yaml
+  # TODO: Enable when DNS is configured for vault.test-cluster.agentydragon.com
+  # - certificate.yaml
+  # - ingress.yaml
