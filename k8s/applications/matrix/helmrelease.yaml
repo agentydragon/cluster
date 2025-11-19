@@ -159,6 +159,8 @@ spec:
         username: synapse
         database: synapse
         # PostgreSQL chart auto-generates password
+      global:
+        storageClass: "proxmox-csi-retain"
       primary:
         persistence:
           enabled: true
@@ -176,7 +178,8 @@ spec:
     redis:
       enabled: true
       auth:
-        enabled: false
+        enabled: true
+        password: "matrix-redis-password-change-me"
       master:
         persistence:
           enabled: false
