@@ -274,6 +274,31 @@ This document tracks project roadmap and strategic architecture decisions for th
   - **Integration**: Connect to Firecrawl, GitHub, cluster APIs, documentation
   - **Use Case**: AI-assisted development, automated documentation, cluster management
   - **Status**: Needs deployment plan
+- [ ] **Guacamole + Authentik RAC**: Clientless remote desktop access with SSO
+  - **Purpose**: Browser-based graphical desktop access (RDP, VNC) to existing VMs with zero-click SSO
+  - **Architecture**: Authentik RAC Provider → Apache Guacamole → Proxmox VMs (separate from cluster)
+  - **Initial Target**: wyrm (existing Proxmox VM) - graphical session access via browser
+  - **Protocols Supported**:
+    - **RDP**: Windows desktops, xrdp on Linux
+    - **VNC**: TigerVNC, x11vnc for Linux graphical sessions
+    - **SSH**: Terminal access (bonus, but graphical is primary goal)
+  - **User Flow**:
+    1. Login to Authentik with OIDC
+    2. Click application → Guacamole embedded in Authentik UI
+    3. Click VM → **Instant graphical desktop session** (no additional login)
+  - **Features**:
+    - Group-based VM access control
+    - Credential injection from Vault via ESO
+    - HTML5 canvas (no client software needed)
+    - Copy/paste, file transfer, audio redirection
+    - Full audit trail in Authentik
+  - **Integration Points**:
+    - Authentik blueprints define endpoints and permissions
+    - ESO provides VNC/RDP passwords from Vault
+    - Ingress: `guac.test-cluster.agentydragon.com`
+  - **Advanced**: xrdp + PAM OIDC for true single-sign-on to Linux desktop sessions
+  - **Future**: Terraform-managed desktop VM pools (VDI-style) for on-demand workspaces
+  - **Status**: Researched, ready for deployment
 
 - [ ] **Investigate PowerDNS Operator Restarts**: Operator has 33 restarts over 22h uptime
   - **Status**: Operator IS working (ClusterZone successfully created), but restart count suggests instability
