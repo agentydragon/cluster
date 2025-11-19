@@ -12,6 +12,9 @@ spec:
   # TODO: IPC_LOCK should not require particularly wide privileges - investigate capability restrictions
   bankVaultsImage: "ghcr.io/bank-vaults/bank-vaults:v1.32.0"
 
+  # TLS certificate managed by cert-manager
+  existingTlsSecretName: vault-tls
+
   # Storage configuration - each replica gets its own PVC
   volumeClaimTemplates:
     - metadata:
@@ -40,20 +43,21 @@ spec:
         retry_join:
           # All cluster members listed for automatic discovery and sequential joining
           # Bank-Vaults creates StatefulSet pods: instance-0, instance-1, instance-2
-          - leader_api_addr: "http://instance-0.vault.svc.cluster.local:8200"
-          - leader_api_addr: "http://instance-1.vault.svc.cluster.local:8200"
-          - leader_api_addr: "http://instance-2.vault.svc.cluster.local:8200"
+          - leader_api_addr: "https://instance-0.vault.svc.cluster.local:8200"
+          - leader_api_addr: "https://instance-1.vault.svc.cluster.local:8200"
+          - leader_api_addr: "https://instance-2.vault.svc.cluster.local:8200"
     listener:
       tcp:
         address: "0.0.0.0:8200"
         cluster_address: "0.0.0.0:8201"
-        tls_disable: true
+        tls_cert_file: /vault/tls/server.crt
+        tls_key_file: /vault/tls/server.key
     # Required addresses for Raft cluster communication
     # References: https://github.com/bank-vaults/vault-operator/blob/main/deploy/examples/
     # api_addr: External address for client requests (load-balanced service)
     # cluster_addr: Pod-specific address for Raft protocol - Bank-Vaults template syntax
-    api_addr: "http://instance.vault.svc.cluster.local:8200"
-    cluster_addr: "http://${.Env.POD_NAME}.vault.svc.cluster.local:8201"
+    api_addr: "https://instance.vault.svc.cluster.local:8200"
+    cluster_addr: "https://${.Env.POD_NAME}.vault.svc.cluster.local:8201"
     ui: true
 
   # Automatic unsealing using Kubernetes secrets

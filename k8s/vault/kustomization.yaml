@@ -4,3 +4,5 @@ resources:
   # Bank-Vaults Vault instance (operator deployed separately)
   - rbac.yaml
   - instance.yaml
+  - certificate.yaml
+  - ingress.yaml
