@@ -621,11 +621,10 @@ Solution: **Temporal separation** with phased deployment.
 
 **SSO Integration Status:**
 
-- ✅ vault-config terraform: Working
-- ✅ authentik-config terraform: Working
+- ✅ vault-oidc-auth terraform: Working
 - ✅ sso-secrets terraform: Working
-- ❌ gitea-sso terraform: Failing (403/503 errors)
-- ❌ matrix-sso terraform: Failing (403/503 errors)
+- ❌ authentik-blueprint-gitea terraform: Failing (403/503 errors)
+- ❌ authentik-blueprint-matrix terraform: Failing (403/503 errors)
 
 - **Identity**: `auth.test-cluster.agentydragon.com`
 - **Git**: `git.test-cluster.agentydragon.com`
