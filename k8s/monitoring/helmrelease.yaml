@@ -1,0 +1,223 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: kube-prometheus-stack
+  namespace: monitoring
+spec:
+  interval: 30m
+  chart:
+    spec:
+      chart: kube-prometheus-stack
+      version: "69.5.0"
+      sourceRef:
+        kind: HelmRepository
+        name: prometheus-community
+        namespace: flux-system
+      interval: 12h
+  values:
+    # Global settings
+    defaultRules:
+      create: true
+      rules:
+        alertmanager: true
+        etcd: false # Talos doesn't expose etcd metrics
+        configReloaders: true
+        general: true
+        k8s: true
+        kubeApiserverAvailability: true
+        kubeApiserverSlos: true
+        kubelet: true
+        kubeProxy: true
+        kubePrometheusGeneral: true
+        kubePrometheusNodeRecording: true
+        kubernetesApps: true
+        kubernetesResources: true
+        kubernetesStorage: true
+        kubernetesSystem: true
+        kubeScheduler: true
+        kubeStateMetrics: true
+        network: true
+        node: true
+        nodeExporterAlerting: true
+        nodeExporterRecording: true
+        prometheus: true
+        prometheusOperator: true
+
+    # Alertmanager configuration
+    alertmanager:
+      enabled: true
+      ingress:
+        enabled: false # Can enable later with authentication
+      alertmanagerSpec:
+        storage:
+          volumeClaimTemplate:
+            spec:
+              storageClassName: proxmox-csi-retain
+              accessModes: ["ReadWriteOnce"]
+              resources:
+                requests:
+                  storage: 5Gi
+        resources:
+          requests:
+            cpu: 10m
+            memory: 64Mi
+          limits:
+            cpu: 100m
+            memory: 128Mi
+        retention: 120h
+
+    # Grafana configuration
+    grafana:
+      enabled: true
+      adminPassword: admin # TODO: Change via secret later
+      defaultDashboardsEnabled: true
+      defaultDashboardsTimezone: UTC
+
+      ingress:
+        enabled: true
+        ingressClassName: nginx
+        annotations:
+          cert-manager.io/cluster-issuer: letsencrypt-prod
+        hosts:
+          - grafana.test-cluster.agentydragon.com
+        tls:
+          - secretName: grafana-tls
+            hosts:
+              - grafana.test-cluster.agentydragon.com
+
+      persistence:
+        enabled: true
+        storageClassName: proxmox-csi-retain
+        accessModes:
+          - ReadWriteOnce
+        size: 10Gi
+
+      resources:
+        requests:
+          cpu: 50m
+          memory: 128Mi
+        limits:
+          cpu: 200m
+          memory: 256Mi
+
+      # Enable useful plugins
+      plugins:
+        - grafana-piechart-panel
+        - grafana-clock-panel
+
+      # Datasources
+      datasources:
+        datasources.yaml:
+          apiVersion: 1
+          datasources:
+            - name: Prometheus
+              type: prometheus
+              url: http://kube-prometheus-stack-prometheus:9090
+              access: proxy
+              isDefault: true
+              jsonData:
+                timeInterval: 30s
+
+    # Prometheus Operator configuration
+    prometheusOperator:
+      enabled: true
+      resources:
+        requests:
+          cpu: 50m
+          memory: 128Mi
+        limits:
+          cpu: 200m
+          memory: 256Mi
+
+      # Admission webhook resource limits
+      admissionWebhooks:
+        patch:
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              cpu: 100m
+              memory: 64Mi
+
+    # Prometheus configuration
+    prometheus:
+      enabled: true
+      ingress:
+        enabled: false # Can enable later with authentication
+
+      prometheusSpec:
+        # Retention settings
+        retention: 7d
+        retentionSize: "15GB"
+
+        # Storage configuration
+        storageSpec:
+          volumeClaimTemplate:
+            spec:
+              storageClassName: proxmox-csi-retain
+              accessModes: ["ReadWriteOnce"]
+              resources:
+                requests:
+                  storage: 20Gi
+
+        # Resource limits for small cluster
+        resources:
+          requests:
+            cpu: 200m
+            memory: 1Gi
+          limits:
+            cpu: 1000m
+            memory: 2Gi
+
+        # Scrape interval
+        scrapeInterval: 30s
+        evaluationInterval: 30s
+
+        # Service monitor selector - select all service monitors
+        serviceMonitorSelectorNilUsesHelmValues: false
+        podMonitorSelectorNilUsesHelmValues: false
+        ruleSelectorNilUsesHelmValues: false
+
+        # Security context
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 1000
+          fsGroup: 2000
+
+    # Node exporter configuration
+    nodeExporter:
+      enabled: true
+      resources:
+        requests:
+          cpu: 10m
+          memory: 32Mi
+        limits:
+          cpu: 100m
+          memory: 64Mi
+
+    # Kube-state-metrics configuration
+    kube-state-metrics:
+      resources:
+        requests:
+          cpu: 10m
+          memory: 64Mi
+        limits:
+          cpu: 100m
+          memory: 128Mi
+
+    # Disable components we don't need
+    kubeApiServer:
+      enabled: true
+    kubelet:
+      enabled: true
+    kubeControllerManager:
+      enabled: true
+    coreDns:
+      enabled: true
+    kubeEtcd:
+      enabled: false # Talos doesn't expose etcd metrics
+    kubeScheduler:
+      enabled: true
+    kubeProxy:
+      enabled: true
