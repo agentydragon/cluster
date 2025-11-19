@@ -3,3 +3,4 @@ kind: Kustomization
 resources:
   - clusterissuer.yaml
   - powerdns-webhook.yaml
+  - powerdns-webhook-rbac.yaml
