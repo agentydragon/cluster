@@ -5,8 +5,7 @@
 # Multi-layer deployment with persistent auth separation:
 # Layer 0: Persistent Auth (CSI tokens, sealed secrets keypair)
 # Layer 1: Infrastructure (VMs, Talos, CNI, networking)
-# Layer 2: Services (Deploy via GitOps)
-# Layer 3: Configuration (Configure via APIs)
+# Layer 2: Services (Deploy via GitOps - Flux handles DNS/SSO automatically)
 
 set -e
 
@@ -29,7 +28,7 @@ while [[ $# -gt 0 ]]; do
             ;;
         *)
             echo "❌ Unknown option: $1"
-            echo "Usage: $0 [--start-from infrastructure|services|configuration] [--help]"
+            echo "Usage: $0 [--start-from infrastructure|services] [--help]"
             exit 1
             ;;
     esac
@@ -41,14 +40,13 @@ if [ "$HELP" = true ]; then
     echo "Usage: $0 [OPTIONS]"
     echo ""
     echo "Options:"
-    echo "  --start-from LAYER    Skip earlier layers, start from: infrastructure|services|configuration"
+    echo "  --start-from LAYER    Skip earlier layers, start from: infrastructure|services"
     echo "  --help, -h           Show this help message"
     echo ""
     echo "Layers:"
     echo "  0. persistent-auth    CSI tokens, sealed secrets (persistent across VM lifecycle)"
     echo "  1. infrastructure     VMs, Talos, CNI, networking (ephemeral)"
-    echo "  2. services          GitOps applications deployment"
-    echo "  3. configuration     Service configuration via APIs"
+    echo "  2. services          GitOps applications (Flux handles DNS/SSO automatically)"
     echo ""
     echo "Examples:"
     echo "  $0                                    # Full bootstrap"
@@ -118,7 +116,7 @@ if [ "$START_FROM_LAYER" != "infrastructure" ] && [ "$START_FROM_LAYER" != "serv
 fi
 
 # Phase 1: Infrastructure Layer
-if [ "$START_FROM_LAYER" != "services" ] && [ "$START_FROM_LAYER" != "configuration" ]; then
+if [ "$START_FROM_LAYER" != "services" ]; then
     echo ""
     echo "⚡ Layer 1: Infrastructure Deployment"
     echo "===================================="
@@ -149,84 +147,55 @@ if [ "$START_FROM_LAYER" != "services" ] && [ "$START_FROM_LAYER" != "configurat
 fi
 
 # Phase 2: Services Layer
-if [ "$START_FROM_LAYER" != "configuration" ]; then
-    echo ""
-    echo "⚡ Layer 2: Services Deployment"
-    echo "=============================="
-
-    # Ensure kubeconfig is available for services layer
-    if [ -z "$KUBECONFIG" ]; then
-        KUBECONFIG_PATH="${TERRAFORM_DIR}/01-infrastructure/kubeconfig"
-        export KUBECONFIG="$KUBECONFIG_PATH"
-    fi
-
-    cd "${TERRAFORM_DIR}/02-services"
-    echo "🚀 Deploying services layer..."
-    echo "     📋 GITOPS → AUTHENTIK → POWERDNS → HARBOR → GITEA → MATRIX"
-
-    if ! terraform apply -auto-approve; then
-        echo "❌ FATAL: Services deployment failed"
-        exit 1
-    fi
-
-    # Wait for critical services to be ready
-    echo "⏳ Waiting for services to be ready..."
-
-    # Wait for Authentik
-    echo "⏳ Waiting for Authentik deployment..."
-    timeout 300 bash -c 'until kubectl get deployment authentik -n authentik-system 2>/dev/null; do sleep 10; done'
-    kubectl wait --for=condition=available deployment/authentik -n authentik-system --timeout=600s
-
-    # Wait for PowerDNS
-    echo "⏳ Waiting for PowerDNS deployment..."
-    timeout 300 bash -c 'until kubectl get deployment powerdns -n powerdns-system 2>/dev/null; do sleep 10; done'
-    kubectl wait --for=condition=available deployment/powerdns -n powerdns-system --timeout=600s
-
-    # Wait for PowerDNS API to be responsive
-    echo "⏳ Waiting for PowerDNS API to be ready..."
-    CLUSTER_VIP="10.0.3.1"  # TODO: Get from terraform output
-    timeout 300 bash -c "until curl -sf http://${CLUSTER_VIP}:8081/api/v1/servers; do sleep 5; done"
-
-    echo "✅ Services layer ready"
-fi
-
-# Phase 3: Configuration Layer (Optional - requires API keys)
 echo ""
-echo "⚡ Layer 3: Configuration (Optional)"
-echo "==================================="
+echo "⚡ Layer 2: Services Deployment"
+echo "=============================="
 
-# Check if API credentials are provided
-cd "${TERRAFORM_DIR}/03-configuration"
-
-if [[ -n "${TF_VAR_powerdns_api_key}" && -n "${TF_VAR_authentik_token}" ]]; then
-    echo "🚀 API credentials provided - deploying configuration layer..."
-    echo "     📋 DNS ZONES → SSO CONFIG → SERVICE INTEGRATION"
-
-    if ! terraform apply -auto-approve; then
-        echo "❌ WARNING: Configuration deployment failed"
-        echo "💡 Services are deployed but may need manual configuration"
-        exit 1
-    fi
-
-    echo "🎉 Full cluster configuration completed!"
-else
-    echo "⚠️  Phase 3 skipped - API credentials not provided"
-    echo "💡 To complete configuration:"
-    echo "   1. Retrieve API keys from deployed services"
-    echo "   2. Export TF_VAR_powerdns_api_key=<key>"
-    echo "   3. Export TF_VAR_authentik_token=<token>"
-    echo "   4. Re-run: cd terraform/03-configuration && terraform apply"
+# Ensure kubeconfig is available for services layer
+if [ -z "$KUBECONFIG" ]; then
+    KUBECONFIG_PATH="${TERRAFORM_DIR}/01-infrastructure/kubeconfig"
+    export KUBECONFIG="$KUBECONFIG_PATH"
 fi
+
+cd "${TERRAFORM_DIR}/02-services"
+echo "🚀 Deploying services layer..."
+echo "     📋 GITOPS → AUTHENTIK → POWERDNS → HARBOR → GITEA → MATRIX"
+
+if ! terraform apply -auto-approve; then
+    echo "❌ FATAL: Services deployment failed"
+    exit 1
+fi
+
+# Wait for critical services to be ready
+echo "⏳ Waiting for services to be ready..."
+
+# Wait for Authentik
+echo "⏳ Waiting for Authentik deployment..."
+timeout 300 bash -c 'until kubectl get deployment authentik -n authentik-system 2>/dev/null; do sleep 10; done'
+kubectl wait --for=condition=available deployment/authentik -n authentik-system --timeout=600s
+
+# Wait for PowerDNS
+echo "⏳ Waiting for PowerDNS deployment..."
+timeout 300 bash -c 'until kubectl get deployment powerdns -n powerdns-system 2>/dev/null; do sleep 10; done'
+kubectl wait --for=condition=available deployment/powerdns -n powerdns-system --timeout=600s
+
+# Wait for PowerDNS API to be responsive
+echo "⏳ Waiting for PowerDNS API to be ready..."
+CLUSTER_VIP="10.0.3.1"  # TODO: Get from terraform output
+timeout 300 bash -c "until curl -sf http://${CLUSTER_VIP}:8081/api/v1/servers; do sleep 5; done"
+
+echo "✅ Services layer ready"
 
 echo ""
-echo "🎉 Layered cluster bootstrap completed!"
-echo "📊 Layer status:"
-echo "   ✅ Phase 1: Infrastructure deployed"
-echo "   ✅ Phase 2: Services deployed"
-if [[ -n "${TF_VAR_powerdns_api_key}" ]]; then
-    echo "   ✅ Phase 3: Configuration deployed"
-else
-    echo "   ⚠️  Phase 3: Configuration pending (API keys needed)"
-fi
+echo "🎉 Cluster bootstrap completed!"
+echo "📊 Bootstrap phases:"
+echo "   ✅ Phase 0: Persistent auth (CSI tokens, sealed secrets keypair)"
+echo "   ✅ Phase 1: Infrastructure (VMs, Talos, Cilium)"
+echo "   ✅ Phase 2: Services (Flux, Vault, Authentik, applications)"
+echo ""
+echo "📋 Post-bootstrap automation (via Flux/GitOps):"
+echo "   • DNS: PowerDNS Operator (zone) + external-dns (records from Ingresses)"
+echo "   • SSO: tofu-controller applies terraform/authentik-blueprint/ configurations"
+echo "   • Gitea: Automated token generation + OAuth config via Jobs"
 echo ""
 echo "🔗 Access cluster: export KUBECONFIG='${KUBECONFIG_PATH}'"
