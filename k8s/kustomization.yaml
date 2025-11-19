@@ -35,3 +35,4 @@ resources:
   - authentik-blueprint/vault/flux-kustomization.yaml
   - authentik-blueprint/users/flux-kustomization.yaml
   - authentik-blueprint/grafana/flux-kustomization.yaml
+  - authentik-blueprint/kagent/flux-kustomization.yaml
