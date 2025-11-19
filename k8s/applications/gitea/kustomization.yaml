@@ -3,4 +3,4 @@ kind: Kustomization
 resources:
   - secrets.yaml
   - helmrelease.yaml
-# Gitea OIDC/SSO configuration is handled by k8s/sso/gitea/ (gitea-sso Terraform)
+# Gitea OIDC/SSO configuration is handled by k8s/authentik-blueprint/gitea/ (Terraform)

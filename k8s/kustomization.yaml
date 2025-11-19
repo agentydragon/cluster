@@ -34,3 +34,4 @@ resources:
   - authentik-blueprint/harbor/flux-kustomization.yaml
   - authentik-blueprint/vault/flux-kustomization.yaml
   - authentik-blueprint/users/flux-kustomization.yaml
+  - authentik-blueprint/grafana/flux-kustomization.yaml

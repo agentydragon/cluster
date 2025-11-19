@@ -5,4 +5,4 @@ resources:
   - secrets.yaml
   - helmrelease.yaml
   - element-web.yaml
-# Matrix OIDC/SSO configuration is handled by k8s/sso/matrix/ (matrix-sso Terraform)
+# Matrix OIDC/SSO configuration is handled by k8s/authentik-blueprint/matrix/ (Terraform)
