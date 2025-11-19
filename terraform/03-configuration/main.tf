@@ -1,31 +1,11 @@
-# LAYER 3: CONFIGURATION
-# Service configuration via external APIs
-# Includes: PowerDNS zones/records, SSO provider configurations
+# LAYER 3: DNS ZONE MANAGEMENT
+# Manages PowerDNS zones and records for cluster domain
+# Note: SSO configurations are managed separately via terraform/authentik-blueprint/ (tofu-controller)
 
-# Configure service API providers using credentials
+# Configure PowerDNS provider
 provider "powerdns" {
   server_url = data.terraform_remote_state.services.outputs.service_endpoints.powerdns_url
   api_key    = var.powerdns_api_key
-}
-
-provider "authentik" {
-  url   = data.terraform_remote_state.services.outputs.service_endpoints.authentik_url
-  token = var.authentik_token
-}
-
-provider "harbor" {
-  url      = data.terraform_remote_state.services.outputs.service_endpoints.harbor_url
-  username = "admin"
-  password = var.harbor_admin_password
-}
-
-provider "gitea" {
-  base_url = data.terraform_remote_state.services.outputs.service_endpoints.gitea_url
-  token    = var.gitea_admin_token
-}
-
-provider "kubernetes" {
-  config_path = "~/.kube/config"
 }
 
 # DNS MODULE: PowerDNS zone and record management
@@ -36,6 +16,3 @@ module "dns" {
   cluster_vip    = data.terraform_remote_state.infrastructure.outputs.cluster_vip
   ingress_pool   = "10.0.3.2"
 }
-
-# Future: SSO configuration modules can be added here
-# module "sso_config" { ... }

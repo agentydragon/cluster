@@ -1,4 +1,4 @@
-# LAYER 3: Configuration Provider Versions
+# LAYER 3: DNS Zone Management Provider Versions
 
 terraform {
   required_version = ">= 1.0"
@@ -8,34 +8,20 @@ terraform {
   }
 
   required_providers {
-    # Service API providers
+    # DNS management
     powerdns = {
       source  = "pan-net/powerdns"
       version = "~> 1.5.0"
     }
-    authentik = {
-      source  = "goauthentik/authentik"
-      version = "~> 2025.10.0"
-    }
-    harbor = {
-      source  = "goharbor/harbor"
-      version = "~> 3.11.0"
-    }
-    gitea = {
-      source  = "go-gitea/gitea"
-      version = "~> 0.7.0"
-    }
+    # Secret storage (for PowerDNS API key)
     vault = {
       source  = "hashicorp/vault"
       version = "~> 5.4.0"
     }
+    # API key generation
     random = {
       source  = "hashicorp/random"
       version = "~> 3.7.0"
-    }
-    kubernetes = {
-      source  = "hashicorp/kubernetes"
-      version = "~> 2.35.0"
     }
   }
 }

@@ -15,11 +15,5 @@ data "terraform_remote_state" "services" {
   }
 }
 
-# Authentik data sources for SSO configuration
-data "authentik_flow" "default_provider_authorization_implicit_consent" {
-  slug = "default-provider-authorization-implicit-consent"
-}
-
-data "authentik_group" "users" {
-  name = "users"
-}
+# Note: Authentik data sources removed - SSO configurations now managed
+# via terraform/authentik-blueprint/ (tofu-controller)
