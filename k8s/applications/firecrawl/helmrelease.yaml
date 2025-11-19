@@ -25,6 +25,7 @@ metadata:
   namespace: firecrawl
 spec:
   interval: 15m
+  timeout: 10m
   chart:
     spec:
       chart: ./examples/kubernetes/firecrawl-helm
