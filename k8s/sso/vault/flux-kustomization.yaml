@@ -4,14 +4,20 @@ metadata:
   name: vault-sso
   namespace: flux-system
 spec:
-  interval: 10m0s
+  interval: 10m
+  timeout: 5m
   path: ./k8s/sso/vault
   prune: true
+  wait: true
   sourceRef:
     kind: GitRepository
     name: flux-system
   dependsOn:
     - name: vault
-    - name: external-secrets
+      namespace: flux-system
+    - name: external-secrets-config
+      namespace: flux-system
     - name: reflector
+      namespace: flux-system
     - name: authentik-config
+      namespace: flux-system
