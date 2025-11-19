@@ -136,31 +136,21 @@ spec:
         nginx.ingress.kubernetes.io/ssl-redirect: "true"
         # Increase body size for media uploads
         nginx.ingress.kubernetes.io/proxy-body-size: "50m"
+      # Client-to-Server API hosts
+      csHosts:
+        - matrix.test-cluster.agentydragon.com
+      # Server-to-Server (federation) hosts
       hosts:
-        - host: matrix.test-cluster.agentydragon.com
-          paths:
-            - path: /
-              pathType: Prefix
+        - test-cluster.agentydragon.com
+      # Include /_synapse admin APIs
+      includeUnderscoreSynapse: true
+      # Include server name in csHosts automatically
+      includeServerName: false
       tls:
         - secretName: matrix-synapse-tls
           hosts:
             - matrix.test-cluster.agentydragon.com
-
-      # Federation ingress (server-to-server)
-      federation:
-        enabled: true
-        annotations:
-          cert-manager.io/cluster-issuer: "letsencrypt-prod-dns"
-          nginx.ingress.kubernetes.io/ssl-redirect: "true"
-        hosts:
-          - host: test-cluster.agentydragon.com
-            paths:
-              - path: /
-                pathType: Prefix
-        tls:
-          - secretName: matrix-federation-tls
-            hosts:
-              - test-cluster.agentydragon.com
+            - test-cluster.agentydragon.com
 
     # PostgreSQL configuration with bundled chart
     postgresql:
