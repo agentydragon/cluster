@@ -25,6 +25,20 @@ provider "flux" {
   }
 }
 
+# Vault provider - connects to in-cluster Vault for secret storage
+# Note: Vault must be deployed and unsealed before running this
+data "kubernetes_secret" "vault_root_token" {
+  metadata {
+    name      = "instance-unseal-keys"
+    namespace = "vault"
+  }
+}
+
+provider "vault" {
+  address = "http://localhost:8200" # via kubectl port-forward
+  token   = data.kubernetes_secret.vault_root_token.data["vault-root"]
+}
+
 # Test Kubernetes connectivity
 resource "kubernetes_namespace" "test" {
   metadata {

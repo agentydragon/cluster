@@ -22,8 +22,5 @@ variable "client_secret" {
   sensitive   = true
 }
 
-variable "harbor_admin_password" {
-  description = "Harbor admin password for initial configuration"
-  type        = string
-  sensitive   = true
-}
+# Note: harbor_admin_password is read directly from kubernetes_secret data source
+# See harbor-config.tf for implementation
