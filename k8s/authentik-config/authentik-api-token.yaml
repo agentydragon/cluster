@@ -1,18 +1,5 @@
-# Phase 1: Bootstrap with generated token
-# Generate API token that will be manually created in Authentik UI
----
-apiVersion: generators.external-secrets.io/v1alpha1
-kind: Password
-metadata:
-  name: authentik-api-token-generator
-  namespace: flux-system
-spec:
-  length: 64
-  digits: 10
-  symbols: 0
-  symbolCharacters: ""
-  noUpper: false
-  allowRepeat: true
+# Copy bootstrap token from authentik namespace for Terraform access
+# The bootstrap token is the actual working API token created by Authentik
 ---
 apiVersion: external-secrets.io/v1beta1
 kind: ExternalSecret
@@ -20,20 +7,22 @@ metadata:
   name: authentik-api-token
   namespace: flux-system
 spec:
-  refreshInterval: 24h
+  refreshInterval: 1m
+  secretStoreRef:
+    name: kubernetes-secret-store
+    kind: ClusterSecretStore
   target:
     name: authentik-api-token
     creationPolicy: Owner
     template:
       type: Opaque
       data:
-        authentik_token: "{{ .password }}"
-  dataFrom:
-    - sourceRef:
-        generatorRef:
-          apiVersion: generators.external-secrets.io/v1alpha1
-          kind: Password
-          name: authentik-api-token-generator
+        authentik_token: "{{ .token }}"
+  data:
+    - secretKey: token
+      remoteRef:
+        key: authentik-bootstrap
+        property: AUTHENTIK_BOOTSTRAP_TOKEN
 # Phase 2: After manual bootstrap, migrate to Vault-backed token
 # ---
 # apiVersion: external-secrets.io/v1beta1
