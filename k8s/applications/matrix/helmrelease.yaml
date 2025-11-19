@@ -63,12 +63,10 @@ spec:
       # Let the chart auto-generate these secrets
       # macaroonSecretKey and registrationSharedSecret will be generated automatically
 
-    # Signing key from secret
+    # Signing key - let the chart generate it
     signingkey:
       job:
-        enabled: false
-      existingSecret: synapse-signing-key
-      existingSecretKey: signing.key
+        enabled: true
 
     # OIDC configuration via extraConfig
     extraConfig:
@@ -151,13 +149,13 @@ spec:
           enabled: true
           storageClass: "proxmox-csi-retain"
           size: 10Gi
-        # Required PostgreSQL settings for Synapse
-        initdb:
-          scriptsConfigMap: synapse-postgres-initdb
         # PostgreSQL 16 compatible settings
         extendedConfiguration: |
           max_connections = 200
           shared_buffers = 256MB
+        # Synapse requires C collation - set via initdb args
+        initdb:
+          args: "--locale=C"
 
     # Enable Redis (required by chart even for single-instance setup)
     redis:
@@ -196,9 +194,6 @@ data:
     #!/bin/bash
     set -e
     # Ensure database has correct collation for Synapse
-    # Bitnami PostgreSQL uses POSTGRES_DATABASE instead of POSTGRES_DB
-    psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "${POSTGRES_DATABASE:-synapse}" <<-EOSQL
-      -- Update database settings for Synapse compatibility
-      ALTER DATABASE synapse SET LC_COLLATE = 'C';
-      ALTER DATABASE synapse SET LC_CTYPE = 'C';
-    EOSQL
+    # Note: This runs as postgres user, after database creation
+    # The collation must be set during database creation instead
+    echo "Database collation check script (collation should be set during CREATE DATABASE)"
