@@ -1,12 +1,11 @@
 apiVersion: infra.contrib.fluxcd.io/v1alpha2
 kind: Terraform
 metadata:
-  name: sso-secrets
+  name: vault-sso
   namespace: flux-system
 spec:
   interval: 15m
-  approvePlan: "auto"
-  path: ./terraform/gitops/secrets
+  path: ./terraform/sso/vault
   sourceRef:
     kind: GitRepository
     name: flux-system
@@ -19,26 +18,26 @@ spec:
   backendConfig:
     customConfiguration: |
       backend "kubernetes" {
-        secret_suffix    = "sso-secrets"
+        secret_suffix    = "vault-sso"
         namespace        = "flux-system"
       }
 
   # Variables for Terraform
   vars:
-    - name: vault_address
-      value: "http://instance.vault.svc.cluster.local:8200"
+    - name: authentik_url
+      value: "https://auth.test-cluster.agentydragon.com"
+    - name: vault_url
+      value: "https://vault.test-cluster.agentydragon.com"
+
+  # Get secrets from Kubernetes secrets
   varsFrom:
     - kind: Secret
-      name: vault-token
+      name: authentik-api-token
       varsKeys:
-        - vault_token
+        - authentik_token
       optional: false
-
-  # Write outputs to Kubernetes secret
-  writeOutputsToSecret:
-    name: sso-secrets-outputs
-    outputs:
-      - harbor_client_secret
-      - gitea_client_secret
-      - matrix_client_secret
-      - vault_client_secret
+    - kind: Secret
+      name: vault-oauth-client-secret
+      varsKeys:
+        - client_secret
+      optional: false

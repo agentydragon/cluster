@@ -15,3 +15,9 @@ output "matrix_client_secret" {
   value       = random_password.matrix_client_secret.result
   sensitive   = true
 }
+
+output "vault_client_secret" {
+  description = "Vault OIDC client secret"
+  value       = random_password.vault_client_secret.result
+  sensitive   = true
+}

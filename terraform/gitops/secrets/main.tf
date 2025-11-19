@@ -47,6 +47,15 @@ resource "random_password" "matrix_client_secret" {
   }
 }
 
+resource "random_password" "vault_client_secret" {
+  length  = 32
+  special = false
+
+  lifecycle {
+    ignore_changes = [length, special]
+  }
+}
+
 # Store all SSO client secrets in Vault for retrieval by applications
 resource "vault_generic_secret" "sso_client_secrets" {
   path = "kv/sso/client-secrets"
@@ -55,6 +64,7 @@ resource "vault_generic_secret" "sso_client_secrets" {
     harbor_client_secret = random_password.harbor_client_secret.result
     gitea_client_secret  = random_password.gitea_client_secret.result
     matrix_client_secret = random_password.matrix_client_secret.result
+    vault_client_secret  = random_password.vault_client_secret.result
   })
 
   lifecycle {

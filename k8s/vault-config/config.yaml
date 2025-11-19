@@ -27,6 +27,19 @@ spec:
   # Variables for Terraform
   vars:
     - name: vault_address
-      value: "https://vault.test-cluster.agentydragon.com"
+      value: "http://instance.vault.svc.cluster.local:8200"
     - name: kubernetes_api_url
       value: "https://kubernetes.default.svc.cluster.local"
+
+  # Get secrets from Kubernetes
+  varsFrom:
+    - kind: Secret
+      name: vault-token
+      varsKeys:
+        - vault_token
+      optional: false
+    - kind: Secret
+      name: vault-oauth-client-secret
+      varsKeys:
+        - client_secret:vault_client_secret
+      optional: false
