@@ -14,11 +14,18 @@ rules:
   # This fixes the "failed to list *v1.ConfigMap: Unauthorized" error
   - apiGroups: [""]
     resources: ["configmaps"]
+    verbs: ["list", "watch", "get"]
+  # The webhook needs to read its own resources to serve API requests
+  - apiGroups: ["acme.zacharyseguin.ca"]
+    resources: ["*"]
     verbs: ["list", "watch"]
-  # The webhook needs to get ConfigMaps for authorization checks
-  - apiGroups: [""]
-    resources: ["configmaps"]
-    verbs: ["get"]
+  # The webhook needs to access authentication information
+  - apiGroups: ["authentication.k8s.io"]
+    resources: ["tokenreviews"]
+    verbs: ["create"]
+  - apiGroups: ["authorization.k8s.io"]
+    resources: ["subjectaccessreviews", "selfsubjectaccessreviews"]
+    verbs: ["create"]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
