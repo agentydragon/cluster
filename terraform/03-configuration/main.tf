@@ -24,6 +24,10 @@ provider "gitea" {
   token    = var.gitea_admin_token
 }
 
+provider "kubernetes" {
+  config_path = "~/.kube/config"
+}
+
 # DNS MODULE: PowerDNS zone and record management
 module "dns" {
   source = "../modules/dns"
