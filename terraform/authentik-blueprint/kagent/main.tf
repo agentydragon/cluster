@@ -5,6 +5,9 @@ terraform {
     authentik = {
       source = "goauthentik/authentik"
     }
+    http = {
+      source = "hashicorp/http"
+    }
   }
 
   backend "kubernetes" {
@@ -60,4 +63,36 @@ resource "authentik_policy_binding" "kagent_access" {
   order  = 0
 }
 
-# Note: Embedded outpost automatically serves all proxy providers
+# Query embedded outpost UUID via API
+# The embedded outpost is created by Authentik automatically, but providers must be assigned explicitly
+data "http" "embedded_outpost" {
+  url = "${var.authentik_url}/api/v3/outposts/instances/?search=embedded"
+  request_headers = {
+    Authorization = "Bearer ${var.authentik_token}"
+    Accept        = "application/json"
+  }
+}
+
+locals {
+  embedded_outpost_uuid = jsondecode(data.http.embedded_outpost.response_body).results[0].pk
+}
+
+# Import the embedded outpost so Terraform can manage provider assignments
+import {
+  to = authentik_outpost.embedded
+  id = local.embedded_outpost_uuid
+}
+
+# Manage the embedded outpost to assign proxy providers
+resource "authentik_outpost" "embedded" {
+  name = "authentik Embedded Outpost"
+  type = "proxy"
+  protocol_providers = [
+    authentik_provider_proxy.kagent.id,
+  ]
+
+  lifecycle {
+    # Prevent Terraform from trying to delete the embedded outpost
+    prevent_destroy = true
+  }
+}
