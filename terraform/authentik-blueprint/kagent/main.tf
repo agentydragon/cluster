@@ -101,6 +101,9 @@ locals {
 resource "restful_operation" "assign_kagent_to_outpost" {
   path   = "/api/v3/outposts/instances/${local.embedded_outpost_uuid}/"
   method = "PATCH"
+  header = {
+    Content-Type = "application/json"
+  }
   body = jsonencode({
     providers = [authentik_provider_proxy.kagent.id]
   })
