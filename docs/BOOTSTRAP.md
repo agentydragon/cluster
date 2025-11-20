@@ -233,8 +233,8 @@ kubectl get svc powerdns-external    # Should show LoadBalancer IP 10.0.3.3
 dig @ns1.agentydragon.com test-cluster.agentydragon.com NS
 # Test cluster PowerDNS directly
 dig @10.0.3.3 test.test-cluster.agentydragon.com
-# Test SNI passthrough (port 8443)
-curl https://test.test-cluster.agentydragon.com:8443/
+# Test SNI passthrough via VPS to cluster ingress (standard HTTPS port 443)
+curl -I https://auth.test-cluster.agentydragon.com/
 ```
 
 Cluster should now be operational with GitOps and external HTTPS connectivity.
