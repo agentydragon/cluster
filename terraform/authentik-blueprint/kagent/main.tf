@@ -5,14 +5,25 @@ terraform {
     authentik = {
       source = "goauthentik/authentik"
     }
-    null = {
-      source = "hashicorp/null"
+    restful = {
+      source = "magodo/restful"
     }
   }
 
   backend "kubernetes" {
     secret_suffix = "authentik-blueprint-kagent"
     namespace     = "flux-system"
+  }
+}
+
+provider "restful" {
+  base_url = var.authentik_url
+  security = {
+    http = {
+      token = {
+        token = var.authentik_token
+      }
+    }
   }
 }
 
@@ -86,20 +97,11 @@ locals {
 
 # Assign Kagent provider to embedded outpost via API
 # UUID is not stable (uuid4()), so we can't use static import
-resource "null_resource" "assign_kagent_to_outpost" {
-  triggers = {
-    outpost_uuid = local.embedded_outpost_uuid
-    provider_id  = authentik_provider_proxy.kagent.id
-    url          = var.authentik_url
-  }
-
-  provisioner "local-exec" {
-    command = <<-EOT
-      wget --method=PATCH \
-        --header="Authorization: Bearer ${var.authentik_token}" \
-        --header="Content-Type: application/json" \
-        --body-data='{"providers":[${self.triggers.provider_id}]}' \
-        -O- "${self.triggers.url}/api/v3/outposts/instances/${self.triggers.outpost_uuid}/"
-    EOT
-  }
+# Using restful provider for cleaner API interaction
+resource "restful_operation" "assign_kagent_to_outpost" {
+  path   = "/api/v3/outposts/instances/${local.embedded_outpost_uuid}/"
+  method = "PATCH"
+  body = jsonencode({
+    providers = [authentik_provider_proxy.kagent.id]
+  })
 }
