@@ -28,7 +28,7 @@ spec:
     - name: authentik_url
       value: "https://auth.test-cluster.agentydragon.com"
     - name: kagent_url
-      value: "https://kagent.test-cluster.agentydragon.com:8443"
+      value: "https://kagent.test-cluster.agentydragon.com"
 
   # Get secrets from Kubernetes secrets
   varsFrom:
