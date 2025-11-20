@@ -128,7 +128,10 @@ tolerations: []
 affinity: {}
 
 # Pod annotations
-podAnnotations: {}
+podAnnotations:
+  # Skip Cilium DNS proxy - PowerDNS is an authoritative server, not a client
+  # Cilium's transparent DNS proxy with 10s linger timeout breaks AXFR zone transfers
+  io.cilium.proxy.denylist: "53/TCP,53/UDP"
 
 # Service account
 serviceAccount:
