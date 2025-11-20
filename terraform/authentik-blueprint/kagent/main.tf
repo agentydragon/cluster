@@ -60,5 +60,44 @@ resource "authentik_policy_binding" "kagent_access" {
   order  = 0
 }
 
-# Note: Provider assignment to embedded outpost is handled by
-# k8s/authentik/kagent-outpost-blueprint.yaml using Authentik blueprints
+# Query the embedded outpost UUID dynamically
+# For forward auth, we MUST use the embedded outpost because:
+# - The ingress auth-url points to auth.test-cluster.agentydragon.com
+# - That endpoint is served by the embedded outpost (part of main Authentik server)
+# - Creating a separate outpost would require deploying it as a pod + updating ingress
+data "http" "embedded_outpost" {
+  url = "${var.authentik_url}/api/v3/outposts/instances/?name=${urlencode("authentik Embedded Outpost")}"
+
+  request_headers = {
+    Authorization = "Bearer ${var.authentik_token}"
+    Accept        = "application/json"
+  }
+
+  depends_on = [authentik_provider_proxy.kagent]
+}
+
+locals {
+  embedded_outpost_data = jsondecode(data.http.embedded_outpost.response_body)
+  embedded_outpost_uuid = local.embedded_outpost_data.results[0].pk
+}
+
+# Assign Kagent provider to embedded outpost via API
+# UUID is not stable (uuid4()), so we can't use static import
+resource "terraform_data" "assign_kagent_to_outpost" {
+  input = {
+    outpost_uuid = local.embedded_outpost_uuid
+    provider_id  = authentik_provider_proxy.kagent.id
+    url          = var.authentik_url
+    token        = var.authentik_token
+  }
+
+  provisioner "local-exec" {
+    command = <<-EOT
+      curl -f -X PATCH \
+        -H "Authorization: Bearer ${self.input.token}" \
+        -H "Content-Type: application/json" \
+        -d '{"providers":[${self.input.provider_id}]}' \
+        "${self.input.url}/api/v3/outposts/instances/${self.input.outpost_uuid}/"
+    EOT
+  }
+}
