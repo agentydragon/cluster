@@ -229,7 +229,6 @@
 
 - Cluster controlplane nodes advertise `10.0.3.0/27` subnet route via Tailscale
 - VPS Tailscale must be configured with `--accept-routes` to receive advertised routes
-- PowerDNS service uses `externalTrafficPolicy: Local` to preserve source IPs for AXFR
 
 **Rationale**: VPS runs PowerDNS authoritative (not recursor), requires AXFR
 
