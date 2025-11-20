@@ -238,14 +238,29 @@
 
 - Longhorn V2: High CPU overhead (100% per worker core for SPDK)
 - OpenEBS LocalPV: Talos incompatibility (path mount issues)
+- Rook-Ceph: Architectural mismatch (requires node-local disks, duplicates ZFS redundancy)
 
-**Selected**: Proxmox CSI
+**Current**: Proxmox CSI (RWO only)
 
 - Native ZFS integration (snapshots, checksums, compression)
 - Zero worker node CPU overhead
 - Simplified architecture via Proxmox API
+- Limitation: ReadWriteOnce only (no multi-pod shared storage)
 
-**Future**: Rook-Ceph available if distributed storage (RWX) needed
+**Future RWX Options**:
+
+1. **NFS StorageClass** (Recommended for current environment)
+   - ZFS dataset on tank pool (58TB RAIDZ2) exported via NFS
+   - `nfs-subdir-external-provisioner` for dynamic provisioning
+   - Leverages existing redundancy (no duplication)
+   - Use cases: Media libraries (Jellyfin), shared downloads (qBittorrent), Syncthing
+   - Pros: Simple setup, uses tank capacity, native RWX support
+   - Cons: Proxmox SPOF (acceptable for single-host setup)
+
+2. **Rook-Ceph** (Only if architecture changes)
+   - Requires: Multi-node Proxmox cluster + local disks per worker node
+   - Would provide: Distributed HA storage independent of Proxmox
+   - Not recommended currently: Centralized storage model mismatch
 
 ---
 

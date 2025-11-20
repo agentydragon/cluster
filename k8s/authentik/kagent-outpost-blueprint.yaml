@@ -1,0 +1,26 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: kagent-outpost-blueprint
+  namespace: authentik
+  labels:
+    goauthentik.io/blueprint: "system"
+data:
+  kagent-outpost.yaml: |
+    # Assign Kagent proxy provider to the embedded outpost
+    # This blueprint updates the embedded outpost to include the Kagent provider
+    version: 1
+    metadata:
+      name: Kagent Outpost Assignment
+      labels:
+        blueprints.goauthentik.io/system: "true"
+    entries:
+      - model: authentik_outposts.outpost
+        id: embedded-outpost
+        identifiers:
+          name: "authentik Embedded Outpost"
+        state: present
+        attrs:
+          type: proxy
+          providers:
+            - !Find [authentik_providers_proxy.proxyprovider, [name, "kagent"]]

@@ -66,6 +66,125 @@ talosctl -n <node-ip> events | grep kubelet
 - 2025-11-17: worker0 - containerd crashed with exit status 2, left kubelet PID 89823 orphaned
 - Logs rotated before crash investigation possible
 
+### tofu-controller TLS Secret Cache Desync (Startup GC Bug)
+
+**Symptoms**:
+
+- Terraform runner pods in CrashLoopBackOff with `secrets "terraform-runner.tls-XXXXXXXX" not found`
+- tofu-controller logs show: `"TLS already generated for"` but secrets don't exist
+- `kubectl get secret -n flux-system -l app.kubernetes.io/name=tf-runner` returns no results
+- Terraform resources stuck in "Reconciliation in progress" indefinitely
+- Runner pod references specific TLS secret name in args but secret is missing
+
+**Root Cause**:
+
+**This is a bug in tf-controller's startup garbage collection logic.** The
+`garbageCollectTLSCertsForcefully()` function uses `time.Now()` as the reference
+point at controller startup, causing it to delete ALL pre-existing TLS secrets
+(since they were created in the past). However, the in-memory cache
+(`knownNamespaceTLSMap`) is not cleared, creating a desynchronization:
+
+1. Controller starts, `referenceTime = time.Now()` (mtls/rotator.go:164)
+2. Startup GC deletes all secrets where `CreationTimestamp.Before(referenceTime)` - which is ALL of them (line 325)
+3. In-memory cache still has cached `TriggerResult` entries for each namespace
+4. Existing runner pods still reference the now-deleted secret names
+5. New reconciliation requests hit cache and return "TLS already generated" (line 264)
+6. Runner pod starts, looks for TLS secret, crashes: "secrets not found"
+
+**Code Location**: `github.com/weaveworks/tf-controller/mtls/rotator.go`
+
+- Bug: Line 164 sets `referenceTime = time.Now()`
+- Bug: Line 180-187 calls forceful GC with this reference time at startup
+- Bug: Line 325 deletes secrets created before "now" (all existing secrets)
+- Cache check: Line 255 returns cached result without verifying secret exists
+
+**Diagnosis**:
+
+```bash
+# 1. Check if TLS secrets exist
+kubectl get secret -n flux-system -l app.kubernetes.io/name=tf-runner
+# Should be empty if bug hit
+
+# 2. Check runner pod logs for specific error
+kubectl logs -n flux-system <terraform-name>-tf-runner
+# Look for: secrets "terraform-runner.tls-XXXXXXXX" not found
+
+# 3. Check controller logs for cache hit
+kubectl logs -n flux-system deployment/tofu-controller-tf-controller --tail=100 | grep "TLS already generated"
+# Controller thinks TLS is generated but it's not
+
+# 4. Check runner pod secret reference
+kubectl get pod -n flux-system <terraform-name>-tf-runner -o yaml | grep tls-secret-name
+# Shows which secret the runner is looking for
+
+# 5. Verify the secret really doesn't exist
+kubectl get secret -n flux-system <secret-name-from-above>
+# Should return: Error from server (NotFound)
+```
+
+**Resolution**:
+
+**Option 1: Restart tofu-controller** (forces cache rebuild):
+
+```bash
+kubectl rollout restart deployment/tofu-controller-tf-controller -n flux-system
+# Wait for controller to restart and regenerate TLS secrets
+sleep 30
+
+# Force reconcile affected Terraform resources
+kubectl annotate terraform <terraform-name> -n flux-system reconcile.fluxcd.io/requestedAt="$(date +%s)" --overwrite
+```
+
+**Option 2: Clear cache via controller restart and force regeneration**:
+
+```bash
+# 1. Restart controller to clear in-memory cache
+kubectl rollout restart deployment/tofu-controller-tf-controller -n flux-system
+
+# 2. Wait for controller to be ready
+kubectl wait --for=condition=available --timeout=60s deployment/tofu-controller-tf-controller -n flux-system
+
+# 3. Delete all stuck runner pods to trigger fresh reconciliation
+kubectl delete pods -n flux-system -l app.kubernetes.io/name=tf-runner
+
+# 4. Controller will regenerate TLS secrets on next reconciliation
+```
+
+**Option 3: Manual cache invalidation** (if Options 1-2 don't work):
+
+```bash
+# Suspend all Terraform resources to clear runner pods
+kubectl get terraform -n flux-system -o name | xargs -I {} kubectl patch {} -p '{"spec":{"suspend":true}}' --type=merge
+
+# Delete all runner pods
+kubectl delete pods -n flux-system -l app.kubernetes.io/name=tf-runner
+
+# Restart controller to clear cache
+kubectl rollout restart deployment/tofu-controller-tf-controller -n flux-system
+kubectl wait --for=condition=available --timeout=60s deployment/tofu-controller-tf-controller -n flux-system
+
+# Resume Terraform resources
+kubectl get terraform -n flux-system -o name | xargs -I {} kubectl patch {} -p '{"spec":{"suspend":false}}' --type=merge
+```
+
+**Prevention**:
+
+- This is an upstream bug in tf-controller - no cluster-side prevention available
+- Monitor runner pods for CrashLoopBackOff after controller restarts
+- Consider filing issue upstream: <https://github.com/weaveworks/tf-controller/issues>
+
+**Upstream Bug Report**: TODO - file issue with tf-controller project
+
+**Proposed Fix**: Change `referenceTime` in rotator.go:164 to use controller start
+time or `time.Now().Add(-cr.CAValidityDuration)` instead of `time.Now()`, so
+startup GC only deletes genuinely expired secrets, not all existing ones.
+
+**Historical Occurrence**:
+
+- 2025-11-19: All Terraform resources affected after investigating Kagent SSO issue
+- Multiple runner pods stuck in CrashLoopBackOff for ~30 minutes
+- Required controller restart to recover
+
 ## 🚨 Fast Path Health Checks
 
 ### Core Cluster Health
