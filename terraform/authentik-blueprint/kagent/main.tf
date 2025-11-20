@@ -95,11 +95,11 @@ resource "null_resource" "assign_kagent_to_outpost" {
 
   provisioner "local-exec" {
     command = <<-EOT
-      curl -f -X PATCH \
-        -H "Authorization: Bearer ${var.authentik_token}" \
-        -H "Content-Type: application/json" \
-        -d '{"providers":[${self.triggers.provider_id}]}' \
-        "${self.triggers.url}/api/v3/outposts/instances/${self.triggers.outpost_uuid}/"
+      wget --method=PATCH \
+        --header="Authorization: Bearer ${var.authentik_token}" \
+        --header="Content-Type: application/json" \
+        --body-data='{"providers":[${self.triggers.provider_id}]}' \
+        -O- "${self.triggers.url}/api/v3/outposts/instances/${self.triggers.outpost_uuid}/"
     EOT
   }
 }
