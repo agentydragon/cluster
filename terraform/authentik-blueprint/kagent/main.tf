@@ -5,6 +5,9 @@ terraform {
     authentik = {
       source = "goauthentik/authentik"
     }
+    null = {
+      source = "hashicorp/null"
+    }
   }
 
   backend "kubernetes" {
@@ -83,21 +86,20 @@ locals {
 
 # Assign Kagent provider to embedded outpost via API
 # UUID is not stable (uuid4()), so we can't use static import
-resource "terraform_data" "assign_kagent_to_outpost" {
-  input = {
+resource "null_resource" "assign_kagent_to_outpost" {
+  triggers = {
     outpost_uuid = local.embedded_outpost_uuid
     provider_id  = authentik_provider_proxy.kagent.id
     url          = var.authentik_url
-    token        = var.authentik_token
   }
 
   provisioner "local-exec" {
     command = <<-EOT
       curl -f -X PATCH \
-        -H "Authorization: Bearer ${self.input.token}" \
+        -H "Authorization: Bearer ${var.authentik_token}" \
         -H "Content-Type: application/json" \
-        -d '{"providers":[${self.input.provider_id}]}' \
-        "${self.input.url}/api/v3/outposts/instances/${self.input.outpost_uuid}/"
+        -d '{"providers":[${self.triggers.provider_id}]}' \
+        "${self.triggers.url}/api/v3/outposts/instances/${self.triggers.outpost_uuid}/"
     EOT
   }
 }
