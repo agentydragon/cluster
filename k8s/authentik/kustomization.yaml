@@ -7,3 +7,4 @@ resources:
   - admin-password-external-secret.yaml
   - token-secret.yaml
   - postgres-external-secret.yaml
+  - kagent-blueprint-configmap.yaml

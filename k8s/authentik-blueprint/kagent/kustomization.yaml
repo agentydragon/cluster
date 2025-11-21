@@ -3,4 +3,3 @@ kind: Kustomization
 resources:
   - flux-kustomization.yaml
   - authentik-provider-tf.yaml
-  - configmap.yaml
