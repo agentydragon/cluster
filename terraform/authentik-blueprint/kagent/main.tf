@@ -5,25 +5,11 @@ terraform {
     authentik = {
       source = "goauthentik/authentik"
     }
-    restful = {
-      source = "magodo/restful"
-    }
   }
 
   backend "kubernetes" {
     secret_suffix = "authentik-blueprint-kagent"
     namespace     = "flux-system"
-  }
-}
-
-provider "restful" {
-  base_url = var.authentik_url
-  security = {
-    http = {
-      token = {
-        token = var.authentik_token
-      }
-    }
   }
 }
 
@@ -74,37 +60,6 @@ resource "authentik_policy_binding" "kagent_access" {
   order  = 0
 }
 
-# Query the embedded outpost UUID dynamically
-# For forward auth, we MUST use the embedded outpost because:
-# - The ingress auth-url points to auth.test-cluster.agentydragon.com
-# - That endpoint is served by the embedded outpost (part of main Authentik server)
-# - Creating a separate outpost would require deploying it as a pod + updating ingress
-data "http" "embedded_outpost" {
-  url = "${var.authentik_url}/api/v3/outposts/instances/?name=${urlencode("authentik Embedded Outpost")}"
-
-  request_headers = {
-    Authorization = "Bearer ${var.authentik_token}"
-    Accept        = "application/json"
-  }
-
-  depends_on = [authentik_provider_proxy.kagent]
-}
-
-locals {
-  embedded_outpost_data = jsondecode(data.http.embedded_outpost.response_body)
-  embedded_outpost_uuid = local.embedded_outpost_data.results[0].pk
-}
-
-# Assign Kagent provider to embedded outpost via API
-# UUID is not stable (uuid4()), so we can't use static import
-# Using restful provider for cleaner API interaction
-resource "restful_operation" "assign_kagent_to_outpost" {
-  path   = "/api/v3/outposts/instances/${local.embedded_outpost_uuid}/"
-  method = "PATCH"
-  header = {
-    Content-Type = "application/json"
-  }
-  body = jsonencode({
-    providers = [authentik_provider_proxy.kagent.id]
-  })
-}
+# Note: Provider assignment to embedded outpost is handled by Authentik blueprint
+# See k8s/authentik-blueprint/kagent/configmap.yaml for declarative configuration
+# The blueprint uses the stable "managed" field instead of unstable UUID
