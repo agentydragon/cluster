@@ -16,6 +16,9 @@ spec:
       interval: 12h
   values:
     controller:
+      # Enable snippet annotations for Authentik forward auth X-Forwarded-Host header
+      allowSnippetAnnotations: true
+
       # Use NodePort to expose on node interfaces (now that Cilium kube-proxy replacement is enabled)
       hostNetwork: false
       hostPort:
