@@ -49,6 +49,8 @@ service:
     type: LoadBalancer
     port: 53
     protocol: Both # TCP and UDP
+    # Preserve source IP for AXFR zone transfers (prevent SNAT from breaking TCP tracking)
+    externalTrafficPolicy: Local
     annotations:
       {}
       # metallb.universe.tf/address-pool: dns-pool
