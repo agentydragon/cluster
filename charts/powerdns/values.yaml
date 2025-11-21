@@ -49,8 +49,10 @@ service:
     type: LoadBalancer
     port: 53
     protocol: Both # TCP and UDP
-    # Preserve source IP for AXFR zone transfers (prevent SNAT from breaking TCP tracking)
-    externalTrafficPolicy: Local
+    # Note: externalTrafficPolicy: Local breaks Tailscale subnet routing
+    # because traffic arrives via controlplane nodes but pod is on worker node
+    # Using default Cluster mode (SNAT) for Tailscale compatibility
+    # externalTrafficPolicy: Local
     annotations:
       {}
       # metallb.universe.tf/address-pool: dns-pool
