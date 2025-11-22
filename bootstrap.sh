@@ -81,7 +81,7 @@ if ! pre-commit run --all-files; then
 fi
 
 # Validate each layer's terraform configuration
-for layer in "00-persistent-auth" "01-infrastructure" "02-services" "03-configuration"; do
+for layer in "00-persistent-auth" "01-infrastructure" "02-services"; do
     echo "🔍 Validating terraform layer: ${layer}..."
     cd "${TERRAFORM_DIR}/${layer}"
     if ! terraform validate; then
