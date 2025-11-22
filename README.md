@@ -153,7 +153,9 @@ Internet (443) → VPS nginx proxy → Tailscale VPN → MetalLB VIP (10.0.3.2:4
 
 - VPS: `~/code/ducktape/ansible/nginx-sites/test-cluster.agentydragon.com.j2`
 - DNS:
-  - VPS PowerDNS delegates `test-cluster.agentydragon.com` → cluster PowerDNS (10.0.3.3)
+  - Cluster PowerDNS (10.0.3.3) is primary authoritative server
+  - VPS PowerDNS is secondary, replicates zone via AXFR over Tailscale
+  - TCP MTU probing enabled for PMTUD blackhole mitigation (see `docs/AXFR_DEBUGGING.md`)
   - Cluster PowerDNS handles Let's Encrypt DNS-01 challenges to obtain SSL certs
 - LoadBalancer: NGINX Ingress uses MetalLB VIP 10.0.3.2 instead of NodePort
 - Cilium: `kubeProxyReplacement: true` with privileged port protection enabled
