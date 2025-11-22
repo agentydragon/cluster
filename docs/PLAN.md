@@ -36,7 +36,7 @@
 
 ### Needs Investigation (Lower Priority)
 
-- [ ] **PowerDNS Operator Restarts** - 33 restarts over 22h (functional but stable enough)
+- None currently
 
 ---
 
@@ -164,11 +164,13 @@
 - **PowerDNS** authoritative server (10.0.3.3)
   - MariaDB backend with Proxmox CSI storage
   - ESO integration for API key management
-  - AXFR configuration for VPS zone replication
+  - AXFR zone replication to VPS (working with TCP MTU probing)
+  - TCP MTU probing enabled for Tailscale PMTUD blackhole mitigation
 - **external-dns** automatic ingress DNS record creation
 - **cert-manager** with PowerDNS webhook for DNS-01 challenges
 - **Tailscale route advertisement** (VPS→Cluster 10.0.3.0/27)
 - **Let's Encrypt certificates** via DNS-01 solver (wildcard support)
+- **Automatic DNS propagation** working end-to-end (3-hour refresh cycle)
 
 ### Platform Services (OPERATIONAL)
 
@@ -224,13 +226,18 @@
 - Primary: Cluster PowerDNS (10.0.3.3) - authoritative source
 - Secondary: VPS PowerDNS - public-facing with AXFR replication
 - Connectivity: Tailscale VPN with route advertisement
+- **TCP MTU probing**: Enabled to handle Tailscale MTU (1280) vs pod MTU (1500) mismatch
 
 **Requirements**:
 
 - Cluster controlplane nodes advertise `10.0.3.0/27` subnet route via Tailscale
 - VPS Tailscale must be configured with `--accept-routes` to receive advertised routes
+- Talos kubelet configured to allow `net.ipv4.tcp_mtu_probing` unsafe sysctl
+- PowerDNS pod runs in privileged namespace with TCP MTU probing enabled
 
-**Rationale**: VPS runs PowerDNS authoritative (not recursor), requires AXFR
+**Rationale**: VPS runs PowerDNS authoritative (not recursor), requires AXFR. TCP MTU probing mitigates PMTUD blackholes caused by Tailscale's lower MTU (RFC 4821).
+
+**See**: `docs/AXFR_DEBUGGING.md` for complete debugging history and solution details
 
 ### Storage Evolution
 
