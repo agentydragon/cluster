@@ -79,6 +79,14 @@ locals {
   embedded_outpost_id = try(jsondecode(data.http.embedded_outpost.response_body).results[0].pk, null)
 }
 
+# Restful provider configuration
+provider "restful" {
+  base_url = var.authentik_url
+  header = {
+    "Authorization" = "Bearer ${var.authentik_token}"
+  }
+}
+
 # Assign Kagent provider to embedded outpost via API
 resource "restful_operation" "assign_provider_to_outpost" {
   path   = "/api/v3/outposts/instances/${local.embedded_outpost_id}/"
@@ -115,14 +123,4 @@ resource "restful_operation" "assign_provider_to_outpost" {
   delete_body = jsonencode({
     providers = []
   })
-}
-
-# Restful provider configuration
-provider "restful" {
-  base_url = var.authentik_url
-  security = {
-    http = {
-      token = var.authentik_token
-    }
-  }
 }
