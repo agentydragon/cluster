@@ -75,16 +75,6 @@ spec:
         - secretRef:
             name: authentik-secret-key
 
-      # Mount blueprint ConfigMaps
-      volumes:
-        - name: kagent-blueprint
-          configMap:
-            name: kagent-blueprint
-      volumeMounts:
-        - name: kagent-blueprint
-          mountPath: /blueprints/custom/kagent
-          readOnly: true
-
       # Service configuration
       service:
         enabled: true

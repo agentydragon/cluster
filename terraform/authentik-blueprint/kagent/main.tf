@@ -5,6 +5,9 @@ terraform {
     authentik = {
       source = "goauthentik/authentik"
     }
+    http = {
+      source = "hashicorp/http"
+    }
   }
 
   backend "kubernetes" {
@@ -60,6 +63,30 @@ resource "authentik_policy_binding" "kagent_access" {
   order  = 0
 }
 
-# Note: Provider assignment to embedded outpost is handled by Authentik blueprint
-# See k8s/authentik-blueprint/kagent/configmap.yaml for declarative configuration
-# The blueprint uses the stable "managed" field instead of unstable UUID
+# Query embedded outpost UUID dynamically
+data "http" "embedded_outpost" {
+  url = "${var.authentik_url}/api/v3/outposts/instances/?managed=goauthentik.io%2Foutposts%2Fembedded"
+  request_headers = {
+    Authorization = "Bearer ${var.authentik_token}"
+    Accept        = "application/json"
+  }
+}
+
+locals {
+  embedded_outpost_id = try(jsondecode(data.http.embedded_outpost.response_body).results[0].pk, null)
+}
+
+# Import and manage the embedded outpost to assign kagent provider
+resource "authentik_outpost" "embedded" {
+  name = "authentik Embedded Outpost"
+  type = "proxy"
+  protocol_providers = [
+    authentik_provider_proxy.kagent.id
+  ]
+}
+
+# Import block to import the existing embedded outpost
+import {
+  to = authentik_outpost.embedded
+  id = local.embedded_outpost_id
+}
