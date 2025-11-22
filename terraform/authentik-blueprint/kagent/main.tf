@@ -88,11 +88,10 @@ resource "null_resource" "assign_provider_to_outpost" {
 
   provisioner "local-exec" {
     command = <<-EOT
-      wget --header="Content-Type: application/json" \
-           --header="Authorization: Bearer ${var.authentik_token}" \
-           --method=PATCH \
-           --body-data='{"providers":[${authentik_provider_proxy.kagent.id}]}' \
-           -O- "${var.authentik_url}/api/v3/outposts/instances/${local.embedded_outpost_id}/"
+      curl -X PATCH "${var.authentik_url}/api/v3/outposts/instances/${local.embedded_outpost_id}/" \
+           -H "Content-Type: application/json" \
+           -H "Authorization: Bearer ${var.authentik_token}" \
+           -d '{"providers":[${authentik_provider_proxy.kagent.id}]}'
     EOT
   }
 }
