@@ -5,8 +5,8 @@ metadata:
   namespace: kagent
 spec:
   type: ExternalName
-  externalName: authentik-server.authentik.svc.cluster.local
+  externalName: ak-outpost-kagent-outpost.authentik.svc.cluster.local
   ports:
     - name: http
-      port: 80
-      targetPort: 80
+      port: 9000
+      targetPort: 9000
