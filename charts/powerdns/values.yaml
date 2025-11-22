@@ -38,8 +38,8 @@ powerdns:
     disable-axfr: "no"
     # Configure as primary server (required for NOTIFY to work)
     primary: "yes"
-    # Send NOTIFY to VPS secondary when zone changes (hostname preferred over IP)
-    also-notify: "agentydragon.com" # VPS - resolves to public IP, reaches secondary via AXFR
+    # Send NOTIFY to VPS secondary when zone changes (IP required, hostnames not supported)
+    also-notify: "172.235.48.86" # VPS public IP (also-notify requires IP, not hostname)
     # Example:
     # local-port: 5353
     # local-address: "0.0.0.0"
