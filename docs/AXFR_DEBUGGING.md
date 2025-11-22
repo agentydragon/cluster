@@ -1,5 +1,7 @@
 # PowerDNS AXFR Zone Transfer Debugging
 
+<!-- markdownlint-disable MD013 -->
+
 **Date:** 2025-11-20 (Updated: 2025-11-22)
 **Status:** ✅ RESOLVED - TCP MTU probing enabled for PMTUD blackhole mitigation
 
@@ -457,7 +459,7 @@ After switching from `externalTrafficPolicy: Local` to `Cluster`, manual AXFR wo
 
 **Evidence from tcpdump:**
 
-```
+```text
 # VPS → Cluster DNS (10.0.3.3)
 01:47:15.108179 IP 100.64.0.3.35854 > 10.0.3.3.53: Flags [S], seq 3942817233, win 64800, options [mss 1440,...], length 0
 01:47:15.108724 IP 10.0.3.3.53 > 100.64.0.3.35854: Flags [S.], seq 3460915750, ack 3942817234, win 64308, options [mss 1460,...], length 0
@@ -483,7 +485,7 @@ After switching from `externalTrafficPolicy: Local` to `Cluster`, manual AXFR wo
 7. VPS sends SACK: "I got 3815:4126 but missing 2587:3815" ⚠️
 8. Retransmissions fail, connection times out after 30s ❌
 
-**Root Cause: PMTUD Blackhole**
+### Root Cause: PMTUD Blackhole
 
 - **Pod MTU**: 1500 bytes (standard Ethernet)
 - **Tailscale MTU**: 1280 bytes (WireGuard overhead reduces from 1500)
@@ -630,7 +632,7 @@ ssh root@agentydragon.com "docker exec powerdns pdnsutil list-zone test-cluster.
 
 From Linux kernel documentation:
 
-```
+```text
 net.ipv4.tcp_mtu_probing - INTEGER
     0 - Disabled (default)
     1 - Disabled by default, enabled when ICMP blackhole detected
