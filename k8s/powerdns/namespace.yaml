@@ -4,3 +4,5 @@ metadata:
   name: dns-system
   labels:
     name: dns-system
+    # Allow unsafe sysctls (net.ipv4.tcp_mtu_probing) for PMTUD blackhole mitigation
+    pod-security.kubernetes.io/enforce: privileged
