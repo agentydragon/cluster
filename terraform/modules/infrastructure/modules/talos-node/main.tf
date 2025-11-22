@@ -29,7 +29,7 @@ locals {
     scsi_hardware = "virtio-scsi-single"
     cpu_type      = "host"
     cpu_cores     = 4
-    memory_mb     = 8 * 1024
+    memory_mb     = 12 * 1024 # 12GB (increased from 8GB)
     vga_type      = "qxl"
     tags          = sort(["talos", var.node_type, "kubernetes", "terraform"])
   }
