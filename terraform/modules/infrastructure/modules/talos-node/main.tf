@@ -115,6 +115,10 @@ locals {
         nodeIP = {
           validSubnets = ["10.0.0.0/16"] # Cluster network range
         }
+        # Allow TCP MTU probing sysctl for PMTUD blackhole mitigation
+        allowedUnsafeSysctls = [
+          "net.ipv4.tcp_mtu_probing"
+        ]
       }
     }
     cluster = {
