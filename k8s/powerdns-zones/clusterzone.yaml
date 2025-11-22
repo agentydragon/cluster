@@ -5,7 +5,7 @@ kind: ClusterZone
 metadata:
   name: test-cluster.agentydragon.com
 spec:
-  kind: Native
+  kind: Master # Master zones send NOTIFY to secondaries for instant replication
   nameservers:
     - ns1.test-cluster.agentydragon.com
     - ns2.test-cluster.agentydragon.com

@@ -8,6 +8,9 @@ terraform {
     http = {
       source = "hashicorp/http"
     }
+    restful = {
+      source = "magodo/restful"
+    }
   }
 
   backend "kubernetes" {
@@ -76,17 +79,50 @@ locals {
   embedded_outpost_id = try(jsondecode(data.http.embedded_outpost.response_body).results[0].pk, null)
 }
 
-# Import and manage the embedded outpost to assign kagent provider
-resource "authentik_outpost" "embedded" {
-  name = "authentik Embedded Outpost"
-  type = "proxy"
-  protocol_providers = [
-    authentik_provider_proxy.kagent.id
-  ]
+# Assign Kagent provider to embedded outpost via API
+resource "restful_operation" "assign_provider_to_outpost" {
+  path   = "/api/v3/outposts/instances/${local.embedded_outpost_id}/"
+  method = "PATCH"
+
+  header = {
+    "Content-Type" = "application/json"
+  }
+
+  body = jsonencode({
+    providers = [
+      tonumber(authentik_provider_proxy.kagent.id)
+    ]
+  })
+
+  # Only update when provider ID changes
+  update_method = "PATCH"
+  update_path   = "/api/v3/outposts/instances/${local.embedded_outpost_id}/"
+  update_header = {
+    "Content-Type" = "application/json"
+  }
+  update_body = jsonencode({
+    providers = [
+      tonumber(authentik_provider_proxy.kagent.id)
+    ]
+  })
+
+  # Delete removes the provider from outpost
+  delete_method = "PATCH"
+  delete_path   = "/api/v3/outposts/instances/${local.embedded_outpost_id}/"
+  delete_header = {
+    "Content-Type" = "application/json"
+  }
+  delete_body = jsonencode({
+    providers = []
+  })
 }
 
-# Import block to import the existing embedded outpost
-import {
-  to = authentik_outpost.embedded
-  id = local.embedded_outpost_id
+# Restful provider configuration
+provider "restful" {
+  base_url = var.authentik_url
+  security = {
+    http = {
+      token = var.authentik_token
+    }
+  }
 }
