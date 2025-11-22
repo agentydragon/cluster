@@ -32,11 +32,7 @@ output "cluster_nodes" {
   }
 }
 
-# STORAGE outputs
-output "storage_configured" {
-  description = "Whether storage CSI driver was configured"
-  value       = module.storage.csi_secret_generated
-}
+# STORAGE outputs removed - CSI configuration handled in 00-persistent-auth layer
 
 # GITOPS outputs
 output "sso_configured" {
