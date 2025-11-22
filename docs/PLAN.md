@@ -247,12 +247,15 @@ blackholes caused by Tailscale's lower MTU (RFC 4821).
 
 **Known Limitation - NOTIFY:**
 
-- Cluster PowerDNS configured as Master with `primary=yes` and `also-notify=100.64.0.3`
-- VPS configured as Slave with `allow-notify-from=100.64.0.0/10`
-- **Issue**: NOTIFY source IP is unpredictable (varies by which node PowerDNS pod runs on)
-- **Result**: VPS rejects NOTIFY as "not a primary" (checks against configured master IP 10.0.3.3)
-- **Current**: AXFR refresh happens every 3 hours via SOA refresh interval (not instant)
-- **Alternatives**: See "DNS Propagation Alternatives" in Research & Evaluation section
+NOTIFY is **not configured** because it doesn't work in Kubernetes environments:
+
+- **Why NOTIFY fails**: PowerDNS pod can run on any cluster node, resulting in unpredictable source IPs
+  (100.64.1.x node Tailscale IPs) for NOTIFY messages
+- **VPS rejection**: Secondary zones check NOTIFY source against configured primary IP (10.0.3.3),
+  reject messages from other IPs as "not a primary"
+- **No fix possible**: Cannot configure all possible node IPs as primaries without breaking DNS delegation
+- **Current approach**: AXFR refresh via SOA refresh interval (3 hours) - reliable but not instant
+- **Alternatives**: See "DNS Propagation Alternatives" in Research & Evaluation section for faster options
 
 **See**: `docs/AXFR_DEBUGGING.md` for complete debugging history and solution details
 
