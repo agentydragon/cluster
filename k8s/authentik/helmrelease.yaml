@@ -33,9 +33,6 @@ spec:
     global:
       deploymentAnnotations:
         secret.reloader.stakater.com/reload: "authentik-secrets"
-      env:
-        - name: AUTHENTIK_HOST
-          value: "https://auth.test-cluster.agentydragon.com"
 
     # Authentik server configuration
     authentik:
@@ -69,6 +66,8 @@ spec:
 
       # Load ESO-generated secret key via envFrom (plus all global secrets)
       envFrom:
+        - configMapRef:
+            name: authentik-host
         - secretRef:
             name: authentik-bootstrap
         - secretRef:
@@ -115,6 +114,8 @@ spec:
 
       # Load ESO-generated secret key via envFrom (plus all global secrets)
       envFrom:
+        - configMapRef:
+            name: authentik-host
         - secretRef:
             name: authentik-bootstrap
         - secretRef:
