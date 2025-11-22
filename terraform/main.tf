@@ -72,13 +72,8 @@ module "infrastructure" {
 
 }
 
-# STORAGE MODULE: Generates CSI secrets for persistent storage
-module "storage" {
-  source     = "./modules/storage"
-  depends_on = [module.infrastructure]
-
-  csi_config = module.pve_auth.csi_config
-}
+# STORAGE MODULE: Removed - CSI configuration now handled in 00-persistent-auth layer
+# CSI secrets are generated independently and sealed for persistence across cluster destroy/recreate
 
 # GITOPS MODULE: SSO services (Authentik, Vault, Harbor, Gitea, Matrix)
 module "gitops" {
