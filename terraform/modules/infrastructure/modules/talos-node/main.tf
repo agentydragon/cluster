@@ -110,15 +110,13 @@ locals {
       kubelet = {
         extraArgs = {
           provider-id = "proxmox://cluster/${var.vm_id}"
+          # Allow TCP MTU probing sysctl for PMTUD blackhole mitigation
+          "allowed-unsafe-sysctls" = "net.ipv4.tcp_mtu_probing"
         }
         # Explicitly set node IP to prevent conflicts with Tailscale IPs
         nodeIP = {
           validSubnets = ["10.0.0.0/16"] # Cluster network range
         }
-        # Allow TCP MTU probing sysctl for PMTUD blackhole mitigation
-        allowedUnsafeSysctls = [
-          "net.ipv4.tcp_mtu_probing"
-        ]
       }
     }
     cluster = {
