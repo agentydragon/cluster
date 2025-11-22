@@ -91,6 +91,13 @@
 
 ### Under Consideration
 
+- [ ] **DNS Propagation Alternatives** - Faster updates than current AXFR
+  - **Option 1: external-dns → VPS PowerDNS API** - Direct API updates via Tailscale
+  - **Option 2: external-dns → Route53** - Bypass VPS, push directly to AWS
+  - **Current issue**: AXFR NOTIFY from cluster has unpredictable source IP (pod can run on any node)
+  - **Current workaround**: AXFR refresh every 3 hours (SOA refresh interval)
+  - **Simple fix**: Reduce SOA refresh to 5-10 minutes
+
 - [ ] **Technitium DNS** - Alternative to PowerDNS (modern, DNSSEC, web UI)
   - Pros: Better architecture, comprehensive features
   - Cons: RFC2136-only integration, newer to K8s ecosystem
@@ -235,7 +242,17 @@
 - Talos kubelet configured to allow `net.ipv4.tcp_mtu_probing` unsafe sysctl
 - PowerDNS pod runs in privileged namespace with TCP MTU probing enabled
 
-**Rationale**: VPS runs PowerDNS authoritative (not recursor), requires AXFR. TCP MTU probing mitigates PMTUD blackholes caused by Tailscale's lower MTU (RFC 4821).
+**Rationale**: VPS runs PowerDNS authoritative (not recursor), requires AXFR. TCP MTU probing mitigates PMTUD
+blackholes caused by Tailscale's lower MTU (RFC 4821).
+
+**Known Limitation - NOTIFY:**
+
+- Cluster PowerDNS configured as Master with `primary=yes` and `also-notify=100.64.0.3`
+- VPS configured as Slave with `allow-notify-from=100.64.0.0/10`
+- **Issue**: NOTIFY source IP is unpredictable (varies by which node PowerDNS pod runs on)
+- **Result**: VPS rejects NOTIFY as "not a primary" (checks against configured master IP 10.0.3.3)
+- **Current**: AXFR refresh happens every 3 hours via SOA refresh interval (not instant)
+- **Alternatives**: See "DNS Propagation Alternatives" in Research & Evaluation section
 
 **See**: `docs/AXFR_DEBUGGING.md` for complete debugging history and solution details
 
