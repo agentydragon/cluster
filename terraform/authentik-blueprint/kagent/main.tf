@@ -33,17 +33,22 @@ data "authentik_flow" "default_authorization_flow" {
   slug = "default-provider-authorization-implicit-consent"
 }
 
+data "authentik_flow" "default_authentication" {
+  slug = "default-authentication-flow"
+}
+
 data "authentik_group" "admins" {
   name = "authentik Admins"
 }
 
 # Kagent Proxy Provider for Forward Auth
 resource "authentik_provider_proxy" "kagent" {
-  name               = "kagent"
-  external_host      = var.kagent_url
-  mode               = "forward_single"
-  authorization_flow = data.authentik_flow.default_authorization_flow.id
-  invalidation_flow  = data.authentik_flow.default_invalidation.id
+  name                = "kagent"
+  external_host       = var.kagent_url
+  mode                = "forward_single"
+  authentication_flow = data.authentik_flow.default_authentication.id
+  authorization_flow  = data.authentik_flow.default_authorization_flow.id
+  invalidation_flow   = data.authentik_flow.default_invalidation.id
 
   # Forward auth doesn't need internal host
   access_token_validity = "hours=1"
