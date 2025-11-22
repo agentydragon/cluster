@@ -36,6 +36,8 @@ powerdns:
     # Enable AXFR for VPS secondary zone
     allow-axfr-ips: "10.0.0.0/8,100.64.0.3" # Allow cluster network and VPS Tailscale IP
     disable-axfr: "no"
+    # Configure as primary server (required for NOTIFY to work)
+    primary: "yes"
     # Send NOTIFY to VPS secondary when zone changes (hostname preferred over IP)
     also-notify: "agentydragon.com" # VPS - resolves to public IP, reaches secondary via AXFR
     # Example:
