@@ -8,8 +8,8 @@ terraform {
     http = {
       source = "hashicorp/http"
     }
-    restful = {
-      source = "magodo/restful"
+    null = {
+      source = "hashicorp/null"
     }
   }
 
@@ -79,48 +79,20 @@ locals {
   embedded_outpost_id = try(jsondecode(data.http.embedded_outpost.response_body).results[0].pk, null)
 }
 
-# Restful provider configuration
-provider "restful" {
-  base_url = var.authentik_url
-  header = {
-    "Authorization" = "Bearer ${var.authentik_token}"
-  }
-}
-
 # Assign Kagent provider to embedded outpost via API
-resource "restful_operation" "assign_provider_to_outpost" {
-  path   = "/api/v3/outposts/instances/${local.embedded_outpost_id}/"
-  method = "PATCH"
-
-  header = {
-    "Content-Type" = "application/json"
+resource "null_resource" "assign_provider_to_outpost" {
+  triggers = {
+    provider_id = authentik_provider_proxy.kagent.id
+    outpost_id  = local.embedded_outpost_id
   }
 
-  body = jsonencode({
-    providers = [
-      tonumber(authentik_provider_proxy.kagent.id)
-    ]
-  })
-
-  # Only update when provider ID changes
-  update_method = "PATCH"
-  update_path   = "/api/v3/outposts/instances/${local.embedded_outpost_id}/"
-  update_header = {
-    "Content-Type" = "application/json"
+  provisioner "local-exec" {
+    command = <<-EOT
+      wget --header="Content-Type: application/json" \
+           --header="Authorization: Bearer ${var.authentik_token}" \
+           --method=PATCH \
+           --body-data='{"providers":[${authentik_provider_proxy.kagent.id}]}' \
+           -O- "${var.authentik_url}/api/v3/outposts/instances/${local.embedded_outpost_id}/"
+    EOT
   }
-  update_body = jsonencode({
-    providers = [
-      tonumber(authentik_provider_proxy.kagent.id)
-    ]
-  })
-
-  # Delete removes the provider from outpost
-  delete_method = "PATCH"
-  delete_path   = "/api/v3/outposts/instances/${local.embedded_outpost_id}/"
-  delete_header = {
-    "Content-Type" = "application/json"
-  }
-  delete_body = jsonencode({
-    providers = []
-  })
 }
