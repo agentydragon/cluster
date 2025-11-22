@@ -9,4 +9,5 @@ resources:
   - anthropic-secret.yaml
   - crds-helmrelease.yaml
   - helmrelease.yaml
+  - authentik-proxy-service.yaml
   - ingress.yaml
