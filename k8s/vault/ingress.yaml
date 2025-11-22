@@ -13,7 +13,7 @@ spec:
   tls:
     - hosts:
         - vault.test-cluster.agentydragon.com
-      secretName: vault-tls
+      secretName: vault-ingress-tls
   rules:
     - host: vault.test-cluster.agentydragon.com
       http:

@@ -5,4 +5,7 @@ resources:
   - rbac.yaml
   - instance.yaml
   - ingress.yaml
-  # Note: Certificate is automatically created by cert-manager from ingress annotation
+  # TLS certificates - split internal (self-signed) and external (Let's Encrypt)
+  - internal-tls-issuer.yaml
+  - internal-tls-certificate.yaml
+  - certificate.yaml # External ingress certificate (Let's Encrypt)

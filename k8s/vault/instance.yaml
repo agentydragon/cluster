@@ -12,8 +12,8 @@ spec:
   # TODO: IPC_LOCK should not require particularly wide privileges - investigate capability restrictions
   bankVaultsImage: "ghcr.io/bank-vaults/bank-vaults:v1.32.0"
 
-  # TLS certificate managed by cert-manager
-  existingTlsSecretName: vault-tls
+  # TLS certificate for internal pod-to-pod communication
+  existingTlsSecretName: vault-internal-tls
 
   # Storage configuration - each replica gets its own PVC
   volumeClaimTemplates:
