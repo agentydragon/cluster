@@ -38,8 +38,8 @@ powerdns:
     disable-axfr: "no"
     # Configure as primary server (required for NOTIFY to work)
     primary: "yes"
-    # Send NOTIFY to VPS secondary when zone changes (IP required, hostnames not supported)
-    also-notify: "172.235.48.86" # VPS public IP (also-notify requires IP, not hostname)
+    # Send NOTIFY to VPS secondary when zone changes via Tailscale (IP required, hostnames not supported)
+    also-notify: "100.64.0.3" # VPS Tailscale IP (avoids NAT, whitelisted on VPS side)
     # Example:
     # local-port: 5353
     # local-address: "0.0.0.0"

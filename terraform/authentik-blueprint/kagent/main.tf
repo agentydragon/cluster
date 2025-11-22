@@ -66,32 +66,9 @@ resource "authentik_policy_binding" "kagent_access" {
   order  = 0
 }
 
-# Query embedded outpost UUID dynamically
-data "http" "embedded_outpost" {
-  url = "${var.authentik_url}/api/v3/outposts/instances/?managed=goauthentik.io%2Foutposts%2Fembedded"
-  request_headers = {
-    Authorization = "Bearer ${var.authentik_token}"
-    Accept        = "application/json"
-  }
-}
-
-locals {
-  embedded_outpost_id = try(jsondecode(data.http.embedded_outpost.response_body).results[0].pk, null)
-}
-
-# Assign Kagent provider to embedded outpost via API
-resource "null_resource" "assign_provider_to_outpost" {
-  triggers = {
-    provider_id = authentik_provider_proxy.kagent.id
-    outpost_id  = local.embedded_outpost_id
-  }
-
-  provisioner "local-exec" {
-    command = <<-EOT
-      curl -X PATCH "${var.authentik_url}/api/v3/outposts/instances/${local.embedded_outpost_id}/" \
-           -H "Content-Type: application/json" \
-           -H "Authorization: Bearer ${var.authentik_token}" \
-           -d '{"providers":[${authentik_provider_proxy.kagent.id}]}'
-    EOT
-  }
-}
+# Note: The Kagent proxy provider must be manually assigned to the embedded outpost
+# This can be done via the Authentik admin UI: Admin Interface -> Outposts -> authentik Embedded Outpost
+# Or via API:
+#   curl -X PATCH "https://auth.test-cluster.agentydragon.com/api/v3/outposts/instances/<outpost-id>/" \
+#     -H "Content-Type: application/json" -H "Authorization: Bearer <token>" \
+#     -d '{"providers":[<provider-id>]}'
