@@ -25,19 +25,8 @@ provider "flux" {
   }
 }
 
-# Vault provider - connects to in-cluster Vault for secret storage
-# Note: Vault must be deployed and unsealed before running this
-data "kubernetes_secret" "vault_root_token" {
-  metadata {
-    name      = "instance-unseal-keys"
-    namespace = "vault"
-  }
-}
-
-provider "vault" {
-  address = "http://localhost:8200" # via kubectl port-forward
-  token   = data.kubernetes_secret.vault_root_token.data["vault-root"]
-}
+# Vault secrets managed by tofu-controller after Flux deploys Vault
+# See: terraform/gitops/secrets/ for Vault secret management
 
 # Test Kubernetes connectivity
 resource "kubernetes_namespace" "test" {
@@ -51,7 +40,6 @@ resource "flux_bootstrap_git" "cluster" {
   path = "k8s"
   depends_on = [
     kubernetes_namespace.test,
-    vault_kv_secret_v2.harbor_admin_password, # Ensure Vault secrets exist before Flux deploys apps
   ]
 }
 
