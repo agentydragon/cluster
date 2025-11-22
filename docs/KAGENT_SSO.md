@@ -7,7 +7,9 @@
 
 ### What is an Outpost?
 
-An **Authentik Outpost** is a component that sits between your application and users, handling authentication. Think of it as an authentication proxy/gateway. Outposts can operate in different modes:
+An **Authentik Outpost** is a component that sits between your application and
+users, handling authentication. Think of it as an authentication proxy/gateway.
+Outposts can operate in different modes:
 
 - **Proxy mode**: Acts as a reverse proxy (like Authelia)
 - **Forward auth mode**: Works with existing reverse proxies (NGINX, Traefik, Envoy)
@@ -16,7 +18,9 @@ An **Authentik Outpost** is a component that sits between your application and u
 
 ### The Embedded Outpost
 
-Authentik includes a **built-in embedded outpost** that runs inside the main Authentik server pod. This is managed by Authentik itself (hence `managed: goauthentik.io/outposts/embedded`).
+Authentik includes a **built-in embedded outpost** that runs inside the main
+Authentik server pod. This is managed by Authentik itself (hence
+`managed: goauthentik.io/outposts/embedded`).
 
 **Where it runs:**
 
@@ -33,7 +37,9 @@ Authentik includes a **built-in embedded outpost** that runs inside the main Aut
 - `/outpost.goauthentik.io/callback` - OAuth callback handler
 - `/outpost.goauthentik.io/sign_out` - Logout endpoint
 
-The embedded outpost is **part of the same Python/Django process** as the main Authentik server - it's not a separate binary or container. The URLs are handled by the same ASGI/WSGI application.
+The embedded outpost is **part of the same Python/Django process** as the main
+Authentik server - it's not a separate binary or container. The URLs are handled
+by the same ASGI/WSGI application.
 
 Benefits:
 
@@ -50,11 +56,12 @@ You can also deploy **external outposts** as separate pods for:
 
 ### How Forward Auth Works
 
-Forward auth is a pattern where NGINX (or another reverse proxy) delegates authentication to an external service:
+Forward auth is a pattern where NGINX (or another reverse proxy) delegates
+authentication to an external service:
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────────┐
-│                         Request Flow                            │
+│                    Request Flow                                 │
 └─────────────────────────────────────────────────────────────────┘
 
 1. User → https://kagent.test-cluster.agentydragon.com
@@ -93,7 +100,9 @@ Forward auth is a pattern where NGINX (or another reverse proxy) delegates authe
 
 ### The Key Configuration Pattern
 
-**Important**: The Kagent ingress uses a clever pattern - it routes `/outpost.goauthentik.io/*` paths on the Kagent domain to the Authentik service. This means:
+**Important**: The Kagent ingress uses a clever pattern - it routes
+`/outpost.goauthentik.io/*` paths on the Kagent domain to the Authentik service.
+This means:
 
 - `https://kagent.test-cluster.agentydragon.com/` → Kagent UI
 - `https://kagent.test-cluster.agentydragon.com/outpost.goauthentik.io/*` → Authentik embedded outpost
@@ -150,7 +159,9 @@ Now when requests come in:
 
 ## Context
 
-Kagent is deployed and accessible at `kagent.test-cluster.agentydragon.com` with an ingress configured for forward auth via Authentik embedded outpost. The goal is to protect access with SSO authentication.
+Kagent is deployed and accessible at `kagent.test-cluster.agentydragon.com` with
+an ingress configured for forward auth via Authentik embedded outpost. The goal
+is to protect access with SSO authentication.
 
 ### Current State
 
@@ -161,7 +172,8 @@ Kagent is deployed and accessible at `kagent.test-cluster.agentydragon.com` with
 
 ## Problem Summary
 
-The Kagent proxy provider needs to be assigned to Authentik's embedded outpost for forward auth to work. Multiple terraform approaches failed due to:
+The Kagent proxy provider needs to be assigned to Authentik's embedded outpost for
+forward auth to work. Multiple terraform approaches failed due to:
 
 1. Import block syntax not supported
 2. `restful_operation` resource missing required arguments
@@ -171,7 +183,9 @@ The Kagent proxy provider needs to be assigned to Authentik's embedded outpost f
 
 ### PostgreSQL Rebuild Impact
 
-Earlier in the session, we recreated the Authentik PostgreSQL pod/PVC to fix credential issues. This wiped the database, requiring Authentik to bootstrap from scratch:
+Earlier in the session, we recreated the Authentik PostgreSQL pod/PVC to fix
+credential issues. This wiped the database, requiring Authentik to bootstrap from
+scratch:
 
 - Default flows and groups recreated successfully
 - Terraform-managed resources (Grafana, Harbor, Vault OAuth providers) recreated
@@ -236,7 +250,8 @@ Successfully assigned Kagent provider (ID: 3) to embedded outpost via API:
 
 ```bash
 TOKEN=$(cat /tmp/new_bootstrap_token.txt | tr -d '\n')
-curl -X PATCH "https://auth.test-cluster.agentydragon.com/api/v3/outposts/instances/aa904b56-e70b-4f6e-a706-5765ac9fbf2b/" \
+curl -X PATCH \
+  "https://auth.test-cluster.agentydragon.com/api/v3/outposts/instances/aa904b56-e70b-4f6e-a706-5765ac9fbf2b/" \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer $TOKEN" \
   -d '{"providers":[3]}'
@@ -250,7 +265,7 @@ curl -X PATCH "https://auth.test-cluster.agentydragon.com/api/v3/outposts/instan
 
 **Result**:
 
-```
+```http
 HTTP/2 302
 location: https://kagent.test-cluster.agentydragon.com/outpost.goauthentik.io/start?rd=...
 set-cookie: authentik_proxy_session_9ee21266-2aae-4c4f-aa15-7df92f6799de; Path=/; ...

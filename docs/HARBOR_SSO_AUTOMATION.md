@@ -261,7 +261,7 @@ curl -X PUT "https://harbor.example.com/api/v2.0/configurations" \
 ### Configuration Parameters
 
 | Parameter | Value | Source |
-|-----------|-------|--------|
+| --------- | ----- | ------ |
 | `auth_mode` | `"oidc_auth"` | Hardcoded |
 | `oidc_name` | `"authentik"` | Hardcoded |
 | `oidc_endpoint` | `"https://auth.test-cluster.agentydragon.com/application/o/harbor/"` | Variable |

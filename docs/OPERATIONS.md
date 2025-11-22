@@ -314,7 +314,7 @@ authentication failures. Consider filing upstream issue if this becomes frequent
 ### Node IP Assignments
 
 | Node | VM ID | IP Address | Role |
-|------|-------|------------|------|
+| ---- | ----- | ---------- | ---- |
 | controlplane0 | 1500 | 10.0.1.1 | Controller |
 | controlplane1 | 1501 | 10.0.1.2 | Controller |
 | controlplane2 | 1502 | 10.0.1.3 | Controller |
@@ -324,7 +324,7 @@ authentication failures. Consider filing upstream issue if this becomes frequent
 ### VIP Assignments
 
 | Service | IP Address | Pool | Purpose |
-|---------|------------|------|---------|
+| ------- | ---------- | ---- | ------- |
 | **Cluster API** | 10.0.3.1 | - | Kubernetes API HA VIP |
 | **Ingress** | 10.0.3.2 | ingress-pool | NGINX Ingress LoadBalancer |
 | **PowerDNS** | 10.0.3.3 | dns-pool | DNS server LoadBalancer |

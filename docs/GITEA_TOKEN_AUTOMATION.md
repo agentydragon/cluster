@@ -215,7 +215,7 @@ Option 1 best aligns with project requirements:
 
 ### Architecture
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────┐
 │ Bootstrap Flow                                              │
 ├─────────────────────────────────────────────────────────────┤
@@ -299,7 +299,8 @@ Alternative: Use token UUID/timestamp suffix for uniqueness, always create new t
 
 ### Terraform Gitea Provider Token Resource
 
-The Gitea Terraform provider has a `gitea_token` resource, but it requires an existing admin token to create tokens - circular dependency.
+The Gitea Terraform provider has a `gitea_token` resource, but it requires
+an existing admin token to create tokens - circular dependency.
 
 ### API Token from Database
 
