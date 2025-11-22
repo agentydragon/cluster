@@ -71,9 +71,25 @@ resource "authentik_policy_binding" "kagent_access" {
   order  = 0
 }
 
-# Note: The Kagent proxy provider must be manually assigned to the embedded outpost
-# This can be done via the Authentik admin UI: Admin Interface -> Outposts -> authentik Embedded Outpost
-# Or via API:
-#   curl -X PATCH "https://auth.test-cluster.agentydragon.com/api/v3/outposts/instances/<outpost-id>/" \
-#     -H "Content-Type: application/json" -H "Authorization: Bearer <token>" \
-#     -d '{"providers":[<provider-id>]}'
+# Query the existing Kubernetes service connection (created by Authentik chart)
+data "authentik_service_connection_kubernetes" "local" {
+  name = "Local Kubernetes Cluster"
+}
+
+# Create dedicated outpost for Kagent (fully declarative, no import needed)
+resource "authentik_outpost" "kagent" {
+  name               = "kagent-outpost"
+  type               = "proxy"
+  service_connection = data.authentik_service_connection_kubernetes.local.id
+
+  # Assign Kagent provider
+  protocol_providers = [
+    authentik_provider_proxy.kagent.id
+  ]
+
+  # Configure authentik_host for OAuth redirects (fixes http://0.0.0.0:9000 issue)
+  config = jsonencode({
+    authentik_host         = var.authentik_url
+    authentik_host_browser = ""
+  })
+}
