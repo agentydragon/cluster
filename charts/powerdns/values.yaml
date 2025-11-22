@@ -125,6 +125,10 @@ podSecurityContext:
   fsGroup: 953
   seccompProfile:
     type: RuntimeDefault
+  # TCP MTU probing to handle PMTUD blackholes (Tailscale MTU 1280 < pod MTU 1500)
+  sysctls:
+    - name: net.ipv4.tcp_mtu_probing
+      value: "1"
 
 # Node selection
 nodeSelector: {}
