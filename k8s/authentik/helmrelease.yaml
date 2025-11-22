@@ -64,6 +64,11 @@ spec:
       name: server
       replicas: 1
 
+      # Environment variables for embedded outpost
+      env:
+        - name: AUTHENTIK_HOST
+          value: "https://auth.test-cluster.agentydragon.com"
+
       # Load ESO-generated secret key via envFrom (plus all global secrets)
       envFrom:
         - secretRef:
