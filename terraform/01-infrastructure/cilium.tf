@@ -42,6 +42,7 @@ resource "helm_release" "cilium_bootstrap" {
   depends_on = [
     null_resource.wait_for_k8s_api, # Wait for k8s API readiness via bash check
     null_resource.add_cilium_repo,
+    null_resource.cleanup_pvcs, # Ensure PVC cleanup runs before CNI is destroyed
     local_file.kubeconfig
   ]
 }
