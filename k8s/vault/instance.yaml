@@ -44,14 +44,18 @@ spec:
           # All cluster members listed for automatic discovery and sequential joining
           # Bank-Vaults creates StatefulSet pods: instance-0, instance-1, instance-2
           - leader_api_addr: "https://instance-0.vault.svc.cluster.local:8200"
+            leader_ca_cert_file: "/vault/tls/ca.crt"
           - leader_api_addr: "https://instance-1.vault.svc.cluster.local:8200"
+            leader_ca_cert_file: "/vault/tls/ca.crt"
           - leader_api_addr: "https://instance-2.vault.svc.cluster.local:8200"
+            leader_ca_cert_file: "/vault/tls/ca.crt"
     listener:
       tcp:
         address: "0.0.0.0:8200"
         cluster_address: "0.0.0.0:8201"
         tls_cert_file: /vault/tls/server.crt
         tls_key_file: /vault/tls/server.key
+        tls_client_ca_file: /vault/tls/ca.crt
     # Required addresses for Raft cluster communication
     # References: https://github.com/bank-vaults/vault-operator/blob/main/deploy/examples/
     # api_addr: External address for client requests (load-balanced service)
