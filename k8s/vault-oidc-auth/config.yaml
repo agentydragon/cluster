@@ -27,15 +27,13 @@ spec:
             items:
               - key: ca.crt
                 path: ca.crt
-      containers:
-        - name: tf-runner
-          volumeMounts:
-            - name: vault-ca
-              mountPath: /vault/tls
-              readOnly: true
-          env:
-            - name: VAULT_CACERT
-              value: /vault/tls/ca.crt
+      volumeMounts:
+        - name: vault-ca
+          mountPath: /vault/tls
+          readOnly: true
+      env:
+        - name: VAULT_CACERT
+          value: /vault/tls/ca.crt
 
   # Store Terraform state in Kubernetes secret
   backendConfig:
