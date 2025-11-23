@@ -100,3 +100,54 @@ data "terraform_remote_state" "persistent_auth" {
 # STORAGE: CSI sealed secrets generated in 00-persistent-auth layer
 # No module needed here - persistent auth layer handles sealed secret generation
 # CSI driver deployed by GitOps using sealed secrets from persistent layer
+
+# PVC cleanup on destroy - remove Proxmox volumes that survive cluster teardown
+resource "null_resource" "cleanup_pvcs" {
+  # Run this cleanup when infrastructure is destroyed
+  provisioner "local-exec" {
+    when    = destroy
+    command = <<-EOT
+      set -e
+      echo "🧹 Cleaning up orphaned PVCs from Proxmox storage..."
+
+      # Check if kubeconfig exists and cluster is accessible
+      if [ ! -f "${path.module}/kubeconfig" ]; then
+        echo "ℹ️  No kubeconfig found - cluster already destroyed, skipping PVC cleanup"
+        exit 0
+      fi
+
+      # Try to connect to cluster
+      if ! kubectl --kubeconfig="${path.module}/kubeconfig" cluster-info &>/dev/null; then
+        echo "ℹ️  Cluster not accessible - already destroyed, skipping PVC cleanup"
+        exit 0
+      fi
+
+      # Get all PVCs using proxmox-csi-retain storage class
+      PVCS=$(kubectl --kubeconfig="${path.module}/kubeconfig" get pvc -A \
+        -o jsonpath='{range .items[?(@.spec.storageClassName=="proxmox-csi-retain")]}{.metadata.namespace}/{.metadata.name}{"\n"}{end}')
+
+      if [ -z "$PVCS" ]; then
+        echo "ℹ️  No PVCs with proxmox-csi-retain found"
+        exit 0
+      fi
+
+      echo "📋 Found PVCs to delete:"
+      echo "$PVCS"
+
+      # Delete each PVC
+      echo "$PVCS" | while IFS='/' read -r namespace name; do
+        if [ -n "$namespace" ] && [ -n "$name" ]; then
+          echo "🗑️  Deleting PVC: $namespace/$name"
+          kubectl --kubeconfig="${path.module}/kubeconfig" delete pvc "$name" -n "$namespace" --ignore-not-found=true
+        fi
+      done
+
+      echo "✅ PVC cleanup complete"
+    EOT
+  }
+
+  depends_on = [
+    module.infrastructure,
+    local_file.kubeconfig
+  ]
+}
