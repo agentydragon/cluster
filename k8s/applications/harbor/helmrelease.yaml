@@ -86,6 +86,9 @@ spec:
     # Registry configuration
     registry:
       replicas: 1
+      # Use Recreate strategy for RWO volume compatibility
+      strategy:
+        type: Recreate
       resources:
         requests:
           memory: 256Mi
@@ -137,6 +140,9 @@ spec:
     # Job service
     jobservice:
       replicas: 1
+      # Use Recreate strategy for RWO volume compatibility
+      strategy:
+        type: Recreate
       resources:
         requests:
           memory: 256Mi
