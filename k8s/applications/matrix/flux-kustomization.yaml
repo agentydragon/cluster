@@ -17,7 +17,7 @@ spec:
       namespace: flux-system
     - name: cert-manager
       namespace: flux-system
-    - name: vault
+    - name: authentik-blueprint-matrix # Wait for Authentik OIDC application to be created
       namespace: flux-system
     - name: external-secrets-config
       namespace: flux-system

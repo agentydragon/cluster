@@ -13,9 +13,7 @@ spec:
   prune: true
   wait: true
   dependsOn:
-    - name: matrix # Wait for matrix base app
-      namespace: flux-system
     - name: authentik # Wait for authentik to be ready
       namespace: flux-system
-    - name: external-secrets-config # Wait for ESO to be configured
+    - name: sso-secrets # Wait for Matrix client secret from Vault
       namespace: flux-system
