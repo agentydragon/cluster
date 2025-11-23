@@ -1,0 +1,21 @@
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: authentik-blueprint-gitea-provider
+  namespace: flux-system
+spec:
+  interval: 10m
+  timeout: 5m
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+  path: "./k8s/authentik-blueprint/gitea-provider"
+  prune: true
+  wait: true
+  dependsOn:
+    - name: authentik-blueprint-gitea-secret # Wait for secret to exist
+      namespace: flux-system
+    - name: gitea # Wait for gitea base app
+      namespace: flux-system
+    - name: authentik # Wait for authentik to be ready
+      namespace: flux-system

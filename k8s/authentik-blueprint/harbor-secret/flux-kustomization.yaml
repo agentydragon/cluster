@@ -1,7 +1,7 @@
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
-  name: authentik-blueprint-matrix
+  name: authentik-blueprint-harbor-secret
   namespace: flux-system
 spec:
   interval: 10m
@@ -9,11 +9,11 @@ spec:
   sourceRef:
     kind: GitRepository
     name: flux-system
-  path: "./k8s/authentik-blueprint/matrix"
+  path: "./k8s/authentik-blueprint/harbor-secret"
   prune: true
   wait: true
   dependsOn:
-    - name: authentik # Wait for authentik to be ready
+    - name: harbor # Wait for Harbor namespace and app
       namespace: flux-system
-    - name: sso-secrets # Wait for Matrix client secret from Vault
+    - name: authentik-blueprint-harbor-provider # Wait for provider to be created
       namespace: flux-system

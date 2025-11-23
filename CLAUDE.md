@@ -190,12 +190,23 @@ Where "everything" means everything currently in PLAN.md scope as specified by u
 1. You have turnkey `./bootstrap.sh` (the ONLY supported method)
 2. That **reliably** results in everything in-scope functioning
 3. **Without needing ANY further manual tweaks**
+4. **All in-scope applications have working SSO authentication**
 
 **Completion criteria:**
 
 - `terraform destroy` → `./bootstrap.sh` → run all health checks
 - **If ANY component is unhealthy, it does NOT work by definition**
+- **If ANY in-scope application lacks functional SSO login, it does NOT work**
 - No declaring "good enough" or aborting work on broken turnkey flow
+
+**SSO Verification Requirements:**
+
+Applications with SSO in scope must have:
+
+- OIDC provider application created in Authentik
+- Application-specific OIDC secrets synced to application namespace
+- SSO login flow working end-to-end (user can log in via Authentik)
+- Automated provisioning working (no manual user creation required)
 
 **Only hand over as "it works" after full destroy→bootstrap→verify cycle passes.**
 
@@ -218,6 +229,61 @@ Where "everything" means everything currently in PLAN.md scope as specified by u
 terraform destroy --auto-approve
 ./bootstrap.sh
 # Verify: does it work end-to-end declaratively?
+```
+
+### SSO Integration Architecture
+
+**Split Blueprint Pattern**: Authentik SSO integration uses a two-blueprint approach to handle namespace dependencies.
+
+**Pattern Structure:**
+
+1. **Provider Blueprint** (`authentik-blueprint-{app}-provider`)
+   - Lives in `terraform/03-configuration/authentik-blueprints/`
+   - Creates OIDC application in Authentik (authentik namespace)
+   - Generates client ID and client secret
+   - No dependency on target application namespace existing
+
+2. **Secret Blueprint** (`authentik-blueprint-{app}-secret`)
+   - Lives in `k8s/{app}/` with application manifests
+   - Creates ExternalSecret in application namespace
+   - Pulls OIDC credentials from Vault
+   - Depends on: provider blueprint → app namespace created → secret blueprint
+
+**Why This Pattern:**
+
+- **Circular dependency prevention**: Application namespace doesn't exist until Flux creates it
+- **Provider-first creation**: OIDC application must exist before secrets can be generated
+- **Clean separation**: Infrastructure (Terraform) vs. Application (Flux GitOps)
+
+## Example: Gitea SSO Integration
+
+```text
+terraform/03-configuration/authentik-blueprints/gitea-provider.yaml
+  ↓ (creates OIDC app in Authentik, stores credentials in Vault)
+k8s/gitea/ namespace creation by Flux
+  ↓
+k8s/gitea/authentik-blueprint-gitea-secret.yaml
+  ↓ (ExternalSecret pulls from Vault)
+k8s/gitea/helmrelease.yaml
+  ↓ (consumes oidc-credentials secret for SSO config)
+Gitea pod with working SSO
+```
+
+**Verification Commands:**
+
+```bash
+# Check provider blueprint applied
+kubectl get terraform -n flux-system authentik-blueprint-gitea-provider
+
+# Check secret exists in app namespace
+kubectl get secret oidc-credentials -n gitea
+
+# Check ExternalSecret synced
+kubectl get externalsecret -n gitea
+
+# Test SSO login flow (requires browser/agent access)
+# Navigate to https://gitea.test-cluster.agentydragon.com
+# Click "Sign in with OpenID Connect"
 ```
 
 ## Bootstrap Script - ONLY Supported Method

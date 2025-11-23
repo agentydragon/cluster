@@ -1,11 +1,11 @@
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
-  name: monitoring
+  name: monitoring-stack
   namespace: flux-system
 spec:
   interval: 10m
-  path: ./k8s/monitoring
+  path: ./k8s/monitoring-stack
   prune: true
   sourceRef:
     kind: GitRepository
@@ -17,9 +17,7 @@ spec:
       namespace: monitoring
   timeout: 10m
   dependsOn:
-    - name: storage
+    - name: monitoring-namespace
     - name: ingress-nginx
     - name: cert-manager-config
-# Note: grafana-oauth-client-secret created by authentik-blueprint-grafana-secret
-# We don't add hard dependency to avoid circular dependency (secret needs monitoring namespace)
-# HelmRelease will fail initially if secret missing, Flux auto-retries until secret exists
+    - name: authentik-blueprint-grafana-secret

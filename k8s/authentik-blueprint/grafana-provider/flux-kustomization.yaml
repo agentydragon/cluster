@@ -1,0 +1,17 @@
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: authentik-blueprint-grafana-provider
+  namespace: flux-system
+spec:
+  interval: 10m
+  path: ./k8s/authentik-blueprint/grafana-provider
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+  dependsOn:
+    - name: authentik
+      namespace: flux-system
+    - name: sso-secrets
+      namespace: flux-system

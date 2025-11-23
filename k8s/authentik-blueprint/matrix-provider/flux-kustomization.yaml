@@ -1,7 +1,7 @@
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
-  name: authentik-blueprint-gitea
+  name: authentik-blueprint-matrix-provider
   namespace: flux-system
 spec:
   interval: 10m
@@ -9,13 +9,11 @@ spec:
   sourceRef:
     kind: GitRepository
     name: flux-system
-  path: "./k8s/authentik-blueprint/gitea"
+  path: "./k8s/authentik-blueprint/matrix-provider"
   prune: true
   wait: true
   dependsOn:
-    - name: gitea # Wait for gitea base app
+    - name: authentik # Wait for Authentik to be ready
       namespace: flux-system
-    - name: authentik # Wait for authentik to be ready
-      namespace: flux-system
-    - name: external-secrets-config # Wait for ESO to be configured
+    - name: sso-secrets # Wait for Matrix client secret from Vault
       namespace: flux-system
