@@ -67,8 +67,9 @@ resource "random_password" "authentik_api_token" {
 }
 
 # Store all SSO client secrets in Vault for retrieval by applications
-resource "vault_generic_secret" "sso_client_secrets" {
-  path = "kv/sso/client-secrets"
+resource "vault_kv_secret_v2" "sso_client_secrets" {
+  mount = "kv"
+  name  = "sso/client-secrets"
 
   data_json = jsonencode({
     harbor_client_secret = random_password.harbor_client_secret.result
