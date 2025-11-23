@@ -100,9 +100,6 @@ data "terraform_remote_state" "persistent_auth" {
 # STORAGE: CSI sealed secrets generated in 00-persistent-auth layer
 # No module needed here - persistent auth layer handles sealed secret generation
 # CSI driver deployed by GitOps using sealed secrets from persistent layer
-
-# NOTE: PVC cleanup cannot be done reliably via Terraform destroy provisioners
-# because the cluster becomes inaccessible during terraform destroy before provisioner runs.
-# PVCs with proxmox-csi-retain storage class must be cleaned manually:
-#   kubectl delete pvc -A --all --field-selector=spec.storageClassName=proxmox-csi-retain
-# Or will be cleaned on next bootstrap if cluster is recreated.
+#
+# NOTE: PVC cleanup handled by destroy provisioner on helm_release.cilium_bootstrap
+# (see cilium.tf) - runs while cluster is still accessible during CNI teardown

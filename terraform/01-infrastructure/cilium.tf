@@ -39,6 +39,29 @@ resource "helm_release" "cilium_bootstrap" {
     ]
   }
 
+  # Clean up PVCs before Cilium is destroyed (while cluster is still accessible)
+  provisioner "local-exec" {
+    when    = destroy
+    command = <<-EOT
+      echo "🧹 Cleaning up orphaned PVCs before cluster teardown..."
+
+      # Get all PVCs with proxmox-csi-retain storage class
+      PVCS=$(kubectl --kubeconfig="${path.module}/kubeconfig" get pvc -A \
+        -o jsonpath='{range .items[?(@.spec.storageClassName=="proxmox-csi-retain")]}{.metadata.namespace}/{.metadata.name}{"\n"}{end}' 2>/dev/null || true)
+
+      if [ -n "$PVCS" ]; then
+        echo "📋 Found PVCs to delete:"
+        echo "$PVCS"
+        echo "$PVCS" | while IFS='/' read -r ns name; do
+          [ -n "$ns" ] && [ -n "$name" ] && kubectl --kubeconfig="${path.module}/kubeconfig" delete pvc "$name" -n "$ns" --ignore-not-found=true --wait=false
+        done
+        echo "✅ PVC cleanup initiated"
+      else
+        echo "ℹ️  No PVCs found to clean up"
+      fi
+    EOT
+  }
+
   depends_on = [
     null_resource.wait_for_k8s_api, # Wait for k8s API readiness via bash check
     null_resource.add_cilium_repo,
