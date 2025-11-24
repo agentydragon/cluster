@@ -10,7 +10,7 @@ spec:
   zoneRef:
     kind: ClusterZone
     name: test-cluster.agentydragon.com
-  name: ns1.test-cluster.agentydragon.com
+  name: ns1 # Relative to zone
   type: A
   ttl: 3600
   records:
@@ -24,7 +24,7 @@ spec:
   zoneRef:
     kind: ClusterZone
     name: test-cluster.agentydragon.com
-  name: ns2.test-cluster.agentydragon.com
+  name: ns2 # Relative to zone
   type: A
   ttl: 3600
   records:
