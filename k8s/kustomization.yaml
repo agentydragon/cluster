@@ -18,6 +18,7 @@ resources:
   - powerdns-zones/flux-kustomization.yaml
   - vault-operator/flux-kustomization.yaml
   - vault/flux-kustomization.yaml
+  - vault-ingress/flux-kustomization.yaml
   - vault-oidc-auth/flux-kustomization.yaml
   - external-secrets-operator/flux-kustomization.yaml
   - external-secrets/flux-kustomization.yaml

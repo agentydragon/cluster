@@ -4,8 +4,8 @@ resources:
   # Bank-Vaults Vault instance (operator deployed separately)
   - rbac.yaml
   - instance.yaml
-  - ingress.yaml
-  # TLS certificates - split internal (self-signed) and external (Let's Encrypt)
+  # TLS certificates - internal only (self-signed for pod-to-pod)
   - internal-tls-issuer.yaml
   - internal-tls-certificate.yaml
-  - certificate.yaml # External ingress certificate (Let's Encrypt)
+# Note: ingress.yaml and certificate.yaml moved to separate vault-ingress kustomization
+# to prevent external cert issues from blocking core Vault functionality
