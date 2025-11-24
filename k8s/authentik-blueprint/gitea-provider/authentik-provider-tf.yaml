@@ -29,6 +29,8 @@ spec:
       value: "https://auth.test-cluster.agentydragon.com"
     - name: gitea_url
       value: "https://git.test-cluster.agentydragon.com"
+    - name: vault_address
+      value: "https://instance.vault.svc.cluster.local:8200"
 
   # Get secrets from Kubernetes secrets
   varsFrom:
@@ -38,7 +40,25 @@ spec:
         - authentik_token
       optional: false
     - kind: Secret
-      name: gitea-oauth-client-secret
+      name: vault-token
       varsKeys:
-        - client_secret
+        - vault_token
       optional: false
+
+  # Configure runner to trust Vault's self-signed CA
+  runnerPodTemplate:
+    spec:
+      volumes:
+        - name: vault-ca
+          secret:
+            secretName: vault-internal-tls
+            items:
+              - key: ca.crt
+                path: ca.crt
+      volumeMounts:
+        - name: vault-ca
+          mountPath: /vault/tls
+          readOnly: true
+      env:
+        - name: VAULT_CACERT
+          value: /vault/tls/ca.crt
