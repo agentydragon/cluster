@@ -17,23 +17,20 @@ spec:
   serviceAccountName: tf-runner
   approvePlan: "auto"
 
-  # Configure runner to trust Vault's self-signed CA
+  # Configure runner to trust cluster CA
   runnerPodTemplate:
     spec:
       volumes:
-        - name: vault-ca
-          secret:
-            secretName: vault-internal-tls
-            items:
-              - key: ca.crt
-                path: ca.crt
+        - name: cluster-ca
+          configMap:
+            name: cluster-internal-ca-bundle
       volumeMounts:
-        - name: vault-ca
-          mountPath: /vault/tls
+        - name: cluster-ca
+          mountPath: /etc/ssl/certs/cluster-ca
           readOnly: true
       env:
         - name: VAULT_CACERT
-          value: /vault/tls/ca.crt
+          value: /etc/ssl/certs/cluster-ca/ca-certificates.crt
 
   # Store Terraform state in Kubernetes secret
   backendConfig:
