@@ -3,9 +3,7 @@ kind: Kustomization
 resources:
   # Bank-Vaults Vault instance (operator deployed separately)
   - rbac.yaml
-  - instance.yaml
-  # TLS certificates - internal only (self-signed for pod-to-pod)
-  - internal-tls-issuer.yaml
   - internal-tls-certificate.yaml
-# Note: ingress.yaml and certificate.yaml moved to separate vault-ingress kustomization
-# to prevent external cert issues from blocking core Vault functionality
+  - instance.yaml
+# Note: Vault uses cluster-internal-ca (from cluster-ca kustomization) instead of vault-specific CA
+# Note: ingress.yaml and certificate.yaml in separate vault-ingress kustomization
