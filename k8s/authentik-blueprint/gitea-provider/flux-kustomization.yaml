@@ -13,9 +13,7 @@ spec:
   prune: true
   wait: true
   dependsOn:
-    - name: authentik-blueprint-gitea-secret # Wait for secret to exist
-      namespace: flux-system
-    - name: gitea # Wait for gitea base app
-      namespace: flux-system
     - name: authentik # Wait for authentik to be ready
+      namespace: flux-system
+    - name: sso-secrets # Wait for Vault client secrets
       namespace: flux-system
