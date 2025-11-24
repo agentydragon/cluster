@@ -14,7 +14,7 @@ spec:
   type: A
   ttl: 3600
   records:
-    - content: "172.235.48.86" # VPS public IP (ns1.agentydragon.com)
+    - "172.235.48.86" # VPS public IP (ns1.agentydragon.com)
 ---
 apiVersion: dns.cav.enablers.ob/v1alpha2
 kind: ClusterRRset
@@ -28,4 +28,4 @@ spec:
   type: A
   ttl: 3600
   records:
-    - content: "172.235.48.86" # VPS public IP (ns1.agentydragon.com, same server)
+    - "172.235.48.86" # VPS public IP (ns1.agentydragon.com, same server)
