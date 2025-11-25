@@ -9,12 +9,14 @@
 
 set -e
 
-# Fix pre-commit/pip compatibility with Nix environment
-export PIP_USER=false
-export PRE_COMMIT_USE_UV=1
-
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 TERRAFORM_DIR="${SCRIPT_DIR}/terraform"
+
+# Ensure we're running with direnv environment loaded
+if [[ -z "${DIRENV_DIR}" ]]; then
+    echo "🔄 Re-executing with direnv environment..."
+    exec direnv exec "${SCRIPT_DIR}" "$0" "$@"
+fi
 
 # Parse command line arguments
 START_FROM_LAYER=""
