@@ -29,6 +29,8 @@ spec:
       value: "https://auth.test-cluster.agentydragon.com"
     - name: matrix_url
       value: "https://matrix.test-cluster.agentydragon.com"
+    - name: vault_address
+      value: "https://instance.vault.svc.cluster.local:8200"
 
   # Get secrets from Kubernetes secrets
   varsFrom:
@@ -38,7 +40,22 @@ spec:
         - authentik_token
       optional: false
     - kind: Secret
-      name: matrix-oauth-client-secret
+      name: vault-token
       varsKeys:
-        - client_secret
+        - vault_token
       optional: false
+
+  # Configure runner to trust cluster CA
+  runnerPodTemplate:
+    spec:
+      volumes:
+        - name: cluster-ca
+          configMap:
+            name: cluster-internal-ca-bundle
+      volumeMounts:
+        - name: cluster-ca
+          mountPath: /etc/ssl/certs/cluster-ca
+          readOnly: true
+      env:
+        - name: VAULT_CACERT
+          value: /etc/ssl/certs/cluster-ca/ca-certificates.crt

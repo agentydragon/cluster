@@ -16,8 +16,13 @@ variable "harbor_url" {
   default     = "https://registry.test-cluster.agentydragon.com"
 }
 
-variable "client_secret" {
-  description = "OAuth2 client secret for Harbor"
+variable "vault_address" {
+  description = "Vault server address"
+  type        = string
+}
+
+variable "vault_token" {
+  description = "Vault authentication token"
   type        = string
   sensitive   = true
 }
