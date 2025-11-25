@@ -9,3 +9,8 @@ spec:
   nameservers:
     - ns1.test-cluster.agentydragon.com
     - ns2.test-cluster.agentydragon.com
+  soaRecord:
+    refresh: 300 # 5 minutes (was default 10800 = 3 hours)
+    retry: 60 # 1 minute
+    expire: 604800 # 1 week
+    ttl: 300 # 5 minutes
