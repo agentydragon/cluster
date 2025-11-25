@@ -5,6 +5,7 @@ metadata:
   namespace: monitoring
 spec:
   interval: 30m
+  timeout: 10m # Prometheus stack upgrades can be slow
   chart:
     spec:
       chart: kube-prometheus-stack
