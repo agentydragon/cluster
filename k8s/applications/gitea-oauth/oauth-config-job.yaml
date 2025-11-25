@@ -42,13 +42,6 @@ spec:
               done
               echo "Admin token is available!"
 
-              echo "Waiting for Authentik TLS certificate to be ready..."
-              until [ "$(kubectl get certificate authentik-tls -n authentik -o jsonpath='{.status.conditions[?(@.type=="Ready")].status}' 2>/dev/null)" = "True" ]; do
-                echo "Authentik certificate not ready, waiting..."
-                sleep 5
-              done
-              echo "Authentik TLS certificate is ready!"
-
               # Get OAuth client credentials
               echo "Reading OAuth client credentials..."
               CLIENT_ID="gitea"
@@ -139,30 +132,4 @@ subjects:
 roleRef:
   kind: Role
   name: gitea-oauth-configurator
-  apiGroup: rbac.authorization.k8s.io
----
-# Role in authentik namespace to read certificates
-apiVersion: rbac.authorization.k8s.io/v1
-kind: Role
-metadata:
-  name: gitea-oauth-configurator-cert-reader
-  namespace: authentik
-rules:
-  - apiGroups: ["cert-manager.io"]
-    resources: ["certificates"]
-    verbs: ["get", "list"]
----
-# RoleBinding to grant ServiceAccount access to authentik namespace
-apiVersion: rbac.authorization.k8s.io/v1
-kind: RoleBinding
-metadata:
-  name: gitea-oauth-configurator-cert-reader
-  namespace: authentik
-subjects:
-  - kind: ServiceAccount
-    name: gitea-oauth-configurator
-    namespace: gitea
-roleRef:
-  kind: Role
-  name: gitea-oauth-configurator-cert-reader
   apiGroup: rbac.authorization.k8s.io

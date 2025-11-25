@@ -1,0 +1,26 @@
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: gitea-oauth
+  namespace: flux-system
+spec:
+  interval: 10m
+  timeout: 5m
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+  path: "./k8s/applications/gitea-oauth"
+  prune: true
+  wait: true
+  dependsOn:
+    - name: gitea
+      namespace: flux-system
+    - name: authentik
+      namespace: flux-system
+  # Wait for Authentik TLS certificate before deploying OAuth job
+  # This prevents job from failing with certificate validation errors
+  healthChecks:
+    - apiVersion: cert-manager.io/v1
+      kind: Certificate
+      name: authentik-tls
+      namespace: authentik

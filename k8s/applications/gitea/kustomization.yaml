@@ -4,6 +4,5 @@ resources:
   - secrets.yaml
   - helmrelease.yaml
   - admin-token-job.yaml
-  - oauth-config-job.yaml
-# Gitea OIDC/SSO configuration via Jobs: admin-token-job creates admin token, oauth-config-job configures Authentik OAuth
-# Authentik provider is configured via k8s/authentik-blueprint/gitea/ (Terraform)
+# Gitea admin token job creates API token for administration
+# OAuth configuration is handled by separate gitea-oauth kustomization
