@@ -13,7 +13,5 @@ spec:
   prune: true
   wait: true
   dependsOn:
-    - name: matrix # Wait for Matrix namespace and app
-      namespace: flux-system
     - name: authentik-blueprint-matrix-provider # Wait for provider to be created
       namespace: flux-system
