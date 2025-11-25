@@ -69,7 +69,10 @@ spec:
     # Grafana configuration
     grafana:
       enabled: true
-      adminPassword: admin # TODO: Change via secret later
+      # Admin password managed via ExternalSecret
+      admin:
+        existingSecret: grafana-admin-password
+        passwordKey: admin-password
       defaultDashboardsEnabled: true
       defaultDashboardsTimezone: UTC
 

@@ -20,4 +20,5 @@ spec:
     - name: monitoring-namespace
     - name: ingress-nginx
     - name: cert-manager-config
+    - name: external-secrets-config
     - name: authentik-blueprint-grafana-secret
