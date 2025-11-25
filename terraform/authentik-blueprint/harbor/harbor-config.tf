@@ -6,12 +6,10 @@
 # Provider versions are centralized in root terraform.tf
 # Note: kubernetes provider uses in-cluster config (no explicit provider block needed)
 
-# Data source: Harbor OAuth client secret (ESO-generated, reflected to flux-system)
-data "kubernetes_secret" "harbor_oauth_client_secret" {
-  metadata {
-    name      = "harbor-oauth-client-secret"
-    namespace = "flux-system"
-  }
+# Data source: Harbor OAuth client secret from Vault
+data "vault_kv_secret_v2" "harbor_client_secret" {
+  mount = "kv"
+  name  = "sso/client-secrets"
 }
 
 # Data source: Harbor admin password (Vault SSOT → ESO → K8s secret)
@@ -39,7 +37,7 @@ resource "harbor_config_auth" "oidc" {
   oidc_name          = "Authentik"
   oidc_endpoint      = "${var.authentik_url}/application/o/harbor/"
   oidc_client_id     = "harbor"
-  oidc_client_secret = data.kubernetes_secret.harbor_oauth_client_secret.data["client_secret"]
+  oidc_client_secret = data.vault_kv_secret_v2.harbor_client_secret.data["harbor_client_secret"]
   oidc_scope         = "openid,email,profile"
   oidc_verify_cert   = true
 
