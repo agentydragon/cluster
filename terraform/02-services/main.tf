@@ -28,19 +28,9 @@ provider "flux" {
 # Vault secrets managed by tofu-controller after Flux deploys Vault
 # See: terraform/gitops/secrets/ for Vault secret management
 
-# Test Kubernetes connectivity
-resource "kubernetes_namespace" "test" {
-  metadata {
-    name = "test-namespace"
-  }
-}
-
 # FLUX BOOTSTRAP: Initialize GitOps engine
 resource "flux_bootstrap_git" "cluster" {
   path = "k8s"
-  depends_on = [
-    kubernetes_namespace.test,
-  ]
 }
 
 # NOTE: Service configuration moved to Layer 3 after services are deployed
