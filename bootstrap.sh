@@ -9,6 +9,10 @@
 
 set -e
 
+# Fix pre-commit/pip compatibility with Nix environment
+export PIP_USER=false
+export PRE_COMMIT_USE_UV=1
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 TERRAFORM_DIR="${SCRIPT_DIR}/terraform"
 
