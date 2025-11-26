@@ -84,6 +84,11 @@
 - [ ] Complete SNI migration (move remaining VPS services to stream-level SNI)
 - [ ] VPS proxy resilience testing (MetalLB VIP pod failure handling)
 - [ ] Proxmox CSI orphaned volume cleanup (post-destroy automation)
+- [ ] **Gitea Terraform Provider** - Automate repository and mirror management
+  - Provider: `go-gitea/gitea` (registry.terraform.io/providers/go-gitea/gitea/latest)
+  - Resources: `gitea_repository`, `gitea_org`, `gitea_oauth2_app`
+  - Use cases: Provision mirrors, manage repos, configure OAuth apps
+  - Note: Does NOT support authentication sources (use kubectl exec Job for OAuth login config)
 
 ---
 
