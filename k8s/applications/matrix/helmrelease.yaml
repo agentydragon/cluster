@@ -24,10 +24,12 @@ spec:
         name: ananace-charts
         namespace: matrix
   valuesFrom:
+    # Inject complete OIDC provider configuration from Vault (via ExternalSecret)
+    # Terraform writes the full config to Vault, eliminating duplication
     - kind: Secret
-      name: matrix-oauth-client-secret
-      valuesKey: client_secret
-      targetPath: extraSecrets.oidc_providers[0].client_secret
+      name: matrix-oidc-config
+      valuesKey: oidc_providers.yaml
+      targetPath: extraSecrets.oidc_providers
   values:
     # Synapse image configuration
     image:
@@ -73,29 +75,9 @@ spec:
       job:
         enabled: true
 
-    # OIDC configuration via extraSecrets (sensitive values)
-    extraSecrets:
-      oidc_providers:
-        - idp_id: authentik
-          idp_name: "Authentik SSO"
-          discover: true
-          # TODO: Consider switching to HTTPS with custom CA trust once production certs are in place
-          # Using internal cluster URL to avoid staging cert validation issues
-          issuer: "http://authentik-server.authentik/application/o/matrix/"
-          client_id: "matrix"
-          # client_secret injected via valuesFrom from matrix-oauth-client-secret
-          scopes:
-            - "openid"
-            - "profile"
-            - "email"
-          user_mapping_provider:
-            config:
-              localpart_template: "{{ user.preferred_username }}"
-              display_name_template: "{{ user.name }}"
-              email_template: "{{ user.email }}"
-          allow_existing_users: true
-          # Enable users to log in with both OIDC and password
-          enable_registration: true
+    # OIDC configuration injected via valuesFrom from matrix-oidc-config secret
+    # Complete config stored in Vault by Terraform (single source of truth)
+    # extraSecrets.oidc_providers populated automatically
 
     # Service configuration
     service:
