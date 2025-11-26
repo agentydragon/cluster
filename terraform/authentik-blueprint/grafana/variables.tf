@@ -16,8 +16,13 @@ variable "grafana_url" {
   default     = "https://grafana.test-cluster.agentydragon.com"
 }
 
-variable "client_secret" {
-  description = "OAuth2 client secret for Grafana"
+variable "vault_address" {
+  description = "Vault server address"
+  type        = string
+}
+
+variable "vault_token" {
+  description = "Vault authentication token"
   type        = string
   sensitive   = true
 }

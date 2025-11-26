@@ -22,9 +22,8 @@ provider "authentik" {
 }
 
 provider "vault" {
-  address         = var.vault_address
-  token           = var.vault_token
-  skip_tls_verify = true # Self-signed internal CA
+  address = var.vault_address
+  token   = var.vault_token
 }
 
 # Create Authentik application for Matrix

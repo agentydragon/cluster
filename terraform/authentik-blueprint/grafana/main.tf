@@ -1,7 +1,12 @@
 terraform {
+  required_version = ">= 1.0"
+
   required_providers {
     authentik = {
       source = "goauthentik/authentik"
+    }
+    vault = {
+      source = "hashicorp/vault"
     }
   }
 
@@ -14,6 +19,11 @@ terraform {
 provider "authentik" {
   url   = var.authentik_url
   token = var.authentik_token
+}
+
+provider "vault" {
+  address = var.vault_address
+  token   = var.vault_token
 }
 
 # Create Authentik application for Grafana
@@ -30,7 +40,7 @@ resource "authentik_application" "grafana" {
 resource "authentik_provider_oauth2" "grafana" {
   name               = "grafana-oauth2"
   client_id          = "grafana"
-  client_secret      = var.client_secret
+  client_secret      = data.vault_kv_secret_v2.grafana_client_secret.data["grafana_client_secret"]
   authorization_flow = data.authentik_flow.default_authorization_flow.id
   invalidation_flow  = data.authentik_flow.default_invalidation_flow.id
 
@@ -48,6 +58,12 @@ resource "authentik_provider_oauth2" "grafana" {
   property_mappings = data.authentik_property_mapping_provider_scope.scopes.ids
 }
 
+# Read Grafana OAuth client secret from Vault
+data "vault_kv_secret_v2" "grafana_client_secret" {
+  mount = "kv"
+  name  = "sso/client-secrets"
+}
+
 # Data sources for default flows and mappings
 data "authentik_flow" "default_authorization_flow" {
   slug = "default-provider-authorization-implicit-consent"
@@ -63,4 +79,27 @@ data "authentik_property_mapping_provider_scope" "scopes" {
     "goauthentik.io/providers/oauth2/scope-email",
     "goauthentik.io/providers/oauth2/scope-profile",
   ]
+}
+
+# Store complete OIDC configuration in Vault for consumption by Grafana
+# This eliminates duplication between Terraform (source of truth) and Kubernetes manifests
+resource "vault_kv_secret_v2" "grafana_oidc_config" {
+  mount = "kv"
+  name  = "sso/oidc-providers/grafana"
+
+  data_json = jsonencode({
+    # Store as YAML string for direct injection into HelmRelease grafana.ini
+    auth_generic_oauth_yaml = yamlencode({
+      enabled             = true
+      name                = "Authentik"
+      client_id           = authentik_provider_oauth2.grafana.client_id
+      client_secret       = data.vault_kv_secret_v2.grafana_client_secret.data["grafana_client_secret"]
+      scopes              = "openid email profile"
+      auth_url            = "https://auth.test-cluster.agentydragon.com/application/o/authorize/"
+      token_url           = "http://authentik-server.authentik/application/o/token/"
+      api_url             = "http://authentik-server.authentik/application/o/userinfo/"
+      role_attribute_path = "contains(groups[*], 'Grafana Admins') && 'Admin' || 'Viewer'"
+      allow_sign_up       = true
+    })
+  })
 }
