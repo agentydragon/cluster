@@ -65,8 +65,8 @@ spec:
                   --provider "openidConnect" \
                   --key "$CLIENT_ID" \
                   --secret "$CLIENT_SECRET" \
-                  --auto-discover-url "https://auth.test-cluster.agentydragon.com/application/o/gitea/.well-known/openid-configuration" \
-                  --icon-url "https://auth.test-cluster.agentydragon.com/static/dist/assets/icons/icon.png" \
+                  --auto-discover-url "http://authentik-server.authentik/application/o/gitea/.well-known/openid-configuration" \
+                  --icon-url "http://authentik-server.authentik/static/dist/assets/icons/icon.png" \
                   --scopes "email" \
                   --scopes "profile" \
                   --scopes "openid"
@@ -80,8 +80,8 @@ spec:
                   --provider "openidConnect" \
                   --key "$CLIENT_ID" \
                   --secret "$CLIENT_SECRET" \
-                  --auto-discover-url "https://auth.test-cluster.agentydragon.com/application/o/gitea/.well-known/openid-configuration" \
-                  --icon-url "https://auth.test-cluster.agentydragon.com/static/dist/assets/icons/icon.png" \
+                  --auto-discover-url "http://authentik-server.authentik/application/o/gitea/.well-known/openid-configuration" \
+                  --icon-url "http://authentik-server.authentik/static/dist/assets/icons/icon.png" \
                   --scopes "email" \
                   --scopes "profile" \
                   --scopes "openid"
