@@ -42,3 +42,18 @@ spec:
       varsKeys:
         - client_secret
       optional: false
+
+  # Configure runner to trust cluster CA
+  runnerPodTemplate:
+    spec:
+      volumes:
+        - name: cluster-ca
+          configMap:
+            name: cluster-internal-ca-bundle
+      volumeMounts:
+        - name: cluster-ca
+          mountPath: /etc/ssl/certs/cluster-ca
+          readOnly: true
+      env:
+        - name: SSL_CERT_FILE
+          value: /etc/ssl/certs/cluster-ca/ca-certificates.crt
