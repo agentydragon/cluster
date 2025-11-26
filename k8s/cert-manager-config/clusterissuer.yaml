@@ -1,43 +1,18 @@
 ---
+# ACME server selection: Change 'server' URL to switch between staging and production
+# Staging: https://acme-staging-v02.api.letsencrypt.org/directory (30,000 certs/week)
+# Production: https://acme-v02.api.letsencrypt.org/directory (5 certs/week)
 apiVersion: cert-manager.io/v1
 kind: ClusterIssuer
 metadata:
   name: letsencrypt-prod
 spec:
   acme:
-    server: https://acme-v02.api.letsencrypt.org/directory
-    email: agentydragon@gmail.com
-    privateKeySecretRef:
-      name: letsencrypt-prod-key
-    solvers:
-      # DNS-01 solver for wildcard domains
-      - dns01:
-          webhook:
-            groupName: acme.syself.com
-            solverName: powerdns
-            config:
-              host: powerdns-api.dns-system:8081
-              apiKeySecretRef:
-                name: powerdns-api-key
-                key: powerdns_api_key
-        selector:
-          dnsNames:
-            - "*.test-cluster.agentydragon.com"
-      # HTTP-01 solver for non-wildcard domains
-      - http01:
-          ingress:
-            class: nginx
----
-apiVersion: cert-manager.io/v1
-kind: ClusterIssuer
-metadata:
-  name: letsencrypt-staging
-spec:
-  acme:
+    # Using staging for development to avoid rate limits
     server: https://acme-staging-v02.api.letsencrypt.org/directory
     email: agentydragon@gmail.com
     privateKeySecretRef:
-      name: letsencrypt-staging-key
+      name: letsencrypt-prod-key
     solvers:
       # DNS-01 solver for wildcard domains
       - dns01:
