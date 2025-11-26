@@ -5,7 +5,7 @@ metadata:
   namespace: test-app
   annotations:
     nginx.ingress.kubernetes.io/ssl-redirect: "true"
-    cert-manager.io/cluster-issuer: "letsencrypt-prod-dns"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
     external-dns.alpha.kubernetes.io/hostname: test.test-cluster.agentydragon.com
 spec:
   ingressClassName: nginx

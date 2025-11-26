@@ -81,7 +81,7 @@ spec:
         enabled: true
         ingressClassName: nginx
         annotations:
-          cert-manager.io/cluster-issuer: letsencrypt-prod-dns
+          cert-manager.io/cluster-issuer: letsencrypt-prod
           external-dns.alpha.kubernetes.io/hostname: grafana.test-cluster.agentydragon.com
         hosts:
           - grafana.test-cluster.agentydragon.com

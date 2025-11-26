@@ -42,7 +42,7 @@ spec:
           core: registry.test-cluster.agentydragon.com
         annotations:
           kubernetes.io/ingress.class: "nginx"
-          cert-manager.io/cluster-issuer: "letsencrypt-prod-dns"
+          cert-manager.io/cluster-issuer: "letsencrypt-prod"
           nginx.ingress.kubernetes.io/ssl-redirect: "true"
           nginx.ingress.kubernetes.io/proxy-body-size: "0"
 
