@@ -1,4 +1,82 @@
 ---
+# ConfigMap containing the OAuth configuration script
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: gitea-oauth-config-script
+  namespace: gitea
+data:
+  configure-oauth.sh: |
+    #!/bin/bash
+    set -e
+
+    echo "Waiting for Gitea to be ready..."
+    until kubectl get deployment gitea -n gitea -o jsonpath='{.status.readyReplicas}' | grep -q "1"; do
+      echo "Gitea deployment not ready, waiting..."
+      sleep 5
+    done
+    echo "Gitea is ready!"
+
+    echo "Waiting for admin token to be available..."
+    until kubectl get secret gitea-admin-token -n gitea > /dev/null 2>&1; do
+      echo "Admin token not yet created, waiting..."
+      sleep 5
+    done
+    echo "Admin token is available!"
+
+    # Get OAuth client credentials
+    echo "Reading OAuth client credentials..."
+    CLIENT_ID="gitea"
+    CLIENT_SECRET=$(kubectl get secret gitea-oauth-client-secret -n gitea -o jsonpath='{.data.client_secret}' | base64 -d)
+
+    # Check if OAuth source already exists
+    echo "Checking if Authentik OAuth source already exists..."
+    AUTH_SOURCES=$(kubectl exec deployment/gitea -n gitea -- gitea admin auth list 2>/dev/null || echo "")
+
+    if echo "$AUTH_SOURCES" | grep -q "authentik"; then
+      echo "Authentik OAuth source already exists, checking if update needed..."
+
+      # Get existing auth ID
+      AUTH_ID=$(echo "$AUTH_SOURCES" | grep authentik | awk '{print $1}')
+      echo "Found existing auth source ID: $AUTH_ID"
+
+      # Update existing source
+      echo "Updating existing OAuth configuration..."
+      kubectl exec deployment/gitea -n gitea -- gitea admin auth update-oauth \
+        --id "$AUTH_ID" \
+        --provider "openidConnect" \
+        --key "$CLIENT_ID" \
+        --secret "$CLIENT_SECRET" \
+        --auto-discover-url "http://authentik-server.authentik/application/o/gitea/.well-known/openid-configuration" \
+        --icon-url "http://authentik-server.authentik/static/dist/assets/icons/icon.png" \
+        --scopes "email" \
+        --scopes "profile" \
+        --scopes "openid"
+
+      echo "OAuth configuration updated successfully!"
+
+    else
+      echo "Creating new Authentik OAuth configuration..."
+      kubectl exec deployment/gitea -n gitea -- gitea admin auth add-oauth \
+        --name "authentik" \
+        --provider "openidConnect" \
+        --key "$CLIENT_ID" \
+        --secret "$CLIENT_SECRET" \
+        --auto-discover-url "http://authentik-server.authentik/application/o/gitea/.well-known/openid-configuration" \
+        --icon-url "http://authentik-server.authentik/static/dist/assets/icons/icon.png" \
+        --scopes "email" \
+        --scopes "profile" \
+        --scopes "openid"
+
+      echo "OAuth configuration created successfully!"
+    fi
+
+    # Verify configuration
+    echo "Verifying OAuth configuration..."
+    kubectl exec deployment/gitea -n gitea -- gitea admin auth list
+
+    echo "Gitea OAuth configuration completed!"
+---
 # Kubernetes Job to configure Gitea OAuth authentication with Authentik
 # This job adds Authentik as an OAuth2 authentication source in Gitea
 # Uses Gitea CLI commands within the Gitea pod
@@ -19,81 +97,19 @@ spec:
     spec:
       restartPolicy: OnFailure
       serviceAccountName: gitea-oauth-configurator
+      volumes:
+        - name: script
+          configMap:
+            name: gitea-oauth-config-script
+            defaultMode: 0755
       containers:
         - name: oauth-configurator
           # Use bitnami/kubectl image which includes kubectl and bash
           image: bitnami/kubectl:latest
-          command: ["/bin/bash", "-c"]
-          args:
-            - |
-              set -e
-
-              echo "Waiting for Gitea to be ready..."
-              until kubectl get deployment gitea -n gitea -o jsonpath='{.status.readyReplicas}' | grep -q "1"; do
-                echo "Gitea deployment not ready, waiting..."
-                sleep 5
-              done
-              echo "Gitea is ready!"
-
-              echo "Waiting for admin token to be available..."
-              until kubectl get secret gitea-admin-token -n gitea > /dev/null 2>&1; do
-                echo "Admin token not yet created, waiting..."
-                sleep 5
-              done
-              echo "Admin token is available!"
-
-              # Get OAuth client credentials
-              echo "Reading OAuth client credentials..."
-              CLIENT_ID="gitea"
-              CLIENT_SECRET=$(kubectl get secret gitea-oauth-client-secret -n gitea -o jsonpath='{.data.client_secret}' | base64 -d)
-
-              # Check if OAuth source already exists
-              echo "Checking if Authentik OAuth source already exists..."
-              AUTH_SOURCES=$(kubectl exec deployment/gitea -n gitea -- gitea admin auth list 2>/dev/null || echo "")
-
-              if echo "$AUTH_SOURCES" | grep -q "authentik"; then
-                echo "Authentik OAuth source already exists, checking if update needed..."
-
-                # Get existing auth ID
-                AUTH_ID=$(echo "$AUTH_SOURCES" | grep authentik | awk '{print $1}')
-                echo "Found existing auth source ID: $AUTH_ID"
-
-                # Update existing source
-                echo "Updating existing OAuth configuration..."
-                kubectl exec deployment/gitea -n gitea -- gitea admin auth update-oauth \
-                  --id "$AUTH_ID" \
-                  --provider "openidConnect" \
-                  --key "$CLIENT_ID" \
-                  --secret "$CLIENT_SECRET" \
-                  --auto-discover-url "http://authentik-server.authentik/application/o/gitea/.well-known/openid-configuration" \
-                  --icon-url "http://authentik-server.authentik/static/dist/assets/icons/icon.png" \
-                  --scopes "email" \
-                  --scopes "profile" \
-                  --scopes "openid"
-
-                echo "OAuth configuration updated successfully!"
-
-              else
-                echo "Creating new Authentik OAuth configuration..."
-                kubectl exec deployment/gitea -n gitea -- gitea admin auth add-oauth \
-                  --name "authentik" \
-                  --provider "openidConnect" \
-                  --key "$CLIENT_ID" \
-                  --secret "$CLIENT_SECRET" \
-                  --auto-discover-url "http://authentik-server.authentik/application/o/gitea/.well-known/openid-configuration" \
-                  --icon-url "http://authentik-server.authentik/static/dist/assets/icons/icon.png" \
-                  --scopes "email" \
-                  --scopes "profile" \
-                  --scopes "openid"
-
-                echo "OAuth configuration created successfully!"
-              fi
-
-              # Verify configuration
-              echo "Verifying OAuth configuration..."
-              kubectl exec deployment/gitea -n gitea -- gitea admin auth list
-
-              echo "Gitea OAuth configuration completed!"
+          command: ["/scripts/configure-oauth.sh"]
+          volumeMounts:
+            - name: script
+              mountPath: /scripts
 ---
 # ServiceAccount for the job with permission to read secrets and exec into pods
 apiVersion: v1
