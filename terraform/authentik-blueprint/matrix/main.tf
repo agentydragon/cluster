@@ -83,29 +83,31 @@ data "authentik_property_mapping_provider_scope" "scopes" {
 
 # Store complete OIDC configuration in Vault for consumption by Matrix Synapse
 # This eliminates duplication between Terraform (source of truth) and Kubernetes manifests
+# Note: Using template string instead of yamlencode() because Matrix's config parser
+#       rejects quoted keys (yamlencode produces "key": value, Matrix wants key: value)
 resource "vault_kv_secret_v2" "matrix_oidc_config" {
   mount = "kv"
   name  = "sso/oidc-providers/matrix"
 
   data_json = jsonencode({
-    # Store as YAML string for direct injection into HelmRelease
-    oidc_providers_yaml = yamlencode([{
-      idp_id        = "authentik"
-      idp_name      = "Authentik SSO"
-      discover      = true
-      issuer        = "http://authentik-server.authentik/application/o/${authentik_application.matrix.slug}/"
-      client_id     = authentik_provider_oauth2.matrix.client_id
-      client_secret = data.vault_kv_secret_v2.matrix_client_secret.data["matrix_client_secret"]
-      scopes        = ["openid", "profile", "email"]
-      user_mapping_provider = {
-        config = {
-          localpart_template    = "{{ user.preferred_username }}"
-          display_name_template = "{{ user.name }}"
-          email_template        = "{{ user.email }}"
-        }
-      }
-      allow_existing_users = true
-      enable_registration  = true
-    }])
+    oidc_providers_yaml = <<-EOT
+      - idp_id: authentik
+        idp_name: Authentik SSO
+        discover: true
+        issuer: http://authentik-server.authentik/application/o/${authentik_application.matrix.slug}/
+        client_id: ${authentik_provider_oauth2.matrix.client_id}
+        client_secret: ${data.vault_kv_secret_v2.matrix_client_secret.data["matrix_client_secret"]}
+        scopes:
+          - openid
+          - profile
+          - email
+        user_mapping_provider:
+          config:
+            localpart_template: "{{ user.preferred_username }}"
+            display_name_template: "{{ user.name }}"
+            email_template: "{{ user.email }}"
+        allow_existing_users: true
+        enable_registration: true
+    EOT
   })
 }
