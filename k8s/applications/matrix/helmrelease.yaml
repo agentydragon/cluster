@@ -74,7 +74,9 @@ spec:
         - idp_id: authentik
           idp_name: "Authentik SSO"
           discover: true
-          issuer: "https://auth.test-cluster.agentydragon.com/application/o/matrix/"
+          # TODO: Consider switching to HTTPS with custom CA trust once production certs are in place
+          # Using internal cluster URL to avoid staging cert validation issues
+          issuer: "http://authentik-server.authentik/application/o/matrix/"
           client_id: "matrix"
           client_secret: "5JAVc6643E4KOVTyfAt5cPtC1gLZ4vr5"
           scopes:
