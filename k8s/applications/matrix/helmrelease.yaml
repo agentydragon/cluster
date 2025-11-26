@@ -23,6 +23,11 @@ spec:
         kind: HelmRepository
         name: ananace-charts
         namespace: matrix
+  valuesFrom:
+    - kind: Secret
+      name: matrix-oauth-client-secret
+      valuesKey: client_secret
+      targetPath: extraSecrets.oidc_providers[0].client_secret
   values:
     # Synapse image configuration
     image:
@@ -78,7 +83,7 @@ spec:
           # Using internal cluster URL to avoid staging cert validation issues
           issuer: "http://authentik-server.authentik/application/o/matrix/"
           client_id: "matrix"
-          client_secret: "5JAVc6643E4KOVTyfAt5cPtC1gLZ4vr5"
+          # client_secret injected via valuesFrom from matrix-oauth-client-secret
           scopes:
             - "openid"
             - "profile"
