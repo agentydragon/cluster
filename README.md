@@ -167,6 +167,32 @@ Internet (443) → VPS nginx proxy → Tailscale VPN → MetalLB VIP (10.0.3.2:4
 
 Kube VIP (10.0.3.1) is established after cluster formation, so bootstrap instead runs against first controller (10.0.1.1).
 
+## Let's Encrypt Rate Limits
+
+**IMPORTANT**: Let's Encrypt has strict rate limits that affect repeated testing:
+
+**Duplicate Certificate Limit**: 5 certificates per week for the same exact domain name
+
+- Applies per domain (e.g., `registry.test-cluster.agentydragon.com`)
+- Rolling 7-day window, refills at ~1 cert per 34 hours
+- No overrides available
+- **Problem**: Each `terraform destroy && ./bootstrap.sh` cycle requests fresh certificates
+
+**For Development/Testing**: Use Let's Encrypt **staging environment**
+
+- Staging limit: 30,000 certificates per week (vs production's 5)
+- Certificates are untrusted (browser warnings) but functional
+- Switch to production once deployment is stable
+
+**If rate limited**: cert-manager will auto-retry on exponential backoff after the limit expires.
+To force immediate retry after reset:
+
+```bash
+kubectl delete certificaterequest -A -l cert-manager.io/certificate-name
+```
+
+See: <https://letsencrypt.org/docs/rate-limits/>
+
 ## Prerequisites / external dependencies
 
 - direnv configured in cluster directory
