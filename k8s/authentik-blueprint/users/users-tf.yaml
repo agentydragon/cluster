@@ -26,7 +26,7 @@ spec:
   # Variables for Terraform
   vars:
     - name: authentik_url
-      value: "http://authentik-server.authentik"
+      value: "http://authentik-server.authentik:80"
 
   # Get secrets from Kubernetes secrets
   varsFrom:

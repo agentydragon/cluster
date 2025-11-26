@@ -26,11 +26,11 @@ spec:
   # Variables for Terraform
   vars:
     - name: authentik_url
-      value: "http://authentik-server.authentik"
+      value: "http://authentik-server.authentik:80"
     - name: grafana_url
       value: "https://grafana.test-cluster.agentydragon.com"
     - name: vault_address
-      value: "http://instance.vault:8200"
+      value: "https://instance.vault.svc.cluster.local:8200"
 
   # Get secrets from Kubernetes secrets
   varsFrom:

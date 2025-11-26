@@ -26,7 +26,7 @@ spec:
   # Variables for Terraform
   vars:
     - name: authentik_url
-      value: "https://auth.test-cluster.agentydragon.com"
+      value: "http://authentik-server.authentik:80"
     - name: gitea_url
       value: "https://git.test-cluster.agentydragon.com"
     - name: vault_address
@@ -45,7 +45,7 @@ spec:
         - vault_token
       optional: false
 
-  # Configure runner to trust cluster CA
+  # Configure runner to trust cluster CA (for Vault HTTPS)
   runnerPodTemplate:
     spec:
       volumes:
