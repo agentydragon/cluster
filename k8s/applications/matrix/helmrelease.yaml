@@ -59,6 +59,12 @@ spec:
       size: 20Gi
       accessMode: ReadWriteOnce
 
+    # Deployment strategy - use Recreate for RWO PVC compatibility
+    # RollingUpdate causes stuck deployments when previous pod holds PVC lock
+    synapse:
+      strategy:
+        type: Recreate
+
     # Synapse configuration via extraConfig
     config:
       # Enable registration (initially disabled, can be enabled later)
