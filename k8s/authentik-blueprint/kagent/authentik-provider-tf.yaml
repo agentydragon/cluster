@@ -26,7 +26,7 @@ spec:
   # Variables for Terraform
   vars:
     - name: authentik_url
-      value: "http://authentik-server.authentik"
+      value: "https://auth.test-cluster.agentydragon.com"
     - name: kagent_url
       value: "https://kagent.test-cluster.agentydragon.com"
 
