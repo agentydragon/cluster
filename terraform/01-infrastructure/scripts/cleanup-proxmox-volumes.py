@@ -6,7 +6,9 @@ Strategy:
 1. Query Kubernetes for Proxmox CSI PV volume handles
 2. Extract Proxmox volume IDs from handles
 3. Delete volumes via SSH to Proxmox host
-4. Fallback to querying Proxmox directly if cluster is down
+
+IMPORTANT: This script MUST run while cluster API is accessible.
+It will fail if it cannot query Kubernetes to avoid deleting wrong volumes.
 """
 
 import sys
@@ -55,32 +57,6 @@ def get_volumes_from_kubernetes(kubeconfig_path: str) -> List[str]:
         return []
 
 
-def get_volumes_from_proxmox(proxmox_host: str) -> List[str]:
-    """Fallback: Query Proxmox directly for all pvc-* volumes."""
-    try:
-        result = subprocess.run(
-            ["ssh", proxmox_host, "pvesm list local"],
-            capture_output=True,
-            text=True,
-            timeout=10,
-        )
-        if result.returncode != 0:
-            return []
-
-        volumes = []
-        for line in result.stdout.splitlines():
-            # Look for lines with "local:" and "pvc-"
-            if "local:" in line and "pvc-" in line:
-                # First column is volume ID: "local:9999/vm-9999-pvc-XXX.raw"
-                volume_id = line.split()[0]
-                volumes.append(volume_id)
-
-        return volumes
-
-    except (subprocess.TimeoutExpired, Exception):
-        return []
-
-
 def delete_volume(proxmox_host: str, volume_id: str) -> bool:
     """Delete a volume from Proxmox storage."""
     try:
@@ -100,23 +76,19 @@ def main():
 
     print("🧹 Cleaning up Proxmox volumes from retained PVs...")
 
-    # Try Kubernetes first
+    # Query Kubernetes - MUST be accessible at this stage
     volumes = get_volumes_from_kubernetes(kubeconfig_path)
 
-    if volumes:
-        print(f"📋 Querying Kubernetes found {len(volumes)} volumes")
-    else:
-        # Fallback to Proxmox direct query
-        print("⚠️  Cluster API unavailable, querying Proxmox directly...")
-        volumes = get_volumes_from_proxmox(proxmox_host)
-        if volumes:
-            print(f"📋 Proxmox query found {len(volumes)} pvc-* volumes")
-
     if not volumes:
-        print("ℹ️  No volumes found to clean up")
-        return 0
+        print("❌ ERROR: Could not query Kubernetes for volumes")
+        print("❌ Cluster API must be accessible during cleanup")
+        print("❌ This prevents accidentally deleting volumes from other contexts")
+        print("")
+        print("If cluster is already destroyed, volumes must be manually cleaned:")
+        print(f"  ssh {proxmox_host} 'pvesm list local | grep pvc-'")
+        return 1
 
-    print("📋 Found volumes to delete:")
+    print(f"📋 Found {len(volumes)} volumes to delete:")
     for vol in volumes:
         print(f"  - {vol}")
 
