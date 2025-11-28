@@ -9,8 +9,8 @@ resource "null_resource" "cleanup_proxmox_volumes" {
 
   triggers = {
     # Track cluster instance to ensure cleanup runs on each destroy
-    cluster_endpoint = var.cluster_endpoint
-    proxmox_host     = "root@atlas"
+    cluster_name = var.cluster_name
+    proxmox_host = "root@atlas"
   }
 
   provisioner "local-exec" {
