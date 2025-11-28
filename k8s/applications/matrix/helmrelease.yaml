@@ -25,11 +25,10 @@ spec:
         namespace: matrix
   valuesFrom:
     # Inject complete OIDC provider configuration from Vault (via ExternalSecret)
-    # Terraform writes the full config to Vault, eliminating duplication
+    # Secret contains values.yaml with proper config.extraConfig.oidc_providers structure
     - kind: Secret
       name: matrix-oidc-config
-      valuesKey: oidc_providers.yaml
-      targetPath: extraSecrets.oidc_providers
+      valuesKey: values.yaml
   values:
     # Synapse image configuration
     image:
@@ -82,8 +81,8 @@ spec:
         enabled: true
 
     # OIDC configuration injected via valuesFrom from matrix-oidc-config secret
-    # Complete config stored in Vault by Terraform (single source of truth)
-    # extraSecrets.oidc_providers populated automatically
+    # Terraform stores structured JSON in Vault (single source of truth)
+    # ExternalSecret templates into config.extraConfig.oidc_providers structure
 
     # Service configuration
     service:
