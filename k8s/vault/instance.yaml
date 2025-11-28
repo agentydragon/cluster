@@ -31,24 +31,16 @@ spec:
     - name: vault-raft
       mountPath: /vault/file
 
-  # Canonical Raft HA configuration - sequential join to established leader
+  # Raft HA configuration - Bank-Vaults handles cluster formation automatically
+  # For fresh bootstrap, Bank-Vaults initializes instance-0 as leader, then joins instance-1 and instance-2
+  # retry_join is not needed - Bank-Vaults manages the join process via operator
   # References:
-  # - https://developer.hashicorp.com/vault/docs/configuration/storage/raft#retry_join-stanza
-  # - https://developer.hashicorp.com/vault/tutorials/raft/raft-deployment-guide#vault-server-configuration-file
-  # - https://developer.hashicorp.com/vault/docs/platform/k8s/helm/run#standalone-server-with-integrated-storage
+  # - https://github.com/bank-vaults/vault-operator/blob/main/deploy/examples/cr-raft.yaml
+  # - https://banzaicloud.com/docs/bank-vaults/operator/
   config:
     storage:
       raft:
         path: "/vault/file"
-        retry_join:
-          # All cluster members listed for automatic discovery and sequential joining
-          # Bank-Vaults creates StatefulSet pods: instance-0, instance-1, instance-2
-          - leader_api_addr: "https://instance-0.vault.svc.cluster.local:8200"
-            leader_ca_cert_file: "/vault/tls/ca.crt"
-          - leader_api_addr: "https://instance-1.vault.svc.cluster.local:8200"
-            leader_ca_cert_file: "/vault/tls/ca.crt"
-          - leader_api_addr: "https://instance-2.vault.svc.cluster.local:8200"
-            leader_ca_cert_file: "/vault/tls/ca.crt"
     listener:
       tcp:
         address: "0.0.0.0:8200"
