@@ -28,9 +28,9 @@ spec:
     storageClass:
       - name: "proxmox-csi-retain"
         storage: "local"
-        # Using "Delete" reclaim policy for turnkey testing (destroy-recreate cycles)
-        # Change to "Retain" for production to preserve data across cluster teardowns
-        reclaimPolicy: "Delete"
+        # Retain policy: volumes preserved on PVC deletion (safety)
+        # Cleanup handled by terraform destroy provisioner
+        reclaimPolicy: "Retain"
         allowVolumeExpansion: true
         parameters:
           cache: "directsync"
