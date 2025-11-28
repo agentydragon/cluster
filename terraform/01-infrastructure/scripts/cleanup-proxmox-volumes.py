@@ -80,12 +80,8 @@ def main():
     volumes = get_volumes_from_kubernetes(kubeconfig_path)
 
     if not volumes:
-        print("❌ ERROR: Could not query Kubernetes for volumes")
-        print("❌ Cluster API must be accessible during cleanup")
-        print("❌ This prevents accidentally deleting volumes from other contexts")
-        print("")
-        print("If cluster is already destroyed, volumes must be manually cleaned:")
-        print(f"  ssh {proxmox_host} 'pvesm list local | grep pvc-'")
+        print("❌ ERROR: Cluster API unavailable - cannot safely identify volumes")
+        print(f"Manual cleanup: ssh {proxmox_host} 'pvesm list local | grep pvc-'")
         return 1
 
     print(f"📋 Found {len(volumes)} volumes to delete:")
