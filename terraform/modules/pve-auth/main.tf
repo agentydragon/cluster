@@ -27,12 +27,12 @@ locals {
   }
 }
 
-# Auto-provision Proxmox users and tokens via SSH
-data "external" "pve_tokens" {
+# Auto-provision Proxmox users (persistent)
+data "external" "pve_users" {
   for_each = local.pve_users
 
   program = ["bash", "-c", <<-EOT
-    token_json=$(ssh ${local.proxmox_host} '
+    ssh ${local.proxmox_host} '
       # Create user if not exists
       pveum user add ${each.value.name} --comment "${each.value.comment}" 2>/dev/null || true
 
@@ -41,7 +41,18 @@ data "external" "pve_tokens" {
 
       # Set ACL permissions
       pveum aclmod / -user ${each.value.name} -role ${each.value.role}
+    '
+    printf '{"success":"true"}'
+  EOT
+  ]
+}
 
+# Generate API tokens for users (ephemeral, can be recreated)
+data "external" "pve_tokens" {
+  for_each = local.pve_users
+
+  program = ["bash", "-c", <<-EOT
+    token_json=$(ssh ${local.proxmox_host} '
       # Create/recreate API token with JSON output
       pveum user token delete ${each.value.name} ${each.value.token} 2>/dev/null || true
       pveum user token add ${each.value.name} ${each.value.token} --privsep 0 --output-format json
@@ -59,6 +70,8 @@ JSON
     printf '{"config_json":"%s"}' "$(echo "$csi_config_json" | sed 's/"/\\"/g')"
   EOT
   ]
+
+  depends_on = [data.external.pve_users]
 }
 
 # Deprovisioning: Clean up Proxmox tokens and users on destroy
