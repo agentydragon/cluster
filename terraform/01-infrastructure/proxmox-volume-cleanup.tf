@@ -3,9 +3,14 @@
 # Retain policy for safety (accidental PVC deletion doesn't lose data)
 
 resource "null_resource" "cleanup_proxmox_volumes" {
-  # This resource depends on Cilium to ensure it runs after PVCs are cleaned up
-  # but before the cluster is fully destroyed
-  depends_on = [helm_release.cilium_bootstrap]
+  # This resource depends on Cilium AND infrastructure to ensure:
+  # 1. PVCs exist when cleanup queries them (Cilium = cluster working)
+  # 2. Cluster API stays alive during cleanup (infrastructure = VMs running)
+  # During destroy: cleanup runs FIRST, then Cilium, then infrastructure
+  depends_on = [
+    helm_release.cilium_bootstrap,
+    module.infrastructure
+  ]
 
   triggers = {
     # Track cluster instance to ensure cleanup runs on each destroy
