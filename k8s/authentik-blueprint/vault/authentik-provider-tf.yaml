@@ -29,6 +29,8 @@ spec:
       value: "http://authentik-server.authentik:80"
     - name: vault_url
       value: "https://vault.test-cluster.agentydragon.com"
+    - name: vault_address
+      value: "https://instance.vault.svc.cluster.local:8200"
 
   # Get secrets from Kubernetes secrets
   varsFrom:
@@ -38,9 +40,9 @@ spec:
         - authentik_token
       optional: false
     - kind: Secret
-      name: vault-oauth-client-secret
+      name: vault-token
       varsKeys:
-        - client_secret
+        - vault_token
       optional: false
 
   # Configure runner to trust cluster CA
