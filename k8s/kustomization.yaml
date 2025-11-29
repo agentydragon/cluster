@@ -31,6 +31,7 @@ resources:
   - authentik/flux-kustomization.yaml
   - sso-secrets/flux-kustomization.yaml
   - applications/harbor/flux-kustomization.yaml
+  - harbor-proxy-cache/flux-kustomization.yaml
   - applications/gitea/flux-kustomization.yaml
   - applications/matrix/flux-kustomization.yaml
   - applications/test-app/flux-kustomization.yaml
