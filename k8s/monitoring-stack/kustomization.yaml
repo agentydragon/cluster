@@ -4,3 +4,4 @@ resources:
   - helmrepository.yaml
   - admin-password-external-secret.yaml
   - helmrelease.yaml
+  - dashboards/harbor-dashboard.yaml
