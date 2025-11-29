@@ -118,6 +118,36 @@ locals {
           validSubnets = ["10.0.0.0/16"] # Cluster network range
         }
       }
+      # Harbor pull-through cache with fallback to upstream registries
+      # Fallback ensures bootstrap works even when Harbor doesn't exist yet
+      registries = {
+        mirrors = {
+          "docker.io" = {
+            endpoints = [
+              "https://registry.test-cluster.agentydragon.com/docker-hub-proxy",
+              "https://registry-1.docker.io"
+            ]
+          }
+          "ghcr.io" = {
+            endpoints = [
+              "https://registry.test-cluster.agentydragon.com/ghcr-proxy",
+              "https://ghcr.io"
+            ]
+          }
+          "quay.io" = {
+            endpoints = [
+              "https://registry.test-cluster.agentydragon.com/quay-proxy",
+              "https://quay.io"
+            ]
+          }
+          "registry.k8s.io" = {
+            endpoints = [
+              "https://registry.test-cluster.agentydragon.com/registry-k8s-io-proxy",
+              "https://registry.k8s.io"
+            ]
+          }
+        }
+      }
     }
     cluster = {
       discovery = {
