@@ -28,6 +28,12 @@ spec:
         kind: HelmRepository
         name: harbor
         namespace: harbor
+  install:
+    timeout: 10m
+    crds: CreateReplace
+  upgrade:
+    timeout: 10m
+    crds: CreateReplace
   values:
     # Core Harbor configuration
     expose:
