@@ -124,9 +124,14 @@
   - Phases: CLI prototype → visual capabilities → multi-agent → production hardening
   - Detail: See `docs/AGENTS.md`
 
-- [ ] **Harbor as Cluster Registry** - Internal registry for all cluster images
-  - Challenge: Bootstrap story (Harbor needs to serve its own images)
-  - Solutions: Bootstrap phase with public registries, then switch
+- [ ] **Harbor Pull-Through Cache** - Transparent cluster-wide registry proxy with automatic image rewriting
+  - **Status**: PRIMARY DIRECTIVE compatible via Talos registry mirrors with fallback
+  - **Architecture**: Talos containerd mirrors → Harbor proxy projects → upstream registries
+  - **Bootstrap compatibility**: Fallback endpoints handle Harbor not existing yet (graceful degradation)
+  - **Deployment order**: Harbor first (database auth) → proxy projects → SSO later (optional)
+  - **Implementation**: Declarative via Harbor Terraform provider in terraform/03-configuration
+  - **Benefits**: Zero chart modifications, bandwidth savings, rate limit mitigation, air-gap preparation
+  - **Detail**: See `docs/HARBOR_PULLTHROUGH_CACHE_GLOBAL_REWRITE.md` for complete analysis
 
 ### Future Enhancements (Freezer)
 
@@ -303,6 +308,7 @@ NOTIFY is **not configured** because it doesn't work in Kubernetes environments:
 - **Operations**: `docs/OPERATIONS.md`
 - **Secret Synchronization**: `docs/archive/SECRET_SYNCHRONIZATION_ANALYSIS.md`
 - **Critical Dependencies**: `docs/CRITICAL_DEPENDENCIES.md`
+- **Harbor Pull-Through Cache Planning**: `docs/HARBOR_PULLTHROUGH_CACHE_GLOBAL_REWRITE.md`
 - **AI Agents Design**: `docs/AGENTS.md` (planned)
 
 ---
