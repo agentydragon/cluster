@@ -75,12 +75,11 @@ module "infrastructure" {
 # STORAGE MODULE: Removed - CSI configuration now handled in 00-persistent-auth layer
 # CSI secrets are generated independently and sealed for persistence across cluster destroy/recreate
 
-# GITOPS MODULE: SSO services (Authentik, Vault, Harbor, Gitea, Matrix)
+# GITOPS MODULE: Shared SSO infrastructure (admin groups, property mappings)
+# Per-application OIDC providers managed by individual blueprints in terraform/authentik-blueprint/
 module "gitops" {
   source     = "./modules/gitops"
   depends_on = [module.infrastructure]
-
-  cluster_domain = var.cluster_domain
 }
 
 # DNS MODULE: PowerDNS zone and record management

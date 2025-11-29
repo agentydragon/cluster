@@ -1,6 +1,2 @@
 # GITOPS MODULE VARIABLES
-
-variable "cluster_domain" {
-  description = "Domain name for cluster services"
-  type        = string
-}
+# No variables required - module only manages shared Authentik infrastructure
