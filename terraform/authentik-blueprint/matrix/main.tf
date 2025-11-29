@@ -118,7 +118,7 @@ resource "vault_kv_secret_v2" "matrix_oidc_config" {
         discover      = true
         issuer        = "http://authentik-server.authentik/application/o/${authentik_application.matrix.slug}/"
         client_id     = authentik_provider_oauth2.matrix.client_id
-        client_secret = data.vault_kv_secret_v2.matrix_client_secret.data["matrix_client_secret"]
+        client_secret = random_password.matrix_client_secret.result
         scopes = [
           "openid",
           "profile",

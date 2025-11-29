@@ -17,6 +17,8 @@ spec:
       namespace: flux-system
     - name: authentik
       namespace: flux-system
+    - name: authentik-blueprint-gitea-provider
+      namespace: flux-system
   # Wait for Authentik TLS certificate before deploying OAuth job
   # This prevents job from failing with certificate validation errors
   healthChecks:

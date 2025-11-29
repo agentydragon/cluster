@@ -1,29 +1,6 @@
-output "harbor_client_secret" {
-  description = "Harbor OIDC client secret"
-  value       = random_password.harbor_client_secret.result
-  sensitive   = true
-}
-
-output "gitea_client_secret" {
-  description = "Gitea OIDC client secret"
-  value       = random_password.gitea_client_secret.result
-  sensitive   = true
-}
-
-output "matrix_client_secret" {
-  description = "Matrix OIDC client secret"
-  value       = random_password.matrix_client_secret.result
-  sensitive   = true
-}
-
-output "vault_client_secret" {
-  description = "Vault OIDC client secret"
-  value       = random_password.vault_client_secret.result
-  sensitive   = true
-}
-
-output "grafana_client_secret" {
-  description = "Grafana OIDC client secret"
-  value       = random_password.grafana_client_secret.result
-  sensitive   = true
-}
+# No outputs needed
+#
+# All per-application OIDC client secrets are now managed by individual blueprints
+# in terraform/authentik-blueprint/{app}/main.tf and stored directly in Vault at
+# kv/sso/{app}. The authentik_api_token is stored in Vault and consumed by
+# authentik-blueprint terraform resources via data sources, not via outputs.
