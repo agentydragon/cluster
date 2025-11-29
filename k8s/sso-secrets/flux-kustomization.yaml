@@ -13,7 +13,7 @@ spec:
   timeout: 10m0s
   wait: true
   dependsOn:
-    - name: vault-oidc-auth # Wait for vault to be configured
+    - name: vault # Wait for Vault to be running (OIDC configuration not needed for secret storage)
       namespace: flux-system
     - name: external-secrets-config # Wait for ESO to be configured
       namespace: flux-system
