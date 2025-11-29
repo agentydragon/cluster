@@ -185,6 +185,113 @@ startup GC only deletes genuinely expired secrets, not all existing ones.
 - Multiple runner pods stuck in CrashLoopBackOff for ~30 minutes
 - Required controller restart to recover
 
+### ESO Password Generator Desynchronization (SSO Authentication Failures)
+
+**Symptoms**:
+
+- SSO/OIDC authentication fails with "invalid client credentials" or "unauthorized"
+- Authentik terraform successfully creates OIDC provider with secret A
+- Kubernetes secret contains different secret B (randomly generated)
+- Application uses secret B, Authentik expects secret A
+- ExternalSecret using ESO Password generator instead of Vault data source
+
+**Root Cause**:
+
+**ESO Password generators create passwords independently on each sync, not reading from a source of truth.**
+When an application's SSO configuration uses two sources for the client secret:
+
+1. Terraform blueprint generates `random_password.result` → stores in Vault at `kv/sso/{app}` → creates Authentik provider
+2. ExternalSecret uses ESO Password generator → generates different password → puts in K8s secret
+3. Authentik knows password A, application uses password B → authentication fails
+
+**Diagnosis**:
+
+```bash
+# 1. Check if ExternalSecret uses Password generator (WRONG)
+kubectl get externalsecret <app>-oidc-secret -n <namespace> -o yaml | grep -A5 "generatorRef"
+# If you see "kind: Password" - this is the problem
+
+# 2. Compare passwords in Vault vs K8s secret
+# Get password from Vault
+kubectl exec -n vault vault-0 -c vault -- \
+  env VAULT_TOKEN=<token> vault kv get -field=client_secret kv/sso/<app>
+
+# Get password from K8s secret
+kubectl get secret <app>-oauth-client-secret -n <namespace> \
+  -o jsonpath='{.data.client_secret}' | base64 -d
+
+# 3. Check terraform blueprint generates password and stores in Vault
+grep -A10 "random_password.*client_secret" terraform/authentik-blueprint/<app>/main.tf
+grep -A10 "vault_kv_secret_v2.*oidc" terraform/authentik-blueprint/<app>/main.tf
+```
+
+**Resolution**:
+
+Replace ESO Password generator with Vault data source. Example fix:
+
+```yaml
+# BEFORE (WRONG - generates independent password):
+---
+apiVersion: generators.external-secrets.io/v1alpha1
+kind: Password
+metadata:
+  name: app-oauth-client-secret-generator
+spec:
+  length: 32
+---
+apiVersion: external-secrets.io/v1beta1
+kind: ExternalSecret
+metadata:
+  name: app-oauth-client-secret
+spec:
+  dataFrom:
+    - sourceRef:
+        generatorRef:
+          kind: Password
+          name: app-oauth-client-secret-generator
+
+# AFTER (CORRECT - reads from Vault):
+---
+apiVersion: external-secrets.io/v1beta1
+kind: ExternalSecret
+metadata:
+  name: app-oidc-secret
+  namespace: <app>
+spec:
+  secretStoreRef:
+    name: vault-backend
+    kind: ClusterSecretStore
+  target:
+    name: app-oauth-client-secret
+  data:
+    - secretKey: client_id
+      remoteRef:
+        key: sso/<app>
+        property: client_id
+    - secretKey: client_secret
+      remoteRef:
+        key: sso/<app>
+        property: client_secret
+```
+
+**Prevention**:
+
+- ALWAYS use Vault as single source of truth for SSO credentials
+- NEVER use ESO Password generator for credentials managed by terraform
+- Pattern: Terraform generates → stores in Vault → ESO reads from Vault
+- Review: `k8s/authentik-blueprint/*/client-secret-eso.yaml` should NOT have Password generators
+
+**Reference Implementation**:
+
+- Correct pattern: `k8s/applications/gitea/secrets.yaml` (lines 38-60)
+- Terraform blueprint: `terraform/authentik-blueprint/gitea/main.tf`
+
+**Historical Occurrence**:
+
+- 2025-11-28: Harbor and Vault ExternalSecrets using Password generators
+- Caused authentication failures for Harbor OIDC and vault-oidc-auth terraform
+- Fixed in commit 05b5e5e by replacing generators with Vault data sources
+
 ## 🚨 Fast Path Health Checks
 
 ### Core Cluster Health
