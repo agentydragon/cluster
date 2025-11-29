@@ -15,5 +15,5 @@ spec:
   dependsOn:
     - name: authentik # Wait for authentik to be ready
       namespace: flux-system
-    - name: sso-secrets # Wait for Vault client secrets
+    - name: vault-token # Wait for Vault authentication
       namespace: flux-system

@@ -13,5 +13,5 @@ spec:
   dependsOn:
     - name: authentik
       namespace: flux-system
-    - name: sso-secrets
+    - name: vault-token
       namespace: flux-system

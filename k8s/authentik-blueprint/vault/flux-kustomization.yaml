@@ -19,5 +19,5 @@ spec:
       namespace: flux-system
     - name: reflector
       namespace: flux-system
-    - name: sso-secrets
+    - name: vault-token
       namespace: flux-system
