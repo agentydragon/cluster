@@ -40,6 +40,17 @@ spec:
         existingSecret: "gitea-admin-password"
         email: "admin@test-cluster.agentydragon.com"
 
+      # OAuth2 authentication sources
+      oauth:
+        - name: "authentik"
+          provider: "openidConnect"
+          existingSecret: "gitea-oauth-client-secret"
+          key: "client_id"
+          secret: "client_secret"
+          autoDiscoverUrl: "https://auth.test-cluster.agentydragon.com/application/o/gitea/.well-known/openid-configuration"
+          iconUrl: "https://auth.test-cluster.agentydragon.com/static/dist/assets/icons/icon.png"
+          scopes: "email profile"
+
       config:
         APP_NAME: "Gitea: Git with a cup of tea"
         RUN_MODE: prod

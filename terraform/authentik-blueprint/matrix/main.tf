@@ -8,6 +8,9 @@ terraform {
     vault = {
       source = "hashicorp/vault"
     }
+    random = {
+      source = "hashicorp/random"
+    }
   }
 
   backend "kubernetes" {
@@ -26,6 +29,31 @@ provider "vault" {
   token   = var.vault_token
 }
 
+# Generate Matrix OAuth client secret
+resource "random_password" "matrix_client_secret" {
+  length  = 32
+  special = false
+
+  lifecycle {
+    ignore_changes = [length, special]
+  }
+}
+
+# Store Matrix OIDC credentials in Vault
+resource "vault_kv_secret_v2" "matrix_oidc" {
+  mount = "kv"
+  name  = "sso/matrix"
+
+  data_json = jsonencode({
+    client_id     = "matrix"
+    client_secret = random_password.matrix_client_secret.result
+  })
+
+  lifecycle {
+    ignore_changes = [data_json]
+  }
+}
+
 # Create Authentik application for Matrix
 resource "authentik_application" "matrix" {
   name              = "Matrix"
@@ -40,7 +68,7 @@ resource "authentik_application" "matrix" {
 resource "authentik_provider_oauth2" "matrix" {
   name               = "matrix-oauth2"
   client_id          = "matrix"
-  client_secret      = data.vault_kv_secret_v2.matrix_client_secret.data["matrix_client_secret"]
+  client_secret      = random_password.matrix_client_secret.result
   authorization_flow = data.authentik_flow.default_authorization_flow.id
   invalidation_flow  = data.authentik_flow.default_invalidation_flow.id
 
@@ -56,12 +84,6 @@ resource "authentik_provider_oauth2" "matrix" {
   include_claims_in_id_token = true
 
   property_mappings = data.authentik_property_mapping_provider_scope.scopes.ids
-}
-
-# Read Matrix OAuth client secret from Vault
-data "vault_kv_secret_v2" "matrix_client_secret" {
-  mount = "kv"
-  name  = "sso/client-secrets"
 }
 
 # Data sources for default flows and mappings

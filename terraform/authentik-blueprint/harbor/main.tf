@@ -14,6 +14,9 @@ terraform {
     vault = {
       source = "hashicorp/vault"
     }
+    random = {
+      source = "hashicorp/random"
+    }
   }
 
   backend "kubernetes" {
@@ -33,6 +36,31 @@ provider "vault" {
   skip_tls_verify = true # Self-signed internal CA
 }
 
+# Generate Harbor OAuth client secret
+resource "random_password" "harbor_client_secret" {
+  length  = 32
+  special = false
+
+  lifecycle {
+    ignore_changes = [length, special]
+  }
+}
+
+# Store Harbor OIDC credentials in Vault
+resource "vault_kv_secret_v2" "harbor_oidc" {
+  mount = "kv"
+  name  = "sso/harbor"
+
+  data_json = jsonencode({
+    client_id     = "harbor"
+    client_secret = random_password.harbor_client_secret.result
+  })
+
+  lifecycle {
+    ignore_changes = [data_json]
+  }
+}
+
 # Create Authentik application for Harbor
 resource "authentik_application" "harbor" {
   name              = "Harbor"
@@ -47,7 +75,7 @@ resource "authentik_application" "harbor" {
 resource "authentik_provider_oauth2" "harbor" {
   name               = "harbor-oauth2"
   client_id          = "harbor"
-  client_secret      = data.vault_kv_secret_v2.harbor_client_secret.data["harbor_client_secret"]
+  client_secret      = random_password.harbor_client_secret.result
   authorization_flow = data.authentik_flow.default_authorization_flow.id
   invalidation_flow  = data.authentik_flow.default_invalidation_flow.id
 
@@ -63,12 +91,6 @@ resource "authentik_provider_oauth2" "harbor" {
   include_claims_in_id_token = true
 
   property_mappings = data.authentik_property_mapping_provider_scope.scopes.ids
-}
-
-# Read Harbor OAuth client secret from Vault
-data "vault_kv_secret_v2" "harbor_client_secret" {
-  mount = "kv"
-  name  = "sso/client-secrets"
 }
 
 # Data sources for default flows and mappings

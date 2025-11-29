@@ -22,6 +22,12 @@ provider "harbor" {
   password = data.kubernetes_secret.harbor_admin_password.data["HARBOR_ADMIN_PASSWORD"]
 }
 
+# Read Harbor OIDC credentials from Vault
+data "vault_kv_secret_v2" "harbor_oidc" {
+  mount = "kv"
+  name  = "sso/harbor"
+}
+
 # Configure Harbor OIDC authentication with Authentik
 resource "harbor_config_auth" "oidc" {
   # Set authentication mode to OIDC
@@ -30,8 +36,8 @@ resource "harbor_config_auth" "oidc" {
   # OIDC provider configuration
   oidc_name          = "Authentik"
   oidc_endpoint      = "${var.authentik_url}/application/o/harbor/"
-  oidc_client_id     = "harbor"
-  oidc_client_secret = data.vault_kv_secret_v2.harbor_client_secret.data["harbor_client_secret"]
+  oidc_client_id     = data.vault_kv_secret_v2.harbor_oidc.data["client_id"]
+  oidc_client_secret = data.vault_kv_secret_v2.harbor_oidc.data["client_secret"]
   oidc_scope         = "openid,email,profile"
   oidc_verify_cert   = true
 

@@ -3,6 +3,12 @@ terraform {
     authentik = {
       source = "goauthentik/authentik"
     }
+    vault = {
+      source = "hashicorp/vault"
+    }
+    random = {
+      source = "hashicorp/random"
+    }
   }
 
   backend "kubernetes" {
@@ -14,6 +20,37 @@ terraform {
 provider "authentik" {
   url   = var.authentik_url
   token = var.authentik_token
+}
+
+provider "vault" {
+  address         = var.vault_address
+  token           = var.vault_token
+  skip_tls_verify = true # Self-signed internal CA
+}
+
+# Generate Vault OAuth client secret
+resource "random_password" "vault_client_secret" {
+  length  = 32
+  special = false
+
+  lifecycle {
+    ignore_changes = [length, special]
+  }
+}
+
+# Store Vault OIDC credentials in Vault
+resource "vault_kv_secret_v2" "vault_oidc" {
+  mount = "kv"
+  name  = "sso/vault"
+
+  data_json = jsonencode({
+    client_id     = "vault"
+    client_secret = random_password.vault_client_secret.result
+  })
+
+  lifecycle {
+    ignore_changes = [data_json]
+  }
 }
 
 # Create Authentik application for Vault
@@ -30,7 +67,7 @@ resource "authentik_application" "vault" {
 resource "authentik_provider_oauth2" "vault" {
   name               = "vault-oidc"
   client_id          = "vault"
-  client_secret      = var.client_secret
+  client_secret      = random_password.vault_client_secret.result
   authorization_flow = data.authentik_flow.default_authorization_flow.id
   invalidation_flow  = data.authentik_flow.default_invalidation_flow.id
 

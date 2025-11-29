@@ -15,8 +15,13 @@ variable "vault_url" {
   default     = "https://vault.test-cluster.agentydragon.com"
 }
 
-variable "client_secret" {
-  description = "OAuth2 client secret for Vault"
+variable "vault_address" {
+  description = "Vault API address for provider"
+  type        = string
+}
+
+variable "vault_token" {
+  description = "Vault authentication token"
   type        = string
   sensitive   = true
 }
