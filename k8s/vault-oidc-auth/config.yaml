@@ -11,7 +11,10 @@ spec:
     name: flux-system
     namespace: flux-system
 
-  # No dependencies - sets up basic Vault configuration
+  # Wait for Authentik OIDC provider to be created
+  dependsOn:
+    - name: authentik-blueprint-vault
+      namespace: flux-system
 
   # Use in-cluster service account
   serviceAccountName: tf-runner
