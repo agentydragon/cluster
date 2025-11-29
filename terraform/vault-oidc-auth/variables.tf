@@ -18,7 +18,7 @@ variable "vault_external_url" {
 variable "authentik_oidc_discovery_url" {
   description = "Authentik OIDC discovery URL"
   type        = string
-  default     = "https://auth.test-cluster.agentydragon.com/application/o/vault/"
+  default     = "http://authentik-server.authentik:9000/application/o/vault/"
 }
 
 variable "vault_client_secret" {
