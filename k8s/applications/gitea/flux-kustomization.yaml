@@ -21,5 +21,5 @@ spec:
       namespace: flux-system
     - name: external-secrets-config
       namespace: flux-system
-    # Note: authentik-blueprint-gitea-secret depends on THIS kustomization for namespace
-    # OIDC secret will be created after app deployment, app must handle secret appearing later
+    - name: authentik-blueprint-gitea-provider # Wait for OIDC app in Authentik
+      namespace: flux-system
