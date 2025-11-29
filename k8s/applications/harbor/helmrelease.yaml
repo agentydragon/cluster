@@ -167,3 +167,36 @@ spec:
         limits:
           memory: 512Mi
           cpu: 200m
+
+    # Metrics and monitoring
+    metrics:
+      enabled: true
+      core:
+        path: /metrics
+        port: 8001
+      registry:
+        path: /metrics
+        port: 8001
+      jobservice:
+        path: /metrics
+        port: 8001
+      exporter:
+        path: /metrics
+        port: 8001
+      serviceMonitor:
+        enabled: true
+        # Match kube-prometheus-stack selector
+        additionalLabels:
+          release: kube-prometheus-stack
+        interval: 30s
+
+    # Harbor exporter for Prometheus metrics
+    exporter:
+      replicas: 1
+      resources:
+        requests:
+          memory: 128Mi
+          cpu: 50m
+        limits:
+          memory: 256Mi
+          cpu: 200m
