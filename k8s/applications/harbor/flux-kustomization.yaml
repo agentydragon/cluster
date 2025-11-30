@@ -19,5 +19,7 @@ spec:
       namespace: flux-system
     - name: external-secrets-config
       namespace: flux-system
+    - name: monitoring-stack
+      namespace: flux-system
     # Phase 1: Deploy without Authentik dependency
     # Phase 2: Add harbor-sso after Harbor is running
