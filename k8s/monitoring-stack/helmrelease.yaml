@@ -18,10 +18,10 @@ spec:
   valuesFrom:
     # Inject complete OIDC configuration from Vault (via ExternalSecret)
     # Terraform writes the full config to Vault, eliminating duplication
+    # Secret structured with full nesting to avoid targetPath escaping issues
     - kind: Secret
       name: grafana-oidc-config
-      valuesKey: config
-      targetPath: grafana.grafana\.ini.auth\.generic_oauth
+      valuesKey: values.yaml
   values:
     # Global settings
     defaultRules:
