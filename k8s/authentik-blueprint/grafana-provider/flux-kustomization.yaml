@@ -11,6 +11,8 @@ spec:
     kind: GitRepository
     name: flux-system
   dependsOn:
+    - name: core # Wait for tofu-controller to install Terraform CRD
+      namespace: flux-system
     - name: authentik
       namespace: flux-system
     - name: vault-token

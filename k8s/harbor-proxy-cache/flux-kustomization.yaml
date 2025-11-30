@@ -1,37 +1,18 @@
 ---
-apiVersion: infra.contrib.fluxcd.io/v1alpha2
-kind: Terraform
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
 metadata:
   name: harbor-proxy-cache
   namespace: flux-system
 spec:
-  interval: 15m
-  path: ./terraform/03-configuration/harbor-proxy-cache
+  interval: 10m0s
+  path: ./k8s/harbor-proxy-cache
+  prune: true
   sourceRef:
     kind: GitRepository
     name: flux-system
-    namespace: flux-system
-
-  # Use in-cluster service account
-  serviceAccountName: tf-runner
-  approvePlan: "auto"
-
-  # Store Terraform state in Kubernetes secret
-  backendConfig:
-    customConfiguration: |
-      backend "kubernetes" {
-        secret_suffix = "harbor-proxy-cache"
-        namespace     = "flux-system"
-      }
-
-  # Variables for Terraform
-  vars:
-    - name: harbor_url
-      value: "https://registry.test-cluster.agentydragon.com"
-
-  # Wait for Harbor to be ready
+  timeout: 10m0s
+  wait: true
   dependsOn:
-    - name: harbor
-      namespace: flux-system
-
-  # No dependency on Authentik - proxy cache is independent of SSO
+    - name: core # Wait for tofu-controller to install Terraform CRD
+    - name: harbor # Wait for Harbor to be deployed

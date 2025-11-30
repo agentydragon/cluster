@@ -13,6 +13,8 @@ spec:
   prune: true
   wait: true
   dependsOn:
+    - name: core # Wait for tofu-controller to install Terraform CRD
+      namespace: flux-system
     - name: authentik # Wait for authentik to be ready
       namespace: flux-system
     - name: external-secrets-config # Wait for ESO to be configured

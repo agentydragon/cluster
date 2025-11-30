@@ -13,6 +13,8 @@ spec:
   prune: true
   wait: true
   dependsOn:
+    - name: core # Wait for tofu-controller to install Terraform CRD
+      namespace: flux-system
     - name: vault # Wait for Vault instance to be ready
     - name: external-secrets-config # Required for ExternalSecret resources
     - name: authentik # Wait for Authentik to be ready (OIDC discovery URL must be accessible)

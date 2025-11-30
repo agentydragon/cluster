@@ -13,6 +13,8 @@ spec:
   timeout: 10m0s
   wait: true
   dependsOn:
+    - name: core # Wait for tofu-controller to install Terraform CRD
+      namespace: flux-system
     - name: vault-token # Wait for Vault token to be available for Terraform authentication
       namespace: flux-system
     - name: external-secrets-config # Wait for ESO to be configured
