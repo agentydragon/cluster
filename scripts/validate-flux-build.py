@@ -14,9 +14,16 @@ from typing import List, Tuple
 
 def run_flux_build() -> Tuple[bool, str, str]:
     """Run flux build and capture output - fail if flux is not available"""
+    import os
+
     try:
         # Try flux build with dry-run (requires kustomization file)
         kustomization_file = "./k8s/flux-system/gotk-sync.yaml"
+
+        # Skip validation if flux-system doesn't exist yet (created during bootstrap)
+        if not os.path.exists(kustomization_file):
+            return True, "", "flux-system not bootstrapped yet - skipping validation"
+
         result = subprocess.run(
             [
                 "flux",
@@ -128,6 +135,11 @@ def main():
         if stderr:
             print(stderr)
         return 1
+
+    # Check if validation was skipped
+    if stderr and "skipping validation" in stderr:
+        print(f"ℹ️  {stderr}")
+        return 0
 
     # Analyze the output
     warnings = analyze_flux_output(stdout)
