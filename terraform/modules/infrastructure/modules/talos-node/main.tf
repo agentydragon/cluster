@@ -311,6 +311,20 @@ data "talos_machine_configuration" "config" {
         }
       }
     }),
+    # Control plane gets apiServer configuration to listen on IPv4
+    yamlencode({
+      cluster = {
+        apiServer = {
+          certSANs = [
+            var.shared_config.cluster_vip,
+            "127.0.0.1"
+          ]
+          extraArgs = {
+            "bind-address" = "0.0.0.0" # Force IPv4 binding
+          }
+        }
+      }
+    }),
     # Control plane gets Tailscale configuration with routing
     yamlencode({
       apiVersion = "v1alpha1"
