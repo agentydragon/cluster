@@ -20,7 +20,7 @@ spec:
     # Terraform writes the full config to Vault, eliminating duplication
     - kind: Secret
       name: grafana-oidc-config
-      valuesKey: auth.generic_oauth.yaml
+      valuesKey: config
       targetPath: grafana.grafana\.ini.auth\.generic_oauth
   values:
     # Global settings
