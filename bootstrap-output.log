@@ -1,0 +1,2257 @@
+🚀 Starting layered Talos cluster bootstrap...
+📂 Terraform directory: /home/agentydragon/code/cluster/terraform
+
+🔍 Phase 0: Preflight Validation
+==================================
+🔍 Running pre-commit validation...
+trim trailing whitespace.................................................Passed
+check for added large files..............................................Passed
+check yaml...............................................................Passed
+check for merge conflicts................................................Passed
+check json...............................................................Passed
+check that executables have shebangs.....................................Passed
+check that scripts with shebangs are executable..........................Passed
+detect private key.......................................................Passed
+Run Kubeconform on yaml files............................................Passed
+k8svalidate..............................................................Passed
+Format YAML files........................................................Passed
+Lint Markdown files......................................................Passed
+ruff (legacy alias)......................................................Passed
+ruff format..............................................................Passed
+Terraform fmt............................................................Passed
+Terraform validate...................................(no files to check)Skipped
+Terraform validate with tflint...........................................Passed
+Checkov security analysis (via nix)......................................Passed
+Validate Kustomize builds (parallel).....................................Passed
+Validate Flux kustomizations (dry-run)...................................Passed
+Validate GitOps dependencies.............................................Passed
+Validate Helm templates..................................................Passed
+Prevent terraform provider version redefinitions.........................Passed
+🔍 Validating terraform layer: 00-persistent-auth...
+[32m[1mSuccess![0m The configuration is valid.
+[0m
+🔍 Validating terraform layer: 01-infrastructure...
+[32m[1mSuccess![0m The configuration is valid.
+[0m
+🔍 Validating terraform layer: 02-services...
+[32m[1mSuccess![0m The configuration is valid.
+[0m
+
+⚡ Layer 0: Persistent Auth Setup
+================================
+ℹ️  Persistent auth layer already exists - skipping deployment
+    Use 'cd terraform/00-persistent-auth && terraform destroy' to reset auth
+
+⚡ Layer 1: Infrastructure Deployment
+====================================
+🚀 Deploying infrastructure layer...
+     📋 PVE-AUTH → VMs → TALOS → CILIUM → SEALED-SECRETS
+[0m[1mdata.terraform_remote_state.persistent_auth: Reading...[0m[0m
+[0m[1mdata.terraform_remote_state.persistent_auth: Read complete after 0s[0m
+[0m[1mmodule.pve_auth.data.external.pve_users["terraform"]: Reading...[0m[0m
+[0m[1mmodule.pve_auth.data.external.pve_users["terraform"]: Read complete after 1s [id=-][0m
+[0m[1mmodule.pve_auth.data.external.pve_tokens["terraform"]: Reading...[0m[0m
+[0m[1mmodule.pve_auth.data.external.pve_tokens["terraform"]: Read complete after 0s [id=-][0m
+
+Terraform used the selected providers to generate the following execution
+plan. Resource actions are indicated with the following symbols:
+  [32m+[0m create[0m
+ [36m<=[0m read (data resources)[0m
+
+Terraform will perform the following actions:
+
+[1m  # helm_release.cilium_bootstrap[0m will be created
+[0m  [32m+[0m[0m resource "helm_release" "cilium_bootstrap" {
+      [32m+[0m[0m atomic                     = true
+      [32m+[0m[0m chart                      = "cilium"
+      [32m+[0m[0m cleanup_on_fail            = true
+      [32m+[0m[0m create_namespace           = true
+      [32m+[0m[0m dependency_update          = false
+      [32m+[0m[0m disable_crd_hooks          = false
+      [32m+[0m[0m disable_openapi_validation = false
+      [32m+[0m[0m disable_webhooks           = false
+      [32m+[0m[0m force_update               = false
+      [32m+[0m[0m id                         = (known after apply)
+      [32m+[0m[0m lint                       = false
+      [32m+[0m[0m max_history                = 3
+      [32m+[0m[0m metadata                   = (known after apply)
+      [32m+[0m[0m name                       = "cilium"
+      [32m+[0m[0m namespace                  = "kube-system"
+      [32m+[0m[0m pass_credentials           = false
+      [32m+[0m[0m recreate_pods              = false
+      [32m+[0m[0m render_subchart_notes      = true
+      [32m+[0m[0m replace                    = false
+      [32m+[0m[0m repository                 = "cilium"
+      [32m+[0m[0m reset_values               = false
+      [32m+[0m[0m reuse_values               = false
+      [32m+[0m[0m set_wo                     = (write-only attribute)
+      [32m+[0m[0m skip_crds                  = false
+      [32m+[0m[0m status                     = "deployed"
+      [32m+[0m[0m take_ownership             = false
+      [32m+[0m[0m timeout                    = 600
+      [32m+[0m[0m upgrade_install            = false
+      [32m+[0m[0m values                     = [
+          [32m+[0m[0m <<-EOT
+                # Cilium CNI configuration for Terraform-managed infrastructure layer
+                # Reference: /code/github.com/cilium/cilium/install/kubernetes/cilium/values.yaml
+
+                cluster:
+                  name: talos-cluster
+                  id: 1
+                k8sServiceHost: "10.0.3.1"
+                k8sServicePort: "6443"
+                ipam:
+                  mode: cluster-pool
+                  operator:
+                    clusterPoolIPv4PodCIDRList:
+                      - "10.244.0.0/16"
+                routingMode: native
+                ipv4NativeRoutingCIDR: "10.244.0.0/16"
+                ipv4:
+                  enabled: true
+                ipMasqAgent:
+                  enabled: false
+                enableIPv4Masquerade: true
+                autoDirectNodeRoutes: true
+                securityContext:
+                  capabilities:
+                    ciliumAgent:
+                      [CHOWN, KILL, NET_ADMIN, NET_RAW, IPC_LOCK, SYS_ADMIN, SYS_RESOURCE, DAC_OVERRIDE, FOWNER, SETGID, SETUID]
+                    cleanCiliumState: [NET_ADMIN, SYS_ADMIN, SYS_RESOURCE]
+                cgroup:
+                  hostRoot: /sys/fs/cgroup
+                  autoMount:
+                    enabled: false
+                hubble:
+                  enabled: true
+                  relay:
+                    enabled: true
+                  ui:
+                    enabled: true
+                loadBalancer:
+                  algorithm: random
+                l2announcements:
+                  enabled: true
+                kubeProxyReplacement: "true"
+                bpf:
+                  hostLegacyRouting: true
+                endpointRoutes:
+                  enabled: true
+                socketLB:
+                  enabled: true
+                hostServices:
+                  enabled: true
+                  protocols: tcp,udp
+                nodePort:
+                  enabled: true
+                  bindProtection: true
+            EOT,
+        ]
+      [32m+[0m[0m verify                     = false
+      [32m+[0m[0m version                    = "1.16.5"
+      [32m+[0m[0m wait                       = true
+      [32m+[0m[0m wait_for_jobs              = true
+    }
+
+[1m  # kubernetes_secret.sealed_secrets_key[0m will be created
+[0m  [32m+[0m[0m resource "kubernetes_secret" "sealed_secrets_key" {
+      [32m+[0m[0m binary_data_wo                 = (write-only attribute)
+      [32m+[0m[0m data                           = (sensitive value)
+      [32m+[0m[0m data_wo                        = (write-only attribute)
+      [32m+[0m[0m id                             = (known after apply)
+      [32m+[0m[0m type                           = "kubernetes.io/tls"
+      [32m+[0m[0m wait_for_service_account_token = true
+
+      [32m+[0m[0m metadata {
+          [32m+[0m[0m generation       = (known after apply)
+          [32m+[0m[0m labels           = {
+              [32m+[0m[0m "sealedsecrets.bitnami.com/sealed-secrets-key" = "active"
+            }
+          [32m+[0m[0m name             = "sealed-secrets-key"
+          [32m+[0m[0m namespace        = "kube-system"
+          [32m+[0m[0m resource_version = (known after apply)
+          [32m+[0m[0m uid              = (known after apply)
+        }
+    }
+
+[1m  # local_file.kubeconfig[0m will be created
+[0m  [32m+[0m[0m resource "local_file" "kubeconfig" {
+      [32m+[0m[0m content              = (sensitive value)
+      [32m+[0m[0m content_base64sha256 = (known after apply)
+      [32m+[0m[0m content_base64sha512 = (known after apply)
+      [32m+[0m[0m content_md5          = (known after apply)
+      [32m+[0m[0m content_sha1         = (known after apply)
+      [32m+[0m[0m content_sha256       = (known after apply)
+      [32m+[0m[0m content_sha512       = (known after apply)
+      [32m+[0m[0m directory_permission = "0777"
+      [32m+[0m[0m file_permission      = "0777"
+      [32m+[0m[0m filename             = "./kubeconfig"
+      [32m+[0m[0m id                   = (known after apply)
+    }
+
+[1m  # local_file.talosconfig[0m will be created
+[0m  [32m+[0m[0m resource "local_file" "talosconfig" {
+      [32m+[0m[0m content              = (sensitive value)
+      [32m+[0m[0m content_base64sha256 = (known after apply)
+      [32m+[0m[0m content_base64sha512 = (known after apply)
+      [32m+[0m[0m content_md5          = (known after apply)
+      [32m+[0m[0m content_sha1         = (known after apply)
+      [32m+[0m[0m content_sha256       = (known after apply)
+      [32m+[0m[0m content_sha512       = (known after apply)
+      [32m+[0m[0m directory_permission = "0777"
+      [32m+[0m[0m file_permission      = "0777"
+      [32m+[0m[0m filename             = "./talosconfig.yml"
+      [32m+[0m[0m id                   = (known after apply)
+    }
+
+[1m  # null_resource.add_cilium_repo[0m will be created
+[0m  [32m+[0m[0m resource "null_resource" "add_cilium_repo" {
+      [32m+[0m[0m id = (known after apply)
+    }
+
+[1m  # null_resource.cleanup_proxmox_volumes[0m will be created
+[0m  [32m+[0m[0m resource "null_resource" "cleanup_proxmox_volumes" {
+      [32m+[0m[0m id       = (known after apply)
+      [32m+[0m[0m triggers = {
+          [32m+[0m[0m "cluster_name" = "talos-cluster"
+          [32m+[0m[0m "proxmox_host" = "root@atlas"
+        }
+    }
+
+[1m  # null_resource.wait_for_k8s_api[0m will be created
+[0m  [32m+[0m[0m resource "null_resource" "wait_for_k8s_api" {
+      [32m+[0m[0m id = (known after apply)
+    }
+
+[1m  # random_string.key_suffix[0m will be created
+[0m  [32m+[0m[0m resource "random_string" "key_suffix" {
+      [32m+[0m[0m id          = (known after apply)
+      [32m+[0m[0m length      = 5
+      [32m+[0m[0m lower       = true
+      [32m+[0m[0m min_lower   = 0
+      [32m+[0m[0m min_numeric = 0
+      [32m+[0m[0m min_special = 0
+      [32m+[0m[0m min_upper   = 0
+      [32m+[0m[0m number      = true
+      [32m+[0m[0m numeric     = true
+      [32m+[0m[0m result      = (known after apply)
+      [32m+[0m[0m special     = false
+      [32m+[0m[0m upper       = false
+    }
+
+[1m  # module.infrastructure.data.talos_client_configuration.talos[0m will be read during apply
+  # (config refers to values not yet known)
+[0m [36m<=[0m[0m data "talos_client_configuration" "talos" {
+      [32m+[0m[0m client_configuration = (known after apply)
+      [32m+[0m[0m cluster_name         = "talos-cluster"
+      [32m+[0m[0m endpoints            = [
+          [32m+[0m[0m "10.0.1.1",
+          [32m+[0m[0m "10.0.1.2",
+          [32m+[0m[0m "10.0.1.3",
+        ]
+      [32m+[0m[0m id                   = (known after apply)
+      [32m+[0m[0m talos_config         = (sensitive value)
+    }
+
+[1m  # module.infrastructure.null_resource.commit_sealed_secrets[0m will be created
+[0m  [32m+[0m[0m resource "null_resource" "commit_sealed_secrets" {
+      [32m+[0m[0m id       = (known after apply)
+      [32m+[0m[0m triggers = {
+          [32m+[0m[0m "timestamp" = (known after apply)
+        }
+    }
+
+[1m  # module.infrastructure.null_resource.wait_for_sealed_secrets[0m will be created
+[0m  [32m+[0m[0m resource "null_resource" "wait_for_sealed_secrets" {
+      [32m+[0m[0m id = (known after apply)
+    }
+
+[1m  # module.infrastructure.talos_cluster_kubeconfig.talos[0m will be created
+[0m  [32m+[0m[0m resource "talos_cluster_kubeconfig" "talos" {
+      [32m+[0m[0m certificate_renewal_duration    = "720h"
+      [32m+[0m[0m client_configuration            = (known after apply)
+      [32m+[0m[0m endpoint                        = "10.0.1.1"
+      [32m+[0m[0m id                              = (known after apply)
+      [32m+[0m[0m kubeconfig_raw                  = (sensitive value)
+      [32m+[0m[0m kubernetes_client_configuration = (known after apply)
+      [32m+[0m[0m node                            = "10.0.1.1"
+    }
+
+[1m  # module.infrastructure.talos_machine_bootstrap.talos[0m will be created
+[0m  [32m+[0m[0m resource "talos_machine_bootstrap" "talos" {
+      [32m+[0m[0m client_configuration = (known after apply)
+      [32m+[0m[0m endpoint             = "10.0.1.1"
+      [32m+[0m[0m id                   = (known after apply)
+      [32m+[0m[0m node                 = "10.0.1.1"
+    }
+
+[1m  # module.infrastructure.talos_machine_secrets.talos[0m will be created
+[0m  [32m+[0m[0m resource "talos_machine_secrets" "talos" {
+      [32m+[0m[0m client_configuration = (known after apply)
+      [32m+[0m[0m id                   = (known after apply)
+      [32m+[0m[0m machine_secrets      = (known after apply)
+      [32m+[0m[0m talos_version        = "v1.9.1"
+    }
+
+[1m  # module.pve_auth.null_resource.cleanup_proxmox_tokens["terraform"][0m will be created
+[0m  [32m+[0m[0m resource "null_resource" "cleanup_proxmox_tokens" {
+      [32m+[0m[0m id       = (known after apply)
+      [32m+[0m[0m triggers = {
+          [32m+[0m[0m "proxmox_host" = "root@atlas"
+          [32m+[0m[0m "role_name"    = "TerraformAdmin"
+          [32m+[0m[0m "token_name"   = "terraform-token"
+          [32m+[0m[0m "user_name"    = "terraform@pve"
+        }
+    }
+
+[1m  # module.infrastructure.module.nodes["controlplane0"].data.external.preauth_key[0m will be read during apply
+  # (depends on a resource or a module with changes pending)
+[0m [36m<=[0m[0m data "external" "preauth_key" {
+      [32m+[0m[0m id      = (known after apply)
+      [32m+[0m[0m program = [
+          [32m+[0m[0m "bash",
+          [32m+[0m[0m "-c",
+          [32m+[0m[0m (sensitive value),
+        ]
+      [32m+[0m[0m result  = (known after apply)
+    }
+
+[1m  # module.infrastructure.module.nodes["controlplane0"].data.talos_image_factory_urls.urls[0m will be read during apply
+  # (config refers to values not yet known)
+[0m [36m<=[0m[0m data "talos_image_factory_urls" "urls" {
+      [32m+[0m[0m architecture  = "amd64"
+      [32m+[0m[0m id            = (known after apply)
+      [32m+[0m[0m platform      = "metal"
+      [32m+[0m[0m schematic_id  = (known after apply)
+      [32m+[0m[0m talos_version = (sensitive value)
+      [32m+[0m[0m urls          = (known after apply)
+    }
+
+[1m  # module.infrastructure.module.nodes["controlplane0"].data.talos_machine_configuration.config[0m will be read during apply
+  # (config refers to values not yet known)
+[0m [36m<=[0m[0m data "talos_machine_configuration" "config" {
+      [32m+[0m[0m cluster_endpoint      = (sensitive value)
+      [32m+[0m[0m cluster_name          = (sensitive value)
+      [32m+[0m[0m config_patches        = [
+          [32m+[0m[0m <<-EOT
+                "cluster":
+                  "discovery":
+                    "enabled": false
+                    "registries":
+                      "kubernetes":
+                        "disabled": true
+                      "service":
+                        "disabled": true
+                  "network":
+                    "cni":
+                      "name": "none"
+                  "proxy":
+                    "disabled": true
+                "machine":
+                  "features":
+                    "hostDNS":
+                      "enabled": true
+                      "forwardKubeDNSToHost": true
+                    "kubePrism":
+                      "enabled": true
+                      "port": 7445
+                  "kubelet":
+                    "extraArgs":
+                      "allowed-unsafe-sysctls": "net.ipv4.tcp_mtu_probing"
+                      "provider-id": "proxmox://cluster/1500"
+                    "nodeIP":
+                      "validSubnets":
+                      - "10.0.0.0/16"
+                  "nodeLabels":
+                    "topology.kubernetes.io/region": "cluster"
+                    "topology.kubernetes.io/zone": "atlas"
+                  "registries":
+                    "mirrors":
+                      "docker.io":
+                        "endpoints":
+                        - "https://registry.test-cluster.agentydragon.com/docker-hub-proxy"
+                        - "https://registry-1.docker.io"
+                      "ghcr.io":
+                        "endpoints":
+                        - "https://registry.test-cluster.agentydragon.com/ghcr-proxy"
+                        - "https://ghcr.io"
+                      "quay.io":
+                        "endpoints":
+                        - "https://registry.test-cluster.agentydragon.com/quay-proxy"
+                        - "https://quay.io"
+                      "registry.k8s.io":
+                        "endpoints":
+                        - "https://registry.test-cluster.agentydragon.com/registry-k8s-io-proxy"
+                        - "https://registry.k8s.io"
+            EOT,
+          [32m+[0m[0m (sensitive value),
+          [32m+[0m[0m (sensitive value),
+          [32m+[0m[0m (sensitive value),
+        ]
+      [32m+[0m[0m docs                  = (sensitive value)
+      [32m+[0m[0m examples              = (sensitive value)
+      [32m+[0m[0m id                    = (known after apply)
+      [32m+[0m[0m kubernetes_version    = (sensitive value)
+      [32m+[0m[0m machine_configuration = (sensitive value)
+      [32m+[0m[0m machine_secrets       = (sensitive value)
+      [32m+[0m[0m machine_type          = (sensitive value)
+      [32m+[0m[0m talos_version         = (sensitive value)
+    }
+
+[1m  # module.infrastructure.module.nodes["controlplane0"].proxmox_virtual_environment_download_file.disk_image[0m will be created
+[0m  [32m+[0m[0m resource "proxmox_virtual_environment_download_file" "disk_image" {
+      [32m+[0m[0m content_type        = "import"
+      [32m+[0m[0m datastore_id        = "local"
+      [32m+[0m[0m file_name           = (known after apply)
+      [32m+[0m[0m id                  = (known after apply)
+      [32m+[0m[0m node_name           = (sensitive value)
+      [32m+[0m[0m overwrite           = true
+      [32m+[0m[0m overwrite_unmanaged = false
+      [32m+[0m[0m size                = (known after apply)
+      [32m+[0m[0m upload_timeout      = 600
+      [32m+[0m[0m url                 = (known after apply)
+      [32m+[0m[0m verify              = true
+    }
+
+[1m  # module.infrastructure.module.nodes["controlplane0"].proxmox_virtual_environment_vm.vm[0m will be created
+[0m  [32m+[0m[0m resource "proxmox_virtual_environment_vm" "vm" {
+      [32m+[0m[0m acpi                    = true
+      [32m+[0m[0m bios                    = "ovmf"
+      [32m+[0m[0m id                      = (known after apply)
+      [32m+[0m[0m ipv4_addresses          = (known after apply)
+      [32m+[0m[0m ipv6_addresses          = (known after apply)
+      [32m+[0m[0m keyboard_layout         = "en-us"
+      [32m+[0m[0m mac_addresses           = (known after apply)
+      [32m+[0m[0m machine                 = "q35"
+      [32m+[0m[0m migrate                 = false
+      [32m+[0m[0m name                    = (sensitive value)
+      [32m+[0m[0m network_interface_names = (known after apply)
+      [32m+[0m[0m node_name               = (sensitive value)
+      [32m+[0m[0m on_boot                 = true
+      [32m+[0m[0m protection              = false
+      [32m+[0m[0m reboot                  = false
+      [32m+[0m[0m reboot_after_update     = true
+      [32m+[0m[0m scsi_hardware           = "virtio-scsi-single"
+      [32m+[0m[0m started                 = true
+      [32m+[0m[0m stop_on_destroy         = true
+      [32m+[0m[0m tablet_device           = true
+      [32m+[0m[0m tags                    = [
+          [32m+[0m[0m "controlplane",
+          [32m+[0m[0m "kubernetes",
+          [32m+[0m[0m "talos",
+          [32m+[0m[0m "terraform",
+        ]
+      [32m+[0m[0m template                = false
+      [32m+[0m[0m timeout_clone           = 1800
+      [32m+[0m[0m timeout_create          = 1800
+      [32m+[0m[0m timeout_migrate         = 1800
+      [32m+[0m[0m timeout_move_disk       = 1800
+      [32m+[0m[0m timeout_reboot          = 1800
+      [32m+[0m[0m timeout_shutdown_vm     = 1800
+      [32m+[0m[0m timeout_start_vm        = 1800
+      [32m+[0m[0m timeout_stop_vm         = 300
+      [32m+[0m[0m vm_id                   = 1500
+
+      [32m+[0m[0m agent {
+          [32m+[0m[0m enabled = true
+          [32m+[0m[0m timeout = "15m"
+          [32m+[0m[0m trim    = true
+          [32m+[0m[0m type    = "virtio"
+        }
+
+      [32m+[0m[0m cpu {
+          [32m+[0m[0m cores      = 4
+          [32m+[0m[0m hotplugged = 0
+          [32m+[0m[0m limit      = 0
+          [32m+[0m[0m numa       = false
+          [32m+[0m[0m sockets    = 1
+          [32m+[0m[0m type       = "host"
+          [32m+[0m[0m units      = 100
+        }
+
+      [32m+[0m[0m disk {
+          [32m+[0m[0m aio               = "io_uring"
+          [32m+[0m[0m backup            = true
+          [32m+[0m[0m cache             = "none"
+          [32m+[0m[0m datastore_id      = "local-zfs"
+          [32m+[0m[0m discard           = "on"
+          [32m+[0m[0m file_format       = "raw"
+          [32m+[0m[0m import_from       = (known after apply)
+          [32m+[0m[0m interface         = "scsi0"
+          [32m+[0m[0m iothread          = true
+          [32m+[0m[0m path_in_datastore = (known after apply)
+          [32m+[0m[0m replicate         = true
+          [32m+[0m[0m size              = 40
+          [32m+[0m[0m ssd               = true
+        }
+
+      [32m+[0m[0m efi_disk {
+          [32m+[0m[0m datastore_id      = "local-zfs"
+          [32m+[0m[0m file_format       = "raw"
+          [32m+[0m[0m pre_enrolled_keys = false
+          [32m+[0m[0m type              = "4m"
+        }
+
+      [32m+[0m[0m memory {
+          [32m+[0m[0m dedicated      = 12288
+          [32m+[0m[0m floating       = 0
+          [32m+[0m[0m keep_hugepages = false
+          [32m+[0m[0m shared         = 0
+        }
+
+      [32m+[0m[0m network_device {
+          [32m+[0m[0m bridge      = "vmbr0"
+          [32m+[0m[0m enabled     = true
+          [32m+[0m[0m firewall    = false
+          [32m+[0m[0m mac_address = (known after apply)
+          [32m+[0m[0m model       = "virtio"
+          [32m+[0m[0m mtu         = 0
+          [32m+[0m[0m queues      = 0
+          [32m+[0m[0m rate_limit  = 0
+          [32m+[0m[0m vlan_id     = 0
+        }
+
+      [32m+[0m[0m operating_system {
+          [32m+[0m[0m type = "l26"
+        }
+
+      [32m+[0m[0m vga {
+          [32m+[0m[0m memory = 16
+          [32m+[0m[0m type   = "qxl"
+        }
+    }
+
+[1m  # module.infrastructure.module.nodes["controlplane0"].talos_image_factory_schematic.schematic[0m will be created
+[0m  [32m+[0m[0m resource "talos_image_factory_schematic" "schematic" {
+      [32m+[0m[0m id        = (known after apply)
+      [32m+[0m[0m schematic = (sensitive value)
+    }
+
+[1m  # module.infrastructure.module.nodes["controlplane0"].talos_machine_configuration_apply.apply[0m will be created
+[0m  [32m+[0m[0m resource "talos_machine_configuration_apply" "apply" {
+      [32m+[0m[0m apply_mode                  = "auto"
+      [32m+[0m[0m client_configuration        = (sensitive value)
+      [32m+[0m[0m config_patches              = []
+      [32m+[0m[0m endpoint                    = "10.0.1.1"
+      [32m+[0m[0m id                          = (known after apply)
+      [32m+[0m[0m machine_configuration       = (sensitive value)
+      [32m+[0m[0m machine_configuration_input = (sensitive value)
+      [32m+[0m[0m node                        = "10.0.1.1"
+    }
+
+[1m  # module.infrastructure.module.nodes["controlplane0"].terraform_data.node_registration[0m will be created
+[0m  [32m+[0m[0m resource "terraform_data" "node_registration" {
+      [32m+[0m[0m id     = (known after apply)
+      [32m+[0m[0m input  = {
+          [32m+[0m[0m key_id = (known after apply)
+          [32m+[0m[0m server = (sensitive value)
+        }
+      [32m+[0m[0m output = (known after apply)
+    }
+
+[1m  # module.infrastructure.module.nodes["controlplane0"].terraform_data.restart_reminder[0m will be created
+[0m  [32m+[0m[0m resource "terraform_data" "restart_reminder" {
+      [32m+[0m[0m id               = (known after apply)
+      [32m+[0m[0m triggers_replace = [
+          [32m+[0m[0m (known after apply),
+        ]
+    }
+
+[1m  # module.infrastructure.module.nodes["controlplane1"].data.external.preauth_key[0m will be read during apply
+  # (depends on a resource or a module with changes pending)
+[0m [36m<=[0m[0m data "external" "preauth_key" {
+      [32m+[0m[0m id      = (known after apply)
+      [32m+[0m[0m program = [
+          [32m+[0m[0m "bash",
+          [32m+[0m[0m "-c",
+          [32m+[0m[0m (sensitive value),
+        ]
+      [32m+[0m[0m result  = (known after apply)
+    }
+
+[1m  # module.infrastructure.module.nodes["controlplane1"].data.talos_image_factory_urls.urls[0m will be read during apply
+  # (config refers to values not yet known)
+[0m [36m<=[0m[0m data "talos_image_factory_urls" "urls" {
+      [32m+[0m[0m architecture  = "amd64"
+      [32m+[0m[0m id            = (known after apply)
+      [32m+[0m[0m platform      = "metal"
+      [32m+[0m[0m schematic_id  = (known after apply)
+      [32m+[0m[0m talos_version = (sensitive value)
+      [32m+[0m[0m urls          = (known after apply)
+    }
+
+[1m  # module.infrastructure.module.nodes["controlplane1"].data.talos_machine_configuration.config[0m will be read during apply
+  # (config refers to values not yet known)
+[0m [36m<=[0m[0m data "talos_machine_configuration" "config" {
+      [32m+[0m[0m cluster_endpoint      = (sensitive value)
+      [32m+[0m[0m cluster_name          = (sensitive value)
+      [32m+[0m[0m config_patches        = [
+          [32m+[0m[0m <<-EOT
+                "cluster":
+                  "discovery":
+                    "enabled": false
+                    "registries":
+                      "kubernetes":
+                        "disabled": true
+                      "service":
+                        "disabled": true
+                  "network":
+                    "cni":
+                      "name": "none"
+                  "proxy":
+                    "disabled": true
+                "machine":
+                  "features":
+                    "hostDNS":
+                      "enabled": true
+                      "forwardKubeDNSToHost": true
+                    "kubePrism":
+                      "enabled": true
+                      "port": 7445
+                  "kubelet":
+                    "extraArgs":
+                      "allowed-unsafe-sysctls": "net.ipv4.tcp_mtu_probing"
+                      "provider-id": "proxmox://cluster/1501"
+                    "nodeIP":
+                      "validSubnets":
+                      - "10.0.0.0/16"
+                  "nodeLabels":
+                    "topology.kubernetes.io/region": "cluster"
+                    "topology.kubernetes.io/zone": "atlas"
+                  "registries":
+                    "mirrors":
+                      "docker.io":
+                        "endpoints":
+                        - "https://registry.test-cluster.agentydragon.com/docker-hub-proxy"
+                        - "https://registry-1.docker.io"
+                      "ghcr.io":
+                        "endpoints":
+                        - "https://registry.test-cluster.agentydragon.com/ghcr-proxy"
+                        - "https://ghcr.io"
+                      "quay.io":
+                        "endpoints":
+                        - "https://registry.test-cluster.agentydragon.com/quay-proxy"
+                        - "https://quay.io"
+                      "registry.k8s.io":
+                        "endpoints":
+                        - "https://registry.test-cluster.agentydragon.com/registry-k8s-io-proxy"
+                        - "https://registry.k8s.io"
+            EOT,
+          [32m+[0m[0m (sensitive value),
+          [32m+[0m[0m (sensitive value),
+          [32m+[0m[0m (sensitive value),
+        ]
+      [32m+[0m[0m docs                  = (sensitive value)
+      [32m+[0m[0m examples              = (sensitive value)
+      [32m+[0m[0m id                    = (known after apply)
+      [32m+[0m[0m kubernetes_version    = (sensitive value)
+      [32m+[0m[0m machine_configuration = (sensitive value)
+      [32m+[0m[0m machine_secrets       = (sensitive value)
+      [32m+[0m[0m machine_type          = (sensitive value)
+      [32m+[0m[0m talos_version         = (sensitive value)
+    }
+
+[1m  # module.infrastructure.module.nodes["controlplane1"].proxmox_virtual_environment_download_file.disk_image[0m will be created
+[0m  [32m+[0m[0m resource "proxmox_virtual_environment_download_file" "disk_image" {
+      [32m+[0m[0m content_type        = "import"
+      [32m+[0m[0m datastore_id        = "local"
+      [32m+[0m[0m file_name           = (known after apply)
+      [32m+[0m[0m id                  = (known after apply)
+      [32m+[0m[0m node_name           = (sensitive value)
+      [32m+[0m[0m overwrite           = true
+      [32m+[0m[0m overwrite_unmanaged = false
+      [32m+[0m[0m size                = (known after apply)
+      [32m+[0m[0m upload_timeout      = 600
+      [32m+[0m[0m url                 = (known after apply)
+      [32m+[0m[0m verify              = true
+    }
+
+[1m  # module.infrastructure.module.nodes["controlplane1"].proxmox_virtual_environment_vm.vm[0m will be created
+[0m  [32m+[0m[0m resource "proxmox_virtual_environment_vm" "vm" {
+      [32m+[0m[0m acpi                    = true
+      [32m+[0m[0m bios                    = "ovmf"
+      [32m+[0m[0m id                      = (known after apply)
+      [32m+[0m[0m ipv4_addresses          = (known after apply)
+      [32m+[0m[0m ipv6_addresses          = (known after apply)
+      [32m+[0m[0m keyboard_layout         = "en-us"
+      [32m+[0m[0m mac_addresses           = (known after apply)
+      [32m+[0m[0m machine                 = "q35"
+      [32m+[0m[0m migrate                 = false
+      [32m+[0m[0m name                    = (sensitive value)
+      [32m+[0m[0m network_interface_names = (known after apply)
+      [32m+[0m[0m node_name               = (sensitive value)
+      [32m+[0m[0m on_boot                 = true
+      [32m+[0m[0m protection              = false
+      [32m+[0m[0m reboot                  = false
+      [32m+[0m[0m reboot_after_update     = true
+      [32m+[0m[0m scsi_hardware           = "virtio-scsi-single"
+      [32m+[0m[0m started                 = true
+      [32m+[0m[0m stop_on_destroy         = true
+      [32m+[0m[0m tablet_device           = true
+      [32m+[0m[0m tags                    = [
+          [32m+[0m[0m "controlplane",
+          [32m+[0m[0m "kubernetes",
+          [32m+[0m[0m "talos",
+          [32m+[0m[0m "terraform",
+        ]
+      [32m+[0m[0m template                = false
+      [32m+[0m[0m timeout_clone           = 1800
+      [32m+[0m[0m timeout_create          = 1800
+      [32m+[0m[0m timeout_migrate         = 1800
+      [32m+[0m[0m timeout_move_disk       = 1800
+      [32m+[0m[0m timeout_reboot          = 1800
+      [32m+[0m[0m timeout_shutdown_vm     = 1800
+      [32m+[0m[0m timeout_start_vm        = 1800
+      [32m+[0m[0m timeout_stop_vm         = 300
+      [32m+[0m[0m vm_id                   = 1501
+
+      [32m+[0m[0m agent {
+          [32m+[0m[0m enabled = true
+          [32m+[0m[0m timeout = "15m"
+          [32m+[0m[0m trim    = true
+          [32m+[0m[0m type    = "virtio"
+        }
+
+      [32m+[0m[0m cpu {
+          [32m+[0m[0m cores      = 4
+          [32m+[0m[0m hotplugged = 0
+          [32m+[0m[0m limit      = 0
+          [32m+[0m[0m numa       = false
+          [32m+[0m[0m sockets    = 1
+          [32m+[0m[0m type       = "host"
+          [32m+[0m[0m units      = 100
+        }
+
+      [32m+[0m[0m disk {
+          [32m+[0m[0m aio               = "io_uring"
+          [32m+[0m[0m backup            = true
+          [32m+[0m[0m cache             = "none"
+          [32m+[0m[0m datastore_id      = "local-zfs"
+          [32m+[0m[0m discard           = "on"
+          [32m+[0m[0m file_format       = "raw"
+          [32m+[0m[0m import_from       = (known after apply)
+          [32m+[0m[0m interface         = "scsi0"
+          [32m+[0m[0m iothread          = true
+          [32m+[0m[0m path_in_datastore = (known after apply)
+          [32m+[0m[0m replicate         = true
+          [32m+[0m[0m size              = 40
+          [32m+[0m[0m ssd               = true
+        }
+
+      [32m+[0m[0m efi_disk {
+          [32m+[0m[0m datastore_id      = "local-zfs"
+          [32m+[0m[0m file_format       = "raw"
+          [32m+[0m[0m pre_enrolled_keys = false
+          [32m+[0m[0m type              = "4m"
+        }
+
+      [32m+[0m[0m memory {
+          [32m+[0m[0m dedicated      = 12288
+          [32m+[0m[0m floating       = 0
+          [32m+[0m[0m keep_hugepages = false
+          [32m+[0m[0m shared         = 0
+        }
+
+      [32m+[0m[0m network_device {
+          [32m+[0m[0m bridge      = "vmbr0"
+          [32m+[0m[0m enabled     = true
+          [32m+[0m[0m firewall    = false
+          [32m+[0m[0m mac_address = (known after apply)
+          [32m+[0m[0m model       = "virtio"
+          [32m+[0m[0m mtu         = 0
+          [32m+[0m[0m queues      = 0
+          [32m+[0m[0m rate_limit  = 0
+          [32m+[0m[0m vlan_id     = 0
+        }
+
+      [32m+[0m[0m operating_system {
+          [32m+[0m[0m type = "l26"
+        }
+
+      [32m+[0m[0m vga {
+          [32m+[0m[0m memory = 16
+          [32m+[0m[0m type   = "qxl"
+        }
+    }
+
+[1m  # module.infrastructure.module.nodes["controlplane1"].talos_image_factory_schematic.schematic[0m will be created
+[0m  [32m+[0m[0m resource "talos_image_factory_schematic" "schematic" {
+      [32m+[0m[0m id        = (known after apply)
+      [32m+[0m[0m schematic = (sensitive value)
+    }
+
+[1m  # module.infrastructure.module.nodes["controlplane1"].talos_machine_configuration_apply.apply[0m will be created
+[0m  [32m+[0m[0m resource "talos_machine_configuration_apply" "apply" {
+      [32m+[0m[0m apply_mode                  = "auto"
+      [32m+[0m[0m client_configuration        = (sensitive value)
+      [32m+[0m[0m config_patches              = []
+      [32m+[0m[0m endpoint                    = "10.0.1.2"
+      [32m+[0m[0m id                          = (known after apply)
+      [32m+[0m[0m machine_configuration       = (sensitive value)
+      [32m+[0m[0m machine_configuration_input = (sensitive value)
+      [32m+[0m[0m node                        = "10.0.1.2"
+    }
+
+[1m  # module.infrastructure.module.nodes["controlplane1"].terraform_data.node_registration[0m will be created
+[0m  [32m+[0m[0m resource "terraform_data" "node_registration" {
+      [32m+[0m[0m id     = (known after apply)
+      [32m+[0m[0m input  = {
+          [32m+[0m[0m key_id = (known after apply)
+          [32m+[0m[0m server = (sensitive value)
+        }
+      [32m+[0m[0m output = (known after apply)
+    }
+
+[1m  # module.infrastructure.module.nodes["controlplane1"].terraform_data.restart_reminder[0m will be created
+[0m  [32m+[0m[0m resource "terraform_data" "restart_reminder" {
+      [32m+[0m[0m id               = (known after apply)
+      [32m+[0m[0m triggers_replace = [
+          [32m+[0m[0m (known after apply),
+        ]
+    }
+
+[1m  # module.infrastructure.module.nodes["controlplane2"].data.external.preauth_key[0m will be read during apply
+  # (depends on a resource or a module with changes pending)
+[0m [36m<=[0m[0m data "external" "preauth_key" {
+      [32m+[0m[0m id      = (known after apply)
+      [32m+[0m[0m program = [
+          [32m+[0m[0m "bash",
+          [32m+[0m[0m "-c",
+          [32m+[0m[0m (sensitive value),
+        ]
+      [32m+[0m[0m result  = (known after apply)
+    }
+
+[1m  # module.infrastructure.module.nodes["controlplane2"].data.talos_image_factory_urls.urls[0m will be read during apply
+  # (config refers to values not yet known)
+[0m [36m<=[0m[0m data "talos_image_factory_urls" "urls" {
+      [32m+[0m[0m architecture  = "amd64"
+      [32m+[0m[0m id            = (known after apply)
+      [32m+[0m[0m platform      = "metal"
+      [32m+[0m[0m schematic_id  = (known after apply)
+      [32m+[0m[0m talos_version = (sensitive value)
+      [32m+[0m[0m urls          = (known after apply)
+    }
+
+[1m  # module.infrastructure.module.nodes["controlplane2"].data.talos_machine_configuration.config[0m will be read during apply
+  # (config refers to values not yet known)
+[0m [36m<=[0m[0m data "talos_machine_configuration" "config" {
+      [32m+[0m[0m cluster_endpoint      = (sensitive value)
+      [32m+[0m[0m cluster_name          = (sensitive value)
+      [32m+[0m[0m config_patches        = [
+          [32m+[0m[0m <<-EOT
+                "cluster":
+                  "discovery":
+                    "enabled": false
+                    "registries":
+                      "kubernetes":
+                        "disabled": true
+                      "service":
+                        "disabled": true
+                  "network":
+                    "cni":
+                      "name": "none"
+                  "proxy":
+                    "disabled": true
+                "machine":
+                  "features":
+                    "hostDNS":
+                      "enabled": true
+                      "forwardKubeDNSToHost": true
+                    "kubePrism":
+                      "enabled": true
+                      "port": 7445
+                  "kubelet":
+                    "extraArgs":
+                      "allowed-unsafe-sysctls": "net.ipv4.tcp_mtu_probing"
+                      "provider-id": "proxmox://cluster/1502"
+                    "nodeIP":
+                      "validSubnets":
+                      - "10.0.0.0/16"
+                  "nodeLabels":
+                    "topology.kubernetes.io/region": "cluster"
+                    "topology.kubernetes.io/zone": "atlas"
+                  "registries":
+                    "mirrors":
+                      "docker.io":
+                        "endpoints":
+                        - "https://registry.test-cluster.agentydragon.com/docker-hub-proxy"
+                        - "https://registry-1.docker.io"
+                      "ghcr.io":
+                        "endpoints":
+                        - "https://registry.test-cluster.agentydragon.com/ghcr-proxy"
+                        - "https://ghcr.io"
+                      "quay.io":
+                        "endpoints":
+                        - "https://registry.test-cluster.agentydragon.com/quay-proxy"
+                        - "https://quay.io"
+                      "registry.k8s.io":
+                        "endpoints":
+                        - "https://registry.test-cluster.agentydragon.com/registry-k8s-io-proxy"
+                        - "https://registry.k8s.io"
+            EOT,
+          [32m+[0m[0m (sensitive value),
+          [32m+[0m[0m (sensitive value),
+          [32m+[0m[0m (sensitive value),
+        ]
+      [32m+[0m[0m docs                  = (sensitive value)
+      [32m+[0m[0m examples              = (sensitive value)
+      [32m+[0m[0m id                    = (known after apply)
+      [32m+[0m[0m kubernetes_version    = (sensitive value)
+      [32m+[0m[0m machine_configuration = (sensitive value)
+      [32m+[0m[0m machine_secrets       = (sensitive value)
+      [32m+[0m[0m machine_type          = (sensitive value)
+      [32m+[0m[0m talos_version         = (sensitive value)
+    }
+
+[1m  # module.infrastructure.module.nodes["controlplane2"].proxmox_virtual_environment_download_file.disk_image[0m will be created
+[0m  [32m+[0m[0m resource "proxmox_virtual_environment_download_file" "disk_image" {
+      [32m+[0m[0m content_type        = "import"
+      [32m+[0m[0m datastore_id        = "local"
+      [32m+[0m[0m file_name           = (known after apply)
+      [32m+[0m[0m id                  = (known after apply)
+      [32m+[0m[0m node_name           = (sensitive value)
+      [32m+[0m[0m overwrite           = true
+      [32m+[0m[0m overwrite_unmanaged = false
+      [32m+[0m[0m size                = (known after apply)
+      [32m+[0m[0m upload_timeout      = 600
+      [32m+[0m[0m url                 = (known after apply)
+      [32m+[0m[0m verify              = true
+    }
+
+[1m  # module.infrastructure.module.nodes["controlplane2"].proxmox_virtual_environment_vm.vm[0m will be created
+[0m  [32m+[0m[0m resource "proxmox_virtual_environment_vm" "vm" {
+      [32m+[0m[0m acpi                    = true
+      [32m+[0m[0m bios                    = "ovmf"
+      [32m+[0m[0m id                      = (known after apply)
+      [32m+[0m[0m ipv4_addresses          = (known after apply)
+      [32m+[0m[0m ipv6_addresses          = (known after apply)
+      [32m+[0m[0m keyboard_layout         = "en-us"
+      [32m+[0m[0m mac_addresses           = (known after apply)
+      [32m+[0m[0m machine                 = "q35"
+      [32m+[0m[0m migrate                 = false
+      [32m+[0m[0m name                    = (sensitive value)
+      [32m+[0m[0m network_interface_names = (known after apply)
+      [32m+[0m[0m node_name               = (sensitive value)
+      [32m+[0m[0m on_boot                 = true
+      [32m+[0m[0m protection              = false
+      [32m+[0m[0m reboot                  = false
+      [32m+[0m[0m reboot_after_update     = true
+      [32m+[0m[0m scsi_hardware           = "virtio-scsi-single"
+      [32m+[0m[0m started                 = true
+      [32m+[0m[0m stop_on_destroy         = true
+      [32m+[0m[0m tablet_device           = true
+      [32m+[0m[0m tags                    = [
+          [32m+[0m[0m "controlplane",
+          [32m+[0m[0m "kubernetes",
+          [32m+[0m[0m "talos",
+          [32m+[0m[0m "terraform",
+        ]
+      [32m+[0m[0m template                = false
+      [32m+[0m[0m timeout_clone           = 1800
+      [32m+[0m[0m timeout_create          = 1800
+      [32m+[0m[0m timeout_migrate         = 1800
+      [32m+[0m[0m timeout_move_disk       = 1800
+      [32m+[0m[0m timeout_reboot          = 1800
+      [32m+[0m[0m timeout_shutdown_vm     = 1800
+      [32m+[0m[0m timeout_start_vm        = 1800
+      [32m+[0m[0m timeout_stop_vm         = 300
+      [32m+[0m[0m vm_id                   = 1502
+
+      [32m+[0m[0m agent {
+          [32m+[0m[0m enabled = true
+          [32m+[0m[0m timeout = "15m"
+          [32m+[0m[0m trim    = true
+          [32m+[0m[0m type    = "virtio"
+        }
+
+      [32m+[0m[0m cpu {
+          [32m+[0m[0m cores      = 4
+          [32m+[0m[0m hotplugged = 0
+          [32m+[0m[0m limit      = 0
+          [32m+[0m[0m numa       = false
+          [32m+[0m[0m sockets    = 1
+          [32m+[0m[0m type       = "host"
+          [32m+[0m[0m units      = 100
+        }
+
+      [32m+[0m[0m disk {
+          [32m+[0m[0m aio               = "io_uring"
+          [32m+[0m[0m backup            = true
+          [32m+[0m[0m cache             = "none"
+          [32m+[0m[0m datastore_id      = "local-zfs"
+          [32m+[0m[0m discard           = "on"
+          [32m+[0m[0m file_format       = "raw"
+          [32m+[0m[0m import_from       = (known after apply)
+          [32m+[0m[0m interface         = "scsi0"
+          [32m+[0m[0m iothread          = true
+          [32m+[0m[0m path_in_datastore = (known after apply)
+          [32m+[0m[0m replicate         = true
+          [32m+[0m[0m size              = 40
+          [32m+[0m[0m ssd               = true
+        }
+
+      [32m+[0m[0m efi_disk {
+          [32m+[0m[0m datastore_id      = "local-zfs"
+          [32m+[0m[0m file_format       = "raw"
+          [32m+[0m[0m pre_enrolled_keys = false
+          [32m+[0m[0m type              = "4m"
+        }
+
+      [32m+[0m[0m memory {
+          [32m+[0m[0m dedicated      = 12288
+          [32m+[0m[0m floating       = 0
+          [32m+[0m[0m keep_hugepages = false
+          [32m+[0m[0m shared         = 0
+        }
+
+      [32m+[0m[0m network_device {
+          [32m+[0m[0m bridge      = "vmbr0"
+          [32m+[0m[0m enabled     = true
+          [32m+[0m[0m firewall    = false
+          [32m+[0m[0m mac_address = (known after apply)
+          [32m+[0m[0m model       = "virtio"
+          [32m+[0m[0m mtu         = 0
+          [32m+[0m[0m queues      = 0
+          [32m+[0m[0m rate_limit  = 0
+          [32m+[0m[0m vlan_id     = 0
+        }
+
+      [32m+[0m[0m operating_system {
+          [32m+[0m[0m type = "l26"
+        }
+
+      [32m+[0m[0m vga {
+          [32m+[0m[0m memory = 16
+          [32m+[0m[0m type   = "qxl"
+        }
+    }
+
+[1m  # module.infrastructure.module.nodes["controlplane2"].talos_image_factory_schematic.schematic[0m will be created
+[0m  [32m+[0m[0m resource "talos_image_factory_schematic" "schematic" {
+      [32m+[0m[0m id        = (known after apply)
+      [32m+[0m[0m schematic = (sensitive value)
+    }
+
+[1m  # module.infrastructure.module.nodes["controlplane2"].talos_machine_configuration_apply.apply[0m will be created
+[0m  [32m+[0m[0m resource "talos_machine_configuration_apply" "apply" {
+      [32m+[0m[0m apply_mode                  = "auto"
+      [32m+[0m[0m client_configuration        = (sensitive value)
+      [32m+[0m[0m config_patches              = []
+      [32m+[0m[0m endpoint                    = "10.0.1.3"
+      [32m+[0m[0m id                          = (known after apply)
+      [32m+[0m[0m machine_configuration       = (sensitive value)
+      [32m+[0m[0m machine_configuration_input = (sensitive value)
+      [32m+[0m[0m node                        = "10.0.1.3"
+    }
+
+[1m  # module.infrastructure.module.nodes["controlplane2"].terraform_data.node_registration[0m will be created
+[0m  [32m+[0m[0m resource "terraform_data" "node_registration" {
+      [32m+[0m[0m id     = (known after apply)
+      [32m+[0m[0m input  = {
+          [32m+[0m[0m key_id = (known after apply)
+          [32m+[0m[0m server = (sensitive value)
+        }
+      [32m+[0m[0m output = (known after apply)
+    }
+
+[1m  # module.infrastructure.module.nodes["controlplane2"].terraform_data.restart_reminder[0m will be created
+[0m  [32m+[0m[0m resource "terraform_data" "restart_reminder" {
+      [32m+[0m[0m id               = (known after apply)
+      [32m+[0m[0m triggers_replace = [
+          [32m+[0m[0m (known after apply),
+        ]
+    }
+
+[1m  # module.infrastructure.module.nodes["worker0"].data.external.preauth_key[0m will be read during apply
+  # (depends on a resource or a module with changes pending)
+[0m [36m<=[0m[0m data "external" "preauth_key" {
+      [32m+[0m[0m id      = (known after apply)
+      [32m+[0m[0m program = [
+          [32m+[0m[0m "bash",
+          [32m+[0m[0m "-c",
+          [32m+[0m[0m (sensitive value),
+        ]
+      [32m+[0m[0m result  = (known after apply)
+    }
+
+[1m  # module.infrastructure.module.nodes["worker0"].data.talos_image_factory_urls.urls[0m will be read during apply
+  # (config refers to values not yet known)
+[0m [36m<=[0m[0m data "talos_image_factory_urls" "urls" {
+      [32m+[0m[0m architecture  = "amd64"
+      [32m+[0m[0m id            = (known after apply)
+      [32m+[0m[0m platform      = "metal"
+      [32m+[0m[0m schematic_id  = (known after apply)
+      [32m+[0m[0m talos_version = (sensitive value)
+      [32m+[0m[0m urls          = (known after apply)
+    }
+
+[1m  # module.infrastructure.module.nodes["worker0"].data.talos_machine_configuration.config[0m will be read during apply
+  # (config refers to values not yet known)
+[0m [36m<=[0m[0m data "talos_machine_configuration" "config" {
+      [32m+[0m[0m cluster_endpoint      = (sensitive value)
+      [32m+[0m[0m cluster_name          = (sensitive value)
+      [32m+[0m[0m config_patches        = [
+          [32m+[0m[0m <<-EOT
+                "cluster":
+                  "discovery":
+                    "enabled": false
+                    "registries":
+                      "kubernetes":
+                        "disabled": true
+                      "service":
+                        "disabled": true
+                  "network":
+                    "cni":
+                      "name": "none"
+                  "proxy":
+                    "disabled": true
+                "machine":
+                  "features":
+                    "hostDNS":
+                      "enabled": true
+                      "forwardKubeDNSToHost": true
+                    "kubePrism":
+                      "enabled": true
+                      "port": 7445
+                  "kubelet":
+                    "extraArgs":
+                      "allowed-unsafe-sysctls": "net.ipv4.tcp_mtu_probing"
+                      "provider-id": "proxmox://cluster/2000"
+                    "nodeIP":
+                      "validSubnets":
+                      - "10.0.0.0/16"
+                  "nodeLabels":
+                    "topology.kubernetes.io/region": "cluster"
+                    "topology.kubernetes.io/zone": "atlas"
+                  "registries":
+                    "mirrors":
+                      "docker.io":
+                        "endpoints":
+                        - "https://registry.test-cluster.agentydragon.com/docker-hub-proxy"
+                        - "https://registry-1.docker.io"
+                      "ghcr.io":
+                        "endpoints":
+                        - "https://registry.test-cluster.agentydragon.com/ghcr-proxy"
+                        - "https://ghcr.io"
+                      "quay.io":
+                        "endpoints":
+                        - "https://registry.test-cluster.agentydragon.com/quay-proxy"
+                        - "https://quay.io"
+                      "registry.k8s.io":
+                        "endpoints":
+                        - "https://registry.test-cluster.agentydragon.com/registry-k8s-io-proxy"
+                        - "https://registry.k8s.io"
+            EOT,
+          [32m+[0m[0m (sensitive value),
+        ]
+      [32m+[0m[0m docs                  = (sensitive value)
+      [32m+[0m[0m examples              = (sensitive value)
+      [32m+[0m[0m id                    = (known after apply)
+      [32m+[0m[0m kubernetes_version    = (sensitive value)
+      [32m+[0m[0m machine_configuration = (sensitive value)
+      [32m+[0m[0m machine_secrets       = (sensitive value)
+      [32m+[0m[0m machine_type          = (sensitive value)
+      [32m+[0m[0m talos_version         = (sensitive value)
+    }
+
+[1m  # module.infrastructure.module.nodes["worker0"].proxmox_virtual_environment_download_file.disk_image[0m will be created
+[0m  [32m+[0m[0m resource "proxmox_virtual_environment_download_file" "disk_image" {
+      [32m+[0m[0m content_type        = "import"
+      [32m+[0m[0m datastore_id        = "local"
+      [32m+[0m[0m file_name           = (known after apply)
+      [32m+[0m[0m id                  = (known after apply)
+      [32m+[0m[0m node_name           = (sensitive value)
+      [32m+[0m[0m overwrite           = true
+      [32m+[0m[0m overwrite_unmanaged = false
+      [32m+[0m[0m size                = (known after apply)
+      [32m+[0m[0m upload_timeout      = 600
+      [32m+[0m[0m url                 = (known after apply)
+      [32m+[0m[0m verify              = true
+    }
+
+[1m  # module.infrastructure.module.nodes["worker0"].proxmox_virtual_environment_vm.vm[0m will be created
+[0m  [32m+[0m[0m resource "proxmox_virtual_environment_vm" "vm" {
+      [32m+[0m[0m acpi                    = true
+      [32m+[0m[0m bios                    = "ovmf"
+      [32m+[0m[0m id                      = (known after apply)
+      [32m+[0m[0m ipv4_addresses          = (known after apply)
+      [32m+[0m[0m ipv6_addresses          = (known after apply)
+      [32m+[0m[0m keyboard_layout         = "en-us"
+      [32m+[0m[0m mac_addresses           = (known after apply)
+      [32m+[0m[0m machine                 = "q35"
+      [32m+[0m[0m migrate                 = false
+      [32m+[0m[0m name                    = (sensitive value)
+      [32m+[0m[0m network_interface_names = (known after apply)
+      [32m+[0m[0m node_name               = (sensitive value)
+      [32m+[0m[0m on_boot                 = true
+      [32m+[0m[0m protection              = false
+      [32m+[0m[0m reboot                  = false
+      [32m+[0m[0m reboot_after_update     = true
+      [32m+[0m[0m scsi_hardware           = "virtio-scsi-single"
+      [32m+[0m[0m started                 = true
+      [32m+[0m[0m stop_on_destroy         = true
+      [32m+[0m[0m tablet_device           = true
+      [32m+[0m[0m tags                    = [
+          [32m+[0m[0m "kubernetes",
+          [32m+[0m[0m "talos",
+          [32m+[0m[0m "terraform",
+          [32m+[0m[0m "worker",
+        ]
+      [32m+[0m[0m template                = false
+      [32m+[0m[0m timeout_clone           = 1800
+      [32m+[0m[0m timeout_create          = 1800
+      [32m+[0m[0m timeout_migrate         = 1800
+      [32m+[0m[0m timeout_move_disk       = 1800
+      [32m+[0m[0m timeout_reboot          = 1800
+      [32m+[0m[0m timeout_shutdown_vm     = 1800
+      [32m+[0m[0m timeout_start_vm        = 1800
+      [32m+[0m[0m timeout_stop_vm         = 300
+      [32m+[0m[0m vm_id                   = 2000
+
+      [32m+[0m[0m agent {
+          [32m+[0m[0m enabled = true
+          [32m+[0m[0m timeout = "15m"
+          [32m+[0m[0m trim    = true
+          [32m+[0m[0m type    = "virtio"
+        }
+
+      [32m+[0m[0m cpu {
+          [32m+[0m[0m cores      = 4
+          [32m+[0m[0m hotplugged = 0
+          [32m+[0m[0m limit      = 0
+          [32m+[0m[0m numa       = false
+          [32m+[0m[0m sockets    = 1
+          [32m+[0m[0m type       = "host"
+          [32m+[0m[0m units      = 100
+        }
+
+      [32m+[0m[0m disk {
+          [32m+[0m[0m aio               = "io_uring"
+          [32m+[0m[0m backup            = true
+          [32m+[0m[0m cache             = "none"
+          [32m+[0m[0m datastore_id      = "local-zfs"
+          [32m+[0m[0m discard           = "on"
+          [32m+[0m[0m file_format       = "raw"
+          [32m+[0m[0m import_from       = (known after apply)
+          [32m+[0m[0m interface         = "scsi0"
+          [32m+[0m[0m iothread          = true
+          [32m+[0m[0m path_in_datastore = (known after apply)
+          [32m+[0m[0m replicate         = true
+          [32m+[0m[0m size              = 40
+          [32m+[0m[0m ssd               = true
+        }
+
+      [32m+[0m[0m efi_disk {
+          [32m+[0m[0m datastore_id      = "local-zfs"
+          [32m+[0m[0m file_format       = "raw"
+          [32m+[0m[0m pre_enrolled_keys = false
+          [32m+[0m[0m type              = "4m"
+        }
+
+      [32m+[0m[0m memory {
+          [32m+[0m[0m dedicated      = 12288
+          [32m+[0m[0m floating       = 0
+          [32m+[0m[0m keep_hugepages = false
+          [32m+[0m[0m shared         = 0
+        }
+
+      [32m+[0m[0m network_device {
+          [32m+[0m[0m bridge      = "vmbr0"
+          [32m+[0m[0m enabled     = true
+          [32m+[0m[0m firewall    = false
+          [32m+[0m[0m mac_address = (known after apply)
+          [32m+[0m[0m model       = "virtio"
+          [32m+[0m[0m mtu         = 0
+          [32m+[0m[0m queues      = 0
+          [32m+[0m[0m rate_limit  = 0
+          [32m+[0m[0m vlan_id     = 0
+        }
+
+      [32m+[0m[0m operating_system {
+          [32m+[0m[0m type = "l26"
+        }
+
+      [32m+[0m[0m vga {
+          [32m+[0m[0m memory = 16
+          [32m+[0m[0m type   = "qxl"
+        }
+    }
+
+[1m  # module.infrastructure.module.nodes["worker0"].talos_image_factory_schematic.schematic[0m will be created
+[0m  [32m+[0m[0m resource "talos_image_factory_schematic" "schematic" {
+      [32m+[0m[0m id        = (known after apply)
+      [32m+[0m[0m schematic = (sensitive value)
+    }
+
+[1m  # module.infrastructure.module.nodes["worker0"].talos_machine_configuration_apply.apply[0m will be created
+[0m  [32m+[0m[0m resource "talos_machine_configuration_apply" "apply" {
+      [32m+[0m[0m apply_mode                  = "auto"
+      [32m+[0m[0m client_configuration        = (sensitive value)
+      [32m+[0m[0m config_patches              = []
+      [32m+[0m[0m endpoint                    = "10.0.2.1"
+      [32m+[0m[0m id                          = (known after apply)
+      [32m+[0m[0m machine_configuration       = (sensitive value)
+      [32m+[0m[0m machine_configuration_input = (sensitive value)
+      [32m+[0m[0m node                        = "10.0.2.1"
+    }
+
+[1m  # module.infrastructure.module.nodes["worker0"].terraform_data.node_registration[0m will be created
+[0m  [32m+[0m[0m resource "terraform_data" "node_registration" {
+      [32m+[0m[0m id     = (known after apply)
+      [32m+[0m[0m input  = {
+          [32m+[0m[0m key_id = (known after apply)
+          [32m+[0m[0m server = (sensitive value)
+        }
+      [32m+[0m[0m output = (known after apply)
+    }
+
+[1m  # module.infrastructure.module.nodes["worker0"].terraform_data.restart_reminder[0m will be created
+[0m  [32m+[0m[0m resource "terraform_data" "restart_reminder" {
+      [32m+[0m[0m id               = (known after apply)
+      [32m+[0m[0m triggers_replace = [
+          [32m+[0m[0m (known after apply),
+        ]
+    }
+
+[1m  # module.infrastructure.module.nodes["worker1"].data.external.preauth_key[0m will be read during apply
+  # (depends on a resource or a module with changes pending)
+[0m [36m<=[0m[0m data "external" "preauth_key" {
+      [32m+[0m[0m id      = (known after apply)
+      [32m+[0m[0m program = [
+          [32m+[0m[0m "bash",
+          [32m+[0m[0m "-c",
+          [32m+[0m[0m (sensitive value),
+        ]
+      [32m+[0m[0m result  = (known after apply)
+    }
+
+[1m  # module.infrastructure.module.nodes["worker1"].data.talos_image_factory_urls.urls[0m will be read during apply
+  # (config refers to values not yet known)
+[0m [36m<=[0m[0m data "talos_image_factory_urls" "urls" {
+      [32m+[0m[0m architecture  = "amd64"
+      [32m+[0m[0m id            = (known after apply)
+      [32m+[0m[0m platform      = "metal"
+      [32m+[0m[0m schematic_id  = (known after apply)
+      [32m+[0m[0m talos_version = (sensitive value)
+      [32m+[0m[0m urls          = (known after apply)
+    }
+
+[1m  # module.infrastructure.module.nodes["worker1"].data.talos_machine_configuration.config[0m will be read during apply
+  # (config refers to values not yet known)
+[0m [36m<=[0m[0m data "talos_machine_configuration" "config" {
+      [32m+[0m[0m cluster_endpoint      = (sensitive value)
+      [32m+[0m[0m cluster_name          = (sensitive value)
+      [32m+[0m[0m config_patches        = [
+          [32m+[0m[0m <<-EOT
+                "cluster":
+                  "discovery":
+                    "enabled": false
+                    "registries":
+                      "kubernetes":
+                        "disabled": true
+                      "service":
+                        "disabled": true
+                  "network":
+                    "cni":
+                      "name": "none"
+                  "proxy":
+                    "disabled": true
+                "machine":
+                  "features":
+                    "hostDNS":
+                      "enabled": true
+                      "forwardKubeDNSToHost": true
+                    "kubePrism":
+                      "enabled": true
+                      "port": 7445
+                  "kubelet":
+                    "extraArgs":
+                      "allowed-unsafe-sysctls": "net.ipv4.tcp_mtu_probing"
+                      "provider-id": "proxmox://cluster/2001"
+                    "nodeIP":
+                      "validSubnets":
+                      - "10.0.0.0/16"
+                  "nodeLabels":
+                    "topology.kubernetes.io/region": "cluster"
+                    "topology.kubernetes.io/zone": "atlas"
+                  "registries":
+                    "mirrors":
+                      "docker.io":
+                        "endpoints":
+                        - "https://registry.test-cluster.agentydragon.com/docker-hub-proxy"
+                        - "https://registry-1.docker.io"
+                      "ghcr.io":
+                        "endpoints":
+                        - "https://registry.test-cluster.agentydragon.com/ghcr-proxy"
+                        - "https://ghcr.io"
+                      "quay.io":
+                        "endpoints":
+                        - "https://registry.test-cluster.agentydragon.com/quay-proxy"
+                        - "https://quay.io"
+                      "registry.k8s.io":
+                        "endpoints":
+                        - "https://registry.test-cluster.agentydragon.com/registry-k8s-io-proxy"
+                        - "https://registry.k8s.io"
+            EOT,
+          [32m+[0m[0m (sensitive value),
+        ]
+      [32m+[0m[0m docs                  = (sensitive value)
+      [32m+[0m[0m examples              = (sensitive value)
+      [32m+[0m[0m id                    = (known after apply)
+      [32m+[0m[0m kubernetes_version    = (sensitive value)
+      [32m+[0m[0m machine_configuration = (sensitive value)
+      [32m+[0m[0m machine_secrets       = (sensitive value)
+      [32m+[0m[0m machine_type          = (sensitive value)
+      [32m+[0m[0m talos_version         = (sensitive value)
+    }
+
+[1m  # module.infrastructure.module.nodes["worker1"].proxmox_virtual_environment_download_file.disk_image[0m will be created
+[0m  [32m+[0m[0m resource "proxmox_virtual_environment_download_file" "disk_image" {
+      [32m+[0m[0m content_type        = "import"
+      [32m+[0m[0m datastore_id        = "local"
+      [32m+[0m[0m file_name           = (known after apply)
+      [32m+[0m[0m id                  = (known after apply)
+      [32m+[0m[0m node_name           = (sensitive value)
+      [32m+[0m[0m overwrite           = true
+      [32m+[0m[0m overwrite_unmanaged = false
+      [32m+[0m[0m size                = (known after apply)
+      [32m+[0m[0m upload_timeout      = 600
+      [32m+[0m[0m url                 = (known after apply)
+      [32m+[0m[0m verify              = true
+    }
+
+[1m  # module.infrastructure.module.nodes["worker1"].proxmox_virtual_environment_vm.vm[0m will be created
+[0m  [32m+[0m[0m resource "proxmox_virtual_environment_vm" "vm" {
+      [32m+[0m[0m acpi                    = true
+      [32m+[0m[0m bios                    = "ovmf"
+      [32m+[0m[0m id                      = (known after apply)
+      [32m+[0m[0m ipv4_addresses          = (known after apply)
+      [32m+[0m[0m ipv6_addresses          = (known after apply)
+      [32m+[0m[0m keyboard_layout         = "en-us"
+      [32m+[0m[0m mac_addresses           = (known after apply)
+      [32m+[0m[0m machine                 = "q35"
+      [32m+[0m[0m migrate                 = false
+      [32m+[0m[0m name                    = (sensitive value)
+      [32m+[0m[0m network_interface_names = (known after apply)
+      [32m+[0m[0m node_name               = (sensitive value)
+      [32m+[0m[0m on_boot                 = true
+      [32m+[0m[0m protection              = false
+      [32m+[0m[0m reboot                  = false
+      [32m+[0m[0m reboot_after_update     = true
+      [32m+[0m[0m scsi_hardware           = "virtio-scsi-single"
+      [32m+[0m[0m started                 = true
+      [32m+[0m[0m stop_on_destroy         = true
+      [32m+[0m[0m tablet_device           = true
+      [32m+[0m[0m tags                    = [
+          [32m+[0m[0m "kubernetes",
+          [32m+[0m[0m "talos",
+          [32m+[0m[0m "terraform",
+          [32m+[0m[0m "worker",
+        ]
+      [32m+[0m[0m template                = false
+      [32m+[0m[0m timeout_clone           = 1800
+      [32m+[0m[0m timeout_create          = 1800
+      [32m+[0m[0m timeout_migrate         = 1800
+      [32m+[0m[0m timeout_move_disk       = 1800
+      [32m+[0m[0m timeout_reboot          = 1800
+      [32m+[0m[0m timeout_shutdown_vm     = 1800
+      [32m+[0m[0m timeout_start_vm        = 1800
+      [32m+[0m[0m timeout_stop_vm         = 300
+      [32m+[0m[0m vm_id                   = 2001
+
+      [32m+[0m[0m agent {
+          [32m+[0m[0m enabled = true
+          [32m+[0m[0m timeout = "15m"
+          [32m+[0m[0m trim    = true
+          [32m+[0m[0m type    = "virtio"
+        }
+
+      [32m+[0m[0m cpu {
+          [32m+[0m[0m cores      = 4
+          [32m+[0m[0m hotplugged = 0
+          [32m+[0m[0m limit      = 0
+          [32m+[0m[0m numa       = false
+          [32m+[0m[0m sockets    = 1
+          [32m+[0m[0m type       = "host"
+          [32m+[0m[0m units      = 100
+        }
+
+      [32m+[0m[0m disk {
+          [32m+[0m[0m aio               = "io_uring"
+          [32m+[0m[0m backup            = true
+          [32m+[0m[0m cache             = "none"
+          [32m+[0m[0m datastore_id      = "local-zfs"
+          [32m+[0m[0m discard           = "on"
+          [32m+[0m[0m file_format       = "raw"
+          [32m+[0m[0m import_from       = (known after apply)
+          [32m+[0m[0m interface         = "scsi0"
+          [32m+[0m[0m iothread          = true
+          [32m+[0m[0m path_in_datastore = (known after apply)
+          [32m+[0m[0m replicate         = true
+          [32m+[0m[0m size              = 40
+          [32m+[0m[0m ssd               = true
+        }
+
+      [32m+[0m[0m efi_disk {
+          [32m+[0m[0m datastore_id      = "local-zfs"
+          [32m+[0m[0m file_format       = "raw"
+          [32m+[0m[0m pre_enrolled_keys = false
+          [32m+[0m[0m type              = "4m"
+        }
+
+      [32m+[0m[0m memory {
+          [32m+[0m[0m dedicated      = 12288
+          [32m+[0m[0m floating       = 0
+          [32m+[0m[0m keep_hugepages = false
+          [32m+[0m[0m shared         = 0
+        }
+
+      [32m+[0m[0m network_device {
+          [32m+[0m[0m bridge      = "vmbr0"
+          [32m+[0m[0m enabled     = true
+          [32m+[0m[0m firewall    = false
+          [32m+[0m[0m mac_address = (known after apply)
+          [32m+[0m[0m model       = "virtio"
+          [32m+[0m[0m mtu         = 0
+          [32m+[0m[0m queues      = 0
+          [32m+[0m[0m rate_limit  = 0
+          [32m+[0m[0m vlan_id     = 0
+        }
+
+      [32m+[0m[0m operating_system {
+          [32m+[0m[0m type = "l26"
+        }
+
+      [32m+[0m[0m vga {
+          [32m+[0m[0m memory = 16
+          [32m+[0m[0m type   = "qxl"
+        }
+    }
+
+[1m  # module.infrastructure.module.nodes["worker1"].talos_image_factory_schematic.schematic[0m will be created
+[0m  [32m+[0m[0m resource "talos_image_factory_schematic" "schematic" {
+      [32m+[0m[0m id        = (known after apply)
+      [32m+[0m[0m schematic = (sensitive value)
+    }
+
+[1m  # module.infrastructure.module.nodes["worker1"].talos_machine_configuration_apply.apply[0m will be created
+[0m  [32m+[0m[0m resource "talos_machine_configuration_apply" "apply" {
+      [32m+[0m[0m apply_mode                  = "auto"
+      [32m+[0m[0m client_configuration        = (sensitive value)
+      [32m+[0m[0m config_patches              = []
+      [32m+[0m[0m endpoint                    = "10.0.2.2"
+      [32m+[0m[0m id                          = (known after apply)
+      [32m+[0m[0m machine_configuration       = (sensitive value)
+      [32m+[0m[0m machine_configuration_input = (sensitive value)
+      [32m+[0m[0m node                        = "10.0.2.2"
+    }
+
+[1m  # module.infrastructure.module.nodes["worker1"].terraform_data.node_registration[0m will be created
+[0m  [32m+[0m[0m resource "terraform_data" "node_registration" {
+      [32m+[0m[0m id     = (known after apply)
+      [32m+[0m[0m input  = {
+          [32m+[0m[0m key_id = (known after apply)
+          [32m+[0m[0m server = (sensitive value)
+        }
+      [32m+[0m[0m output = (known after apply)
+    }
+
+[1m  # module.infrastructure.module.nodes["worker1"].terraform_data.restart_reminder[0m will be created
+[0m  [32m+[0m[0m resource "terraform_data" "restart_reminder" {
+      [32m+[0m[0m id               = (known after apply)
+      [32m+[0m[0m triggers_replace = [
+          [32m+[0m[0m (known after apply),
+        ]
+    }
+
+[1m  # module.infrastructure.module.nodes["worker2"].data.external.preauth_key[0m will be read during apply
+  # (depends on a resource or a module with changes pending)
+[0m [36m<=[0m[0m data "external" "preauth_key" {
+      [32m+[0m[0m id      = (known after apply)
+      [32m+[0m[0m program = [
+          [32m+[0m[0m "bash",
+          [32m+[0m[0m "-c",
+          [32m+[0m[0m (sensitive value),
+        ]
+      [32m+[0m[0m result  = (known after apply)
+    }
+
+[1m  # module.infrastructure.module.nodes["worker2"].data.talos_image_factory_urls.urls[0m will be read during apply
+  # (config refers to values not yet known)
+[0m [36m<=[0m[0m data "talos_image_factory_urls" "urls" {
+      [32m+[0m[0m architecture  = "amd64"
+      [32m+[0m[0m id            = (known after apply)
+      [32m+[0m[0m platform      = "metal"
+      [32m+[0m[0m schematic_id  = (known after apply)
+      [32m+[0m[0m talos_version = (sensitive value)
+      [32m+[0m[0m urls          = (known after apply)
+    }
+
+[1m  # module.infrastructure.module.nodes["worker2"].data.talos_machine_configuration.config[0m will be read during apply
+  # (config refers to values not yet known)
+[0m [36m<=[0m[0m data "talos_machine_configuration" "config" {
+      [32m+[0m[0m cluster_endpoint      = (sensitive value)
+      [32m+[0m[0m cluster_name          = (sensitive value)
+      [32m+[0m[0m config_patches        = [
+          [32m+[0m[0m <<-EOT
+                "cluster":
+                  "discovery":
+                    "enabled": false
+                    "registries":
+                      "kubernetes":
+                        "disabled": true
+                      "service":
+                        "disabled": true
+                  "network":
+                    "cni":
+                      "name": "none"
+                  "proxy":
+                    "disabled": true
+                "machine":
+                  "features":
+                    "hostDNS":
+                      "enabled": true
+                      "forwardKubeDNSToHost": true
+                    "kubePrism":
+                      "enabled": true
+                      "port": 7445
+                  "kubelet":
+                    "extraArgs":
+                      "allowed-unsafe-sysctls": "net.ipv4.tcp_mtu_probing"
+                      "provider-id": "proxmox://cluster/2002"
+                    "nodeIP":
+                      "validSubnets":
+                      - "10.0.0.0/16"
+                  "nodeLabels":
+                    "topology.kubernetes.io/region": "cluster"
+                    "topology.kubernetes.io/zone": "atlas"
+                  "registries":
+                    "mirrors":
+                      "docker.io":
+                        "endpoints":
+                        - "https://registry.test-cluster.agentydragon.com/docker-hub-proxy"
+                        - "https://registry-1.docker.io"
+                      "ghcr.io":
+                        "endpoints":
+                        - "https://registry.test-cluster.agentydragon.com/ghcr-proxy"
+                        - "https://ghcr.io"
+                      "quay.io":
+                        "endpoints":
+                        - "https://registry.test-cluster.agentydragon.com/quay-proxy"
+                        - "https://quay.io"
+                      "registry.k8s.io":
+                        "endpoints":
+                        - "https://registry.test-cluster.agentydragon.com/registry-k8s-io-proxy"
+                        - "https://registry.k8s.io"
+            EOT,
+          [32m+[0m[0m (sensitive value),
+        ]
+      [32m+[0m[0m docs                  = (sensitive value)
+      [32m+[0m[0m examples              = (sensitive value)
+      [32m+[0m[0m id                    = (known after apply)
+      [32m+[0m[0m kubernetes_version    = (sensitive value)
+      [32m+[0m[0m machine_configuration = (sensitive value)
+      [32m+[0m[0m machine_secrets       = (sensitive value)
+      [32m+[0m[0m machine_type          = (sensitive value)
+      [32m+[0m[0m talos_version         = (sensitive value)
+    }
+
+[1m  # module.infrastructure.module.nodes["worker2"].proxmox_virtual_environment_download_file.disk_image[0m will be created
+[0m  [32m+[0m[0m resource "proxmox_virtual_environment_download_file" "disk_image" {
+      [32m+[0m[0m content_type        = "import"
+      [32m+[0m[0m datastore_id        = "local"
+      [32m+[0m[0m file_name           = (known after apply)
+      [32m+[0m[0m id                  = (known after apply)
+      [32m+[0m[0m node_name           = (sensitive value)
+      [32m+[0m[0m overwrite           = true
+      [32m+[0m[0m overwrite_unmanaged = false
+      [32m+[0m[0m size                = (known after apply)
+      [32m+[0m[0m upload_timeout      = 600
+      [32m+[0m[0m url                 = (known after apply)
+      [32m+[0m[0m verify              = true
+    }
+
+[1m  # module.infrastructure.module.nodes["worker2"].proxmox_virtual_environment_vm.vm[0m will be created
+[0m  [32m+[0m[0m resource "proxmox_virtual_environment_vm" "vm" {
+      [32m+[0m[0m acpi                    = true
+      [32m+[0m[0m bios                    = "ovmf"
+      [32m+[0m[0m id                      = (known after apply)
+      [32m+[0m[0m ipv4_addresses          = (known after apply)
+      [32m+[0m[0m ipv6_addresses          = (known after apply)
+      [32m+[0m[0m keyboard_layout         = "en-us"
+      [32m+[0m[0m mac_addresses           = (known after apply)
+      [32m+[0m[0m machine                 = "q35"
+      [32m+[0m[0m migrate                 = false
+      [32m+[0m[0m name                    = (sensitive value)
+      [32m+[0m[0m network_interface_names = (known after apply)
+      [32m+[0m[0m node_name               = (sensitive value)
+      [32m+[0m[0m on_boot                 = true
+      [32m+[0m[0m protection              = false
+      [32m+[0m[0m reboot                  = false
+      [32m+[0m[0m reboot_after_update     = true
+      [32m+[0m[0m scsi_hardware           = "virtio-scsi-single"
+      [32m+[0m[0m started                 = true
+      [32m+[0m[0m stop_on_destroy         = true
+      [32m+[0m[0m tablet_device           = true
+      [32m+[0m[0m tags                    = [
+          [32m+[0m[0m "kubernetes",
+          [32m+[0m[0m "talos",
+          [32m+[0m[0m "terraform",
+          [32m+[0m[0m "worker",
+        ]
+      [32m+[0m[0m template                = false
+      [32m+[0m[0m timeout_clone           = 1800
+      [32m+[0m[0m timeout_create          = 1800
+      [32m+[0m[0m timeout_migrate         = 1800
+      [32m+[0m[0m timeout_move_disk       = 1800
+      [32m+[0m[0m timeout_reboot          = 1800
+      [32m+[0m[0m timeout_shutdown_vm     = 1800
+      [32m+[0m[0m timeout_start_vm        = 1800
+      [32m+[0m[0m timeout_stop_vm         = 300
+      [32m+[0m[0m vm_id                   = 2002
+
+      [32m+[0m[0m agent {
+          [32m+[0m[0m enabled = true
+          [32m+[0m[0m timeout = "15m"
+          [32m+[0m[0m trim    = true
+          [32m+[0m[0m type    = "virtio"
+        }
+
+      [32m+[0m[0m cpu {
+          [32m+[0m[0m cores      = 4
+          [32m+[0m[0m hotplugged = 0
+          [32m+[0m[0m limit      = 0
+          [32m+[0m[0m numa       = false
+          [32m+[0m[0m sockets    = 1
+          [32m+[0m[0m type       = "host"
+          [32m+[0m[0m units      = 100
+        }
+
+      [32m+[0m[0m disk {
+          [32m+[0m[0m aio               = "io_uring"
+          [32m+[0m[0m backup            = true
+          [32m+[0m[0m cache             = "none"
+          [32m+[0m[0m datastore_id      = "local-zfs"
+          [32m+[0m[0m discard           = "on"
+          [32m+[0m[0m file_format       = "raw"
+          [32m+[0m[0m import_from       = (known after apply)
+          [32m+[0m[0m interface         = "scsi0"
+          [32m+[0m[0m iothread          = true
+          [32m+[0m[0m path_in_datastore = (known after apply)
+          [32m+[0m[0m replicate         = true
+          [32m+[0m[0m size              = 40
+          [32m+[0m[0m ssd               = true
+        }
+
+      [32m+[0m[0m efi_disk {
+          [32m+[0m[0m datastore_id      = "local-zfs"
+          [32m+[0m[0m file_format       = "raw"
+          [32m+[0m[0m pre_enrolled_keys = false
+          [32m+[0m[0m type              = "4m"
+        }
+
+      [32m+[0m[0m memory {
+          [32m+[0m[0m dedicated      = 12288
+          [32m+[0m[0m floating       = 0
+          [32m+[0m[0m keep_hugepages = false
+          [32m+[0m[0m shared         = 0
+        }
+
+      [32m+[0m[0m network_device {
+          [32m+[0m[0m bridge      = "vmbr0"
+          [32m+[0m[0m enabled     = true
+          [32m+[0m[0m firewall    = false
+          [32m+[0m[0m mac_address = (known after apply)
+          [32m+[0m[0m model       = "virtio"
+          [32m+[0m[0m mtu         = 0
+          [32m+[0m[0m queues      = 0
+          [32m+[0m[0m rate_limit  = 0
+          [32m+[0m[0m vlan_id     = 0
+        }
+
+      [32m+[0m[0m operating_system {
+          [32m+[0m[0m type = "l26"
+        }
+
+      [32m+[0m[0m vga {
+          [32m+[0m[0m memory = 16
+          [32m+[0m[0m type   = "qxl"
+        }
+    }
+
+[1m  # module.infrastructure.module.nodes["worker2"].talos_image_factory_schematic.schematic[0m will be created
+[0m  [32m+[0m[0m resource "talos_image_factory_schematic" "schematic" {
+      [32m+[0m[0m id        = (known after apply)
+      [32m+[0m[0m schematic = (sensitive value)
+    }
+
+[1m  # module.infrastructure.module.nodes["worker2"].talos_machine_configuration_apply.apply[0m will be created
+[0m  [32m+[0m[0m resource "talos_machine_configuration_apply" "apply" {
+      [32m+[0m[0m apply_mode                  = "auto"
+      [32m+[0m[0m client_configuration        = (sensitive value)
+      [32m+[0m[0m config_patches              = []
+      [32m+[0m[0m endpoint                    = "10.0.2.3"
+      [32m+[0m[0m id                          = (known after apply)
+      [32m+[0m[0m machine_configuration       = (sensitive value)
+      [32m+[0m[0m machine_configuration_input = (sensitive value)
+      [32m+[0m[0m node                        = "10.0.2.3"
+    }
+
+[1m  # module.infrastructure.module.nodes["worker2"].terraform_data.node_registration[0m will be created
+[0m  [32m+[0m[0m resource "terraform_data" "node_registration" {
+      [32m+[0m[0m id     = (known after apply)
+      [32m+[0m[0m input  = {
+          [32m+[0m[0m key_id = (known after apply)
+          [32m+[0m[0m server = (sensitive value)
+        }
+      [32m+[0m[0m output = (known after apply)
+    }
+
+[1m  # module.infrastructure.module.nodes["worker2"].terraform_data.restart_reminder[0m will be created
+[0m  [32m+[0m[0m resource "terraform_data" "restart_reminder" {
+      [32m+[0m[0m id               = (known after apply)
+      [32m+[0m[0m triggers_replace = [
+          [32m+[0m[0m (known after apply),
+        ]
+    }
+
+[1mPlan:[0m 50 to add, 0 to change, 0 to destroy.
+[0m
+Changes to Outputs:
+  [32m+[0m[0m cluster_domain         = "test-cluster.agentydragon.com"
+  [32m+[0m[0m cluster_endpoint       = "https://10.0.3.1:6443"
+  [32m+[0m[0m cluster_nodes          = {
+      [32m+[0m[0m controlplane_ips = [
+          [32m+[0m[0m "10.0.1.1",
+          [32m+[0m[0m "10.0.1.2",
+          [32m+[0m[0m "10.0.1.3",
+        ]
+      [32m+[0m[0m worker_ips       = [
+          [32m+[0m[0m "10.0.2.1",
+          [32m+[0m[0m "10.0.2.2",
+          [32m+[0m[0m "10.0.2.3",
+        ]
+    }
+  [32m+[0m[0m cluster_vip            = "10.0.3.1"
+  [32m+[0m[0m infrastructure_ready   = {
+      [32m+[0m[0m cluster_ready   = true
+      [32m+[0m[0m persistent_auth = true
+      [32m+[0m[0m timestamp       = (known after apply)
+    }
+  [32m+[0m[0m kubeconfig             = (sensitive value)
+  [32m+[0m[0m kubeconfig_data        = (sensitive value)
+  [32m+[0m[0m proxmox_tokens_created = true
+  [32m+[0m[0m talos_config           = (sensitive value)
+[0m[1mrandom_string.key_suffix: Creating...[0m[0m
+[0m[1mmodule.pve_auth.null_resource.cleanup_proxmox_tokens["terraform"]: Creating...[0m[0m
+[0m[1mrandom_string.key_suffix: Creation complete after 0s [id=n1nk7][0m
+[0m[1mmodule.pve_auth.null_resource.cleanup_proxmox_tokens["terraform"]: Creation complete after 0s [id=8531617835717444938][0m
+[0m[1mmodule.infrastructure.null_resource.commit_sealed_secrets: Creating...[0m[0m
+[0m[1mmodule.infrastructure.talos_machine_secrets.talos: Creating...[0m[0m
+[0m[1mmodule.infrastructure.null_resource.commit_sealed_secrets: Provisioning with 'local-exec'...[0m[0m
+[0m[1mmodule.infrastructure.null_resource.commit_sealed_secrets (local-exec):[0m [0mExecuting: ["/bin/sh" "-c" "      cd ../modules/infrastructure/../..\n\n      # Check if there are changes to sealed secrets\n      if git diff --quiet k8s/**/*-sealed.yaml 2>/dev/null; then\n        echo \"No changes to sealed secrets\"\n      else\n        # Add and commit the changes\n        git add k8s/**/*-sealed.yaml\n        git commit -m \"chore: auto-seal secrets with terraform-generated keypair\n\nTerraform automatically resealed secrets with the stable keypair.\n\n🤖 Generated with [Claude Code](https://claude.ai/code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\" || true\n        echo \"Committed updated sealed secrets\"\n      fi\n"]
+[0m[1mmodule.infrastructure.module.nodes["worker1"].data.external.preauth_key: Reading...[0m[0m
+[0m[1mmodule.infrastructure.module.nodes["controlplane1"].data.external.preauth_key: Reading...[0m[0m
+[0m[1mmodule.infrastructure.module.nodes["worker2"].data.external.preauth_key: Reading...[0m[0m
+[0m[1mmodule.infrastructure.module.nodes["controlplane2"].data.external.preauth_key: Reading...[0m[0m
+[0m[1mmodule.infrastructure.module.nodes["controlplane0"].data.external.preauth_key: Reading...[0m[0m
+[0m[1mmodule.infrastructure.module.nodes["worker0"].data.external.preauth_key: Reading...[0m[0m
+[0m[1mmodule.infrastructure.null_resource.commit_sealed_secrets (local-exec):[0m [0mNo changes to sealed secrets
+[0m[1mmodule.infrastructure.null_resource.commit_sealed_secrets: Creation complete after 0s [id=7848061390089356938][0m
+[0m[1mmodule.infrastructure.module.nodes["worker0"].talos_image_factory_schematic.schematic: Creating...[0m[0m
+[0m[1mmodule.infrastructure.module.nodes["controlplane1"].talos_image_factory_schematic.schematic: Creating...[0m[0m
+[0m[1mmodule.infrastructure.module.nodes["controlplane2"].talos_image_factory_schematic.schematic: Creating...[0m[0m
+[0m[1mmodule.infrastructure.module.nodes["controlplane1"].talos_image_factory_schematic.schematic: Creation complete after 0s [id=8625261087969321b7343ba74d7c4e513040526b9aad1c5364eb5c6f8f7c9118][0m
+[0m[1mmodule.infrastructure.module.nodes["controlplane0"].talos_image_factory_schematic.schematic: Creating...[0m[0m
+[0m[1mmodule.infrastructure.module.nodes["worker0"].talos_image_factory_schematic.schematic: Creation complete after 0s [id=42afed947641896c10021aa0145fbeed4ed13c9834cbdf0dd19f156b7707053a][0m
+[0m[1mmodule.infrastructure.module.nodes["controlplane2"].talos_image_factory_schematic.schematic: Creation complete after 0s [id=f58c3fca4dc29b276f6a21a2a240620d6cdec01f70537c47b54d0f16bdbdd434][0m
+[0m[1mmodule.infrastructure.module.nodes["worker1"].talos_image_factory_schematic.schematic: Creating...[0m[0m
+[0m[1mmodule.infrastructure.module.nodes["worker2"].talos_image_factory_schematic.schematic: Creating...[0m[0m
+[0m[1mmodule.infrastructure.module.nodes["worker1"].talos_image_factory_schematic.schematic: Creation complete after 0s [id=55ab7d22245808ca9382aab96040dc6075f11658c48d5c0d518b222352fb2717][0m
+[0m[1mmodule.infrastructure.module.nodes["controlplane0"].talos_image_factory_schematic.schematic: Creation complete after 0s [id=9377f96ecd8e343493a55c724c00cf8d31ae975bc4e969715c400e76ce0781fa][0m
+[0m[1mmodule.infrastructure.module.nodes["worker2"].talos_image_factory_schematic.schematic: Creation complete after 0s [id=bd5c6a562d5bde3f2e59162bfa1a72326ba1091d344aad37d7d8c7af70f9baca][0m
+[0m[1mmodule.infrastructure.talos_machine_secrets.talos: Creation complete after 0s [id=machine_secrets][0m
+[0m[1mmodule.infrastructure.data.talos_client_configuration.talos: Reading...[0m[0m
+[0m[1mmodule.infrastructure.module.nodes["worker0"].data.talos_image_factory_urls.urls: Reading...[0m[0m
+[0m[1mmodule.infrastructure.module.nodes["controlplane1"].data.talos_image_factory_urls.urls: Reading...[0m[0m
+[0m[1mmodule.infrastructure.module.nodes["controlplane0"].data.talos_image_factory_urls.urls: Reading...[0m[0m
+[0m[1mmodule.infrastructure.data.talos_client_configuration.talos: Read complete after 0s [id=talos-cluster][0m
+[0m[1mmodule.infrastructure.module.nodes["controlplane1"].data.talos_image_factory_urls.urls: Read complete after 0s[0m
+[0m[1mmodule.infrastructure.module.nodes["controlplane0"].data.talos_image_factory_urls.urls: Read complete after 0s[0m
+[0m[1mmodule.infrastructure.module.nodes["worker0"].data.talos_image_factory_urls.urls: Read complete after 0s[0m
+[0m[1mmodule.infrastructure.module.nodes["worker2"].data.talos_image_factory_urls.urls: Reading...[0m[0m
+[0m[1mmodule.infrastructure.module.nodes["controlplane2"].data.talos_image_factory_urls.urls: Reading...[0m[0m
+[0m[1mmodule.infrastructure.module.nodes["worker2"].data.talos_image_factory_urls.urls: Read complete after 0s[0m
+[0m[1mmodule.infrastructure.module.nodes["controlplane2"].data.talos_image_factory_urls.urls: Read complete after 0s[0m
+[0m[1mmodule.infrastructure.module.nodes["worker1"].data.talos_image_factory_urls.urls: Reading...[0m[0m
+[0m[1mmodule.infrastructure.module.nodes["worker1"].data.talos_image_factory_urls.urls: Read complete after 0s[0m
+[0m[1mmodule.infrastructure.module.nodes["worker0"].proxmox_virtual_environment_download_file.disk_image: Creating...[0m[0m
+[0m[1mmodule.infrastructure.module.nodes["controlplane0"].proxmox_virtual_environment_download_file.disk_image: Creating...[0m[0m
+[0m[1mmodule.infrastructure.module.nodes["worker1"].proxmox_virtual_environment_download_file.disk_image: Creating...[0m[0m
+[0m[1mmodule.infrastructure.module.nodes["controlplane1"].proxmox_virtual_environment_download_file.disk_image: Creating...[0m[0m
+[0m[1mmodule.infrastructure.module.nodes["worker1"].data.external.preauth_key: Read complete after 1s [id=-][0m
+[0m[1mmodule.infrastructure.module.nodes["controlplane1"].data.external.preauth_key: Read complete after 1s [id=-][0m
+[0m[1mmodule.infrastructure.module.nodes["worker2"].proxmox_virtual_environment_download_file.disk_image: Creating...[0m[0m
+[0m[1mmodule.infrastructure.module.nodes["controlplane2"].proxmox_virtual_environment_download_file.disk_image: Creating...[0m[0m
+[0m[1mmodule.infrastructure.module.nodes["controlplane0"].data.external.preauth_key: Read complete after 1s [id=-][0m
+[0m[1mmodule.infrastructure.module.nodes["worker0"].data.external.preauth_key: Read complete after 2s [id=-][0m
+[0m[1mmodule.infrastructure.module.nodes["controlplane2"].data.external.preauth_key: Read complete after 2s [id=-][0m
+[0m[1mmodule.infrastructure.module.nodes["worker2"].data.external.preauth_key: Read complete after 2s [id=-][0m
+[0m[1mmodule.infrastructure.module.nodes["controlplane2"].data.talos_machine_configuration.config: Reading...[0m[0m
+[0m[1mmodule.infrastructure.module.nodes["controlplane1"].data.talos_machine_configuration.config: Reading...[0m[0m
+[0m[1mmodule.infrastructure.module.nodes["controlplane0"].data.talos_machine_configuration.config: Reading...[0m[0m
+[0m[1mmodule.infrastructure.module.nodes["worker2"].data.talos_machine_configuration.config: Reading...[0m[0m
+[0m[1mmodule.infrastructure.module.nodes["controlplane2"].data.talos_machine_configuration.config: Read complete after 0s [id=talos-cluster][0m
+[0m[1mmodule.infrastructure.module.nodes["worker2"].data.talos_machine_configuration.config: Read complete after 0s [id=talos-cluster][0m
+[0m[1mmodule.infrastructure.module.nodes["controlplane0"].data.talos_machine_configuration.config: Read complete after 0s [id=talos-cluster][0m
+[0m[1mmodule.infrastructure.module.nodes["controlplane1"].data.talos_machine_configuration.config: Read complete after 0s [id=talos-cluster][0m
+[0m[1mmodule.infrastructure.module.nodes["worker1"].data.talos_machine_configuration.config: Reading...[0m[0m
+[0m[1mmodule.infrastructure.module.nodes["worker1"].data.talos_machine_configuration.config: Read complete after 0s [id=talos-cluster][0m
+[0m[1mmodule.infrastructure.module.nodes["worker0"].data.talos_machine_configuration.config: Reading...[0m[0m
+[0m[1mmodule.infrastructure.module.nodes["worker0"].data.talos_machine_configuration.config: Read complete after 0s [id=talos-cluster][0m
+[0m[1mmodule.infrastructure.module.nodes["controlplane0"].proxmox_virtual_environment_download_file.disk_image: Creation complete after 9s [id=local:import/talos-9377f96ecd8e343493a55c724c00cf8d31ae975bc4e969715c400e76ce0781fa-amd64.qcow2][0m
+[0m[1mmodule.infrastructure.module.nodes["worker1"].proxmox_virtual_environment_download_file.disk_image: Creation complete after 9s [id=local:import/talos-55ab7d22245808ca9382aab96040dc6075f11658c48d5c0d518b222352fb2717-amd64.qcow2][0m
+[0m[1mmodule.infrastructure.module.nodes["worker0"].proxmox_virtual_environment_download_file.disk_image: Creation complete after 9s [id=local:import/talos-42afed947641896c10021aa0145fbeed4ed13c9834cbdf0dd19f156b7707053a-amd64.qcow2][0m
+[0m[1mmodule.infrastructure.module.nodes["controlplane1"].proxmox_virtual_environment_download_file.disk_image: Still creating... [00m10s elapsed][0m[0m
+[0m[1mmodule.infrastructure.module.nodes["controlplane1"].proxmox_virtual_environment_download_file.disk_image: Creation complete after 11s [id=local:import/talos-8625261087969321b7343ba74d7c4e513040526b9aad1c5364eb5c6f8f7c9118-amd64.qcow2][0m
+[0m[1mmodule.infrastructure.module.nodes["controlplane2"].proxmox_virtual_environment_download_file.disk_image: Still creating... [00m10s elapsed][0m[0m
+[0m[1mmodule.infrastructure.module.nodes["worker2"].proxmox_virtual_environment_download_file.disk_image: Still creating... [00m10s elapsed][0m[0m
+[0m[1mmodule.infrastructure.module.nodes["worker2"].proxmox_virtual_environment_download_file.disk_image: Creation complete after 12s [id=local:import/talos-bd5c6a562d5bde3f2e59162bfa1a72326ba1091d344aad37d7d8c7af70f9baca-amd64.qcow2][0m
+[0m[1mmodule.infrastructure.module.nodes["controlplane2"].proxmox_virtual_environment_download_file.disk_image: Creation complete after 14s [id=local:import/talos-f58c3fca4dc29b276f6a21a2a240620d6cdec01f70537c47b54d0f16bdbdd434-amd64.qcow2][0m
+[0m[1mmodule.infrastructure.module.nodes["worker2"].proxmox_virtual_environment_vm.vm: Creating...[0m[0m
+[0m[1mmodule.infrastructure.module.nodes["controlplane1"].proxmox_virtual_environment_vm.vm: Creating...[0m[0m
+[0m[1mmodule.infrastructure.module.nodes["controlplane2"].proxmox_virtual_environment_vm.vm: Creating...[0m[0m
+[0m[1mmodule.infrastructure.module.nodes["worker0"].proxmox_virtual_environment_vm.vm: Creating...[0m[0m
+[0m[1mmodule.infrastructure.module.nodes["worker1"].proxmox_virtual_environment_vm.vm: Creating...[0m[0m
+[0m[1mmodule.infrastructure.module.nodes["controlplane0"].proxmox_virtual_environment_vm.vm: Creating...[0m[0m
+[0m[1mmodule.infrastructure.module.nodes["worker0"].proxmox_virtual_environment_vm.vm: Still creating... [00m10s elapsed][0m[0m
+[0m[1mmodule.infrastructure.module.nodes["controlplane0"].proxmox_virtual_environment_vm.vm: Still creating... [00m10s elapsed][0m[0m
+[0m[1mmodule.infrastructure.module.nodes["controlplane1"].proxmox_virtual_environment_vm.vm: Still creating... [00m10s elapsed][0m[0m
+[0m[1mmodule.infrastructure.module.nodes["controlplane2"].proxmox_virtual_environment_vm.vm: Still creating... [00m10s elapsed][0m[0m
+[0m[1mmodule.infrastructure.module.nodes["worker2"].proxmox_virtual_environment_vm.vm: Still creating... [00m10s elapsed][0m[0m
+[0m[1mmodule.infrastructure.module.nodes["worker1"].proxmox_virtual_environment_vm.vm: Still creating... [00m10s elapsed][0m[0m
+[0m[1mmodule.infrastructure.module.nodes["controlplane2"].proxmox_virtual_environment_vm.vm: Still creating... [00m20s elapsed][0m[0m
+[0m[1mmodule.infrastructure.module.nodes["worker1"].proxmox_virtual_environment_vm.vm: Still creating... [00m20s elapsed][0m[0m
+[0m[1mmodule.infrastructure.module.nodes["worker2"].proxmox_virtual_environment_vm.vm: Still creating... [00m20s elapsed][0m[0m
+[0m[1mmodule.infrastructure.module.nodes["worker0"].proxmox_virtual_environment_vm.vm: Still creating... [00m20s elapsed][0m[0m
+[0m[1mmodule.infrastructure.module.nodes["controlplane0"].proxmox_virtual_environment_vm.vm: Still creating... [00m20s elapsed][0m[0m
+[0m[1mmodule.infrastructure.module.nodes["controlplane1"].proxmox_virtual_environment_vm.vm: Still creating... [00m20s elapsed][0m[0m
+[0m[1mmodule.infrastructure.module.nodes["controlplane0"].proxmox_virtual_environment_vm.vm: Creation complete after 28s [id=1500][0m
+[0m[1mmodule.infrastructure.module.nodes["worker1"].proxmox_virtual_environment_vm.vm: Still creating... [00m30s elapsed][0m[0m
+[0m[1mmodule.infrastructure.module.nodes["controlplane2"].proxmox_virtual_environment_vm.vm: Still creating... [00m30s elapsed][0m[0m
+[0m[1mmodule.infrastructure.module.nodes["worker0"].proxmox_virtual_environment_vm.vm: Still creating... [00m30s elapsed][0m[0m
+[0m[1mmodule.infrastructure.module.nodes["worker2"].proxmox_virtual_environment_vm.vm: Still creating... [00m30s elapsed][0m[0m
+[0m[1mmodule.infrastructure.module.nodes["controlplane1"].proxmox_virtual_environment_vm.vm: Still creating... [00m30s elapsed][0m[0m
+[0m[1mmodule.infrastructure.module.nodes["controlplane1"].proxmox_virtual_environment_vm.vm: Creation complete after 32s [id=1501][0m
+[0m[1mmodule.infrastructure.module.nodes["worker2"].proxmox_virtual_environment_vm.vm: Creation complete after 34s [id=2002][0m
+[0m[1mmodule.infrastructure.module.nodes["worker0"].proxmox_virtual_environment_vm.vm: Creation complete after 34s [id=2000][0m
+[0m[1mmodule.infrastructure.module.nodes["worker1"].proxmox_virtual_environment_vm.vm: Creation complete after 35s [id=2001][0m
+[0m[1mmodule.infrastructure.module.nodes["controlplane2"].proxmox_virtual_environment_vm.vm: Creation complete after 35s [id=1502][0m
+[0m[1mmodule.infrastructure.module.nodes["worker1"].terraform_data.node_registration: Creating...[0m[0m
+[0m[1mmodule.infrastructure.module.nodes["worker0"].terraform_data.node_registration: Creating...[0m[0m
+[0m[1mmodule.infrastructure.module.nodes["worker1"].terraform_data.node_registration: Creation complete after 0s [id=8137a74e-b99a-c8bc-41d8-bca3027c0a7a][0m
+[0m[1mmodule.infrastructure.module.nodes["controlplane0"].talos_machine_configuration_apply.apply: Creating...[0m[0m
+[0m[1mmodule.infrastructure.module.nodes["controlplane2"].talos_machine_configuration_apply.apply: Creating...[0m[0m
+[0m[1mmodule.infrastructure.module.nodes["worker1"].talos_machine_configuration_apply.apply: Creating...[0m[0m
+[0m[1mmodule.infrastructure.module.nodes["worker2"].talos_machine_configuration_apply.apply: Creating...[0m[0m
+[0m[1mmodule.infrastructure.module.nodes["worker0"].talos_machine_configuration_apply.apply: Creating...[0m[0m
+[0m[1mmodule.infrastructure.module.nodes["worker2"].terraform_data.node_registration: Creating...[0m[0m
+[0m[1mmodule.infrastructure.module.nodes["controlplane2"].terraform_data.node_registration: Creating...[0m[0m
+[0m[1mmodule.infrastructure.module.nodes["controlplane0"].terraform_data.node_registration: Creating...[0m[0m
+[0m[1mmodule.infrastructure.module.nodes["worker0"].terraform_data.node_registration: Creation complete after 0s [id=0f218404-ed47-c16c-86df-fb2dbb290096][0m
+[0m[1mmodule.infrastructure.module.nodes["controlplane0"].terraform_data.restart_reminder: Creating...[0m[0m
+[0m[1mmodule.infrastructure.module.nodes["controlplane2"].terraform_data.node_registration: Creation complete after 0s [id=8d6e3349-67f4-64e7-b05a-35d88ed5830e][0m
+[0m[1mmodule.infrastructure.module.nodes["controlplane1"].terraform_data.node_registration: Creating...[0m[0m
+[0m[1mmodule.infrastructure.module.nodes["worker2"].terraform_data.node_registration: Creation complete after 0s [id=9aaa4f24-5e71-c58e-abe9-cebf68175252][0m
+[0m[1mmodule.infrastructure.module.nodes["controlplane0"].terraform_data.node_registration: Creation complete after 0s [id=fb54007d-1f46-1492-6238-7d27e3941721][0m
+[0m[1mmodule.infrastructure.module.nodes["worker0"].talos_machine_configuration_apply.apply: Creation complete after 0s [id=machine_configuration_apply][0m
+[0m[1mmodule.infrastructure.module.nodes["worker2"].talos_machine_configuration_apply.apply: Creation complete after 0s [id=machine_configuration_apply][0m
+[0m[1mmodule.infrastructure.module.nodes["controlplane0"].terraform_data.restart_reminder: Provisioning with 'local-exec'...[0m[0m
+[0m[1mmodule.infrastructure.module.nodes["controlplane0"].terraform_data.restart_reminder (local-exec):[0m [0m(output suppressed due to sensitive value in config)
+[0m[1mmodule.infrastructure.module.nodes["controlplane0"].terraform_data.restart_reminder (local-exec):[0m [0m(output suppressed due to sensitive value in config)
+[0m[1mmodule.infrastructure.module.nodes["controlplane0"].terraform_data.restart_reminder (local-exec):[0m [0m(output suppressed due to sensitive value in config)
+[0m[1mmodule.infrastructure.module.nodes["controlplane0"].terraform_data.restart_reminder (local-exec):[0m [0m(output suppressed due to sensitive value in config)
+[0m[1mmodule.infrastructure.module.nodes["controlplane0"].terraform_data.restart_reminder (local-exec):[0m [0m(output suppressed due to sensitive value in config)
+[0m[1mmodule.infrastructure.module.nodes["controlplane0"].terraform_data.restart_reminder (local-exec):[0m [0m(output suppressed due to sensitive value in config)
+[0m[1mmodule.infrastructure.module.nodes["controlplane2"].talos_machine_configuration_apply.apply: Creation complete after 0s [id=machine_configuration_apply][0m
+[0m[1mmodule.infrastructure.module.nodes["worker0"].terraform_data.restart_reminder: Creating...[0m[0m
+[0m[1mmodule.infrastructure.module.nodes["worker1"].terraform_data.restart_reminder: Creating...[0m[0m
+[0m[1mmodule.infrastructure.module.nodes["controlplane1"].talos_machine_configuration_apply.apply: Creating...[0m[0m
+[0m[1mmodule.infrastructure.module.nodes["controlplane0"].talos_machine_configuration_apply.apply: Creation complete after 0s [id=machine_configuration_apply][0m
+[0m[1mmodule.infrastructure.module.nodes["worker2"].terraform_data.restart_reminder: Creating...[0m[0m
+[0m[1mmodule.infrastructure.module.nodes["controlplane1"].terraform_data.restart_reminder: Creating...[0m[0m
+[0m[1mmodule.infrastructure.module.nodes["controlplane0"].terraform_data.restart_reminder: Creation complete after 0s [id=577844dc-8707-63d1-7e81-d4593a7e9d02][0m
+[0m[1mmodule.infrastructure.module.nodes["worker2"].terraform_data.restart_reminder: Provisioning with 'local-exec'...[0m[0m
+[0m[1mmodule.infrastructure.module.nodes["worker2"].terraform_data.restart_reminder (local-exec):[0m [0m(output suppressed due to sensitive value in config)
+[0m[1mmodule.infrastructure.module.nodes["worker2"].terraform_data.restart_reminder (local-exec):[0m [0m(output suppressed due to sensitive value in config)
+[0m[1mmodule.infrastructure.module.nodes["worker2"].terraform_data.restart_reminder (local-exec):[0m [0m(output suppressed due to sensitive value in config)
+[0m[1mmodule.infrastructure.module.nodes["worker2"].terraform_data.restart_reminder (local-exec):[0m [0m(output suppressed due to sensitive value in config)
+[0m[1mmodule.infrastructure.module.nodes["worker2"].terraform_data.restart_reminder (local-exec):[0m [0m(output suppressed due to sensitive value in config)
+[0m[1mmodule.infrastructure.module.nodes["worker2"].terraform_data.restart_reminder (local-exec):[0m [0m(output suppressed due to sensitive value in config)
+[0m[1mmodule.infrastructure.module.nodes["controlplane2"].terraform_data.restart_reminder: Creating...[0m[0m
+[0m[1mmodule.infrastructure.module.nodes["worker0"].terraform_data.restart_reminder: Provisioning with 'local-exec'...[0m[0m
+[0m[1mmodule.infrastructure.module.nodes["controlplane1"].terraform_data.node_registration: Creation complete after 0s [id=1eb4c57c-2ee8-18c6-45bf-2db74af88e01][0m
+[0m[1mmodule.infrastructure.module.nodes["worker0"].terraform_data.restart_reminder (local-exec):[0m [0m(output suppressed due to sensitive value in config)
+[0m[1mmodule.infrastructure.module.nodes["worker0"].terraform_data.restart_reminder (local-exec):[0m [0m(output suppressed due to sensitive value in config)
+[0m[1mmodule.infrastructure.module.nodes["worker0"].terraform_data.restart_reminder (local-exec):[0m [0m(output suppressed due to sensitive value in config)
+[0m[1mmodule.infrastructure.module.nodes["worker0"].terraform_data.restart_reminder (local-exec):[0m [0m(output suppressed due to sensitive value in config)
+[0m[1mmodule.infrastructure.module.nodes["worker0"].terraform_data.restart_reminder (local-exec):[0m [0m(output suppressed due to sensitive value in config)
+[0m[1mmodule.infrastructure.module.nodes["worker0"].terraform_data.restart_reminder (local-exec):[0m [0m(output suppressed due to sensitive value in config)
+[0m[1mmodule.infrastructure.module.nodes["worker1"].terraform_data.restart_reminder: Provisioning with 'local-exec'...[0m[0m
+[0m[1mmodule.infrastructure.module.nodes["controlplane1"].terraform_data.restart_reminder: Provisioning with 'local-exec'...[0m[0m
+[0m[1mmodule.infrastructure.module.nodes["worker1"].terraform_data.restart_reminder (local-exec):[0m [0m(output suppressed due to sensitive value in config)
+[0m[1mmodule.infrastructure.module.nodes["controlplane1"].terraform_data.restart_reminder (local-exec):[0m [0m(output suppressed due to sensitive value in config)
+[0m[1mmodule.infrastructure.module.nodes["worker1"].terraform_data.restart_reminder (local-exec):[0m [0m(output suppressed due to sensitive value in config)
+[0m[1mmodule.infrastructure.module.nodes["worker1"].terraform_data.restart_reminder (local-exec):[0m [0m(output suppressed due to sensitive value in config)
+[0m[1mmodule.infrastructure.module.nodes["worker1"].terraform_data.restart_reminder (local-exec):[0m [0m(output suppressed due to sensitive value in config)
+[0m[1mmodule.infrastructure.module.nodes["controlplane1"].terraform_data.restart_reminder (local-exec):[0m [0m(output suppressed due to sensitive value in config)
+[0m[1mmodule.infrastructure.module.nodes["worker1"].terraform_data.restart_reminder (local-exec):[0m [0m(output suppressed due to sensitive value in config)
+[0m[1mmodule.infrastructure.module.nodes["controlplane1"].terraform_data.restart_reminder (local-exec):[0m [0m(output suppressed due to sensitive value in config)
+[0m[1mmodule.infrastructure.module.nodes["worker1"].terraform_data.restart_reminder (local-exec):[0m [0m(output suppressed due to sensitive value in config)
+[0m[1mmodule.infrastructure.module.nodes["controlplane1"].terraform_data.restart_reminder (local-exec):[0m [0m(output suppressed due to sensitive value in config)
+[0m[1mmodule.infrastructure.module.nodes["controlplane1"].terraform_data.restart_reminder (local-exec):[0m [0m(output suppressed due to sensitive value in config)
+[0m[1mmodule.infrastructure.module.nodes["controlplane1"].terraform_data.restart_reminder (local-exec):[0m [0m(output suppressed due to sensitive value in config)
+[0m[1mmodule.infrastructure.module.nodes["worker0"].terraform_data.restart_reminder: Creation complete after 0s [id=0fbf2688-2e8a-68f2-6b45-454f000fe4ec][0m
+[0m[1mmodule.infrastructure.module.nodes["controlplane1"].terraform_data.restart_reminder: Creation complete after 0s [id=d2dbc03c-afdb-efbb-faa9-a322fc2fd5ff][0m
+[0m[1mmodule.infrastructure.module.nodes["worker1"].terraform_data.restart_reminder: Creation complete after 0s [id=ed5f4c6a-c045-7964-96cd-49a47ac49c11][0m
+[0m[1mmodule.infrastructure.module.nodes["controlplane1"].talos_machine_configuration_apply.apply: Creation complete after 0s [id=machine_configuration_apply][0m
+[0m[1mmodule.infrastructure.module.nodes["worker2"].terraform_data.restart_reminder: Creation complete after 0s [id=1d62cec3-4e8c-32d8-0833-0c1bb87362d8][0m
+[0m[1mmodule.infrastructure.module.nodes["controlplane2"].terraform_data.restart_reminder: Provisioning with 'local-exec'...[0m[0m
+[0m[1mmodule.infrastructure.module.nodes["controlplane2"].terraform_data.restart_reminder (local-exec):[0m [0m(output suppressed due to sensitive value in config)
+[0m[1mmodule.infrastructure.module.nodes["controlplane2"].terraform_data.restart_reminder (local-exec):[0m [0m(output suppressed due to sensitive value in config)
+[0m[1mmodule.infrastructure.module.nodes["controlplane2"].terraform_data.restart_reminder (local-exec):[0m [0m(output suppressed due to sensitive value in config)
+[0m[1mmodule.infrastructure.module.nodes["controlplane2"].terraform_data.restart_reminder (local-exec):[0m [0m(output suppressed due to sensitive value in config)
+[0m[1mmodule.infrastructure.module.nodes["controlplane2"].terraform_data.restart_reminder (local-exec):[0m [0m(output suppressed due to sensitive value in config)
+[0m[1mmodule.infrastructure.module.nodes["controlplane2"].terraform_data.restart_reminder (local-exec):[0m [0m(output suppressed due to sensitive value in config)
+[0m[1mmodule.infrastructure.module.nodes["controlplane2"].terraform_data.restart_reminder: Creation complete after 1s [id=e2f30c27-06f5-5611-e457-7a547d15a142][0m
+[0m[1mmodule.infrastructure.module.nodes["worker1"].talos_machine_configuration_apply.apply: Creation complete after 1s [id=machine_configuration_apply][0m
+[0m[1mmodule.infrastructure.talos_machine_bootstrap.talos: Creating...[0m[0m
+[0m[1mmodule.infrastructure.talos_machine_bootstrap.talos: Creation complete after 1s [id=machine_bootstrap][0m
+[0m[1mmodule.infrastructure.talos_cluster_kubeconfig.talos: Creating...[0m[0m
+[0m[1mmodule.infrastructure.talos_cluster_kubeconfig.talos: Creation complete after 0s [id=talos-cluster][0m
+[0m[1mmodule.infrastructure.null_resource.wait_for_sealed_secrets: Creating...[0m[0m
+[0m[1mmodule.infrastructure.null_resource.wait_for_sealed_secrets: Provisioning with 'local-exec'...[0m[0m
+[0m[1mmodule.infrastructure.null_resource.wait_for_sealed_secrets (local-exec):[0m [0mExecuting: ["/bin/sh" "-c" "echo \"⏳ Waiting for sealed-secrets controller to be deployed by Flux...\"\n# Wait for sealed-secrets controller to be deployed by Flux\nkubectl wait --for=condition=available deployment/sealed-secrets-controller -n kube-system --timeout=300s\necho \"✅ Sealed-secrets controller is ready\"\n"]
+[0m[1mmodule.infrastructure.null_resource.wait_for_sealed_secrets (local-exec):[0m [0m⏳ Waiting for sealed-secrets controller to be deployed by Flux...
+[0m[1mmodule.infrastructure.null_resource.wait_for_sealed_secrets (local-exec):[0m [0mE1129 20:55:39.107251 3529283 memcache.go:265] "Unhandled Error" err="couldn't get current server API group list: the server could not find the requested resource"
+[0m[1mmodule.infrastructure.null_resource.wait_for_sealed_secrets (local-exec):[0m [0mE1129 20:55:39.117282 3529283 memcache.go:265] "Unhandled Error" err="couldn't get current server API group list: the server could not find the requested resource"
+[0m[1mmodule.infrastructure.null_resource.wait_for_sealed_secrets (local-exec):[0m [0mE1129 20:55:39.126586 3529283 memcache.go:265] "Unhandled Error" err="couldn't get current server API group list: the server could not find the requested resource"
+[0m[1mmodule.infrastructure.null_resource.wait_for_sealed_secrets (local-exec):[0m [0mE1129 20:55:39.135964 3529283 memcache.go:265] "Unhandled Error" err="couldn't get current server API group list: the server could not find the requested resource"
+[0m[1mmodule.infrastructure.null_resource.wait_for_sealed_secrets (local-exec):[0m [0mError from server (NotFound): the server could not find the requested resource
+[0m[1mmodule.infrastructure.null_resource.wait_for_sealed_secrets (local-exec):[0m [0m✅ Sealed-secrets controller is ready
+[0m[1mmodule.infrastructure.null_resource.wait_for_sealed_secrets: Creation complete after 0s [id=1805664514736874604][0m
+[0m[1mlocal_file.kubeconfig: Creating...[0m[0m
+[0m[1mlocal_file.talosconfig: Creating...[0m[0m
+[0m[1mlocal_file.talosconfig: Creation complete after 0s [id=87be9b4a32a4b67b191b7c28a7e6264d7a1afaaf][0m
+[0m[1mlocal_file.kubeconfig: Creation complete after 0s [id=44ef0ba0487f85448abd5b70bdc7d8230c35a577][0m
+[0m[1mnull_resource.wait_for_k8s_api: Creating...[0m[0m
+[0m[1mnull_resource.wait_for_k8s_api: Provisioning with 'local-exec'...[0m[0m
+[0m[1mnull_resource.wait_for_k8s_api (local-exec):[0m [0mExecuting: ["/bin/sh" "-c" "echo \"Waiting for Kubernetes API to be ready...\"\ni=1\nwhile [ $i -le 60 ]; do\n  if kubectl get nodes --request-timeout=10s >/dev/null 2>&1 && \\\n     kubectl get serviceaccount default -n default --request-timeout=10s >/dev/null 2>&1 && \\\n     kubectl auth can-i create pods --request-timeout=10s >/dev/null 2>&1; then\n    echo \"Kubernetes API is fully ready for workloads!\"\n    exit 0\n  fi\n  echo \"Attempt $i/60: Waiting for API readiness...\"\n  sleep 10\n  i=$((i + 1))\ndone\necho \"Kubernetes API failed to become ready after 10 minutes\"\nexit 1\n"]
+[0m[1mnull_resource.wait_for_k8s_api (local-exec):[0m [0mWaiting for Kubernetes API to be ready...
+[0m[1mnull_resource.wait_for_k8s_api: Still creating... [00m10s elapsed][0m[0m
+[0m[1mnull_resource.wait_for_k8s_api (local-exec):[0m [0mAttempt 1/60: Waiting for API readiness...
+[0m[1mnull_resource.wait_for_k8s_api: Still creating... [00m20s elapsed][0m[0m
+[0m[1mnull_resource.wait_for_k8s_api: Still creating... [00m30s elapsed][0m[0m
+[0m[1mnull_resource.wait_for_k8s_api (local-exec):[0m [0mAttempt 2/60: Waiting for API readiness...
+[0m[1mnull_resource.wait_for_k8s_api: Still creating... [00m40s elapsed][0m[0m
+[0m[1mnull_resource.wait_for_k8s_api: Still creating... [00m50s elapsed][0m[0m
+[0m[1mnull_resource.wait_for_k8s_api (local-exec):[0m [0mAttempt 3/60: Waiting for API readiness...
+[0m[1mnull_resource.wait_for_k8s_api: Still creating... [01m00s elapsed][0m[0m
+[0m[1mnull_resource.wait_for_k8s_api: Still creating... [01m10s elapsed][0m[0m
+[0m[1mnull_resource.wait_for_k8s_api (local-exec):[0m [0mAttempt 4/60: Waiting for API readiness...
+[0m[1mnull_resource.wait_for_k8s_api: Still creating... [01m20s elapsed][0m[0m
+[0m[1mnull_resource.wait_for_k8s_api: Still creating... [01m30s elapsed][0m[0m
+[0m[1mnull_resource.wait_for_k8s_api (local-exec):[0m [0mAttempt 5/60: Waiting for API readiness...
+[0m[1mnull_resource.wait_for_k8s_api: Still creating... [01m40s elapsed][0m[0m
+[0m[1mnull_resource.wait_for_k8s_api: Still creating... [01m50s elapsed][0m[0m
+[0m[1mnull_resource.wait_for_k8s_api (local-exec):[0m [0mAttempt 6/60: Waiting for API readiness...
+[0m[1mnull_resource.wait_for_k8s_api: Still creating... [02m00s elapsed][0m[0m
+[0m[1mnull_resource.wait_for_k8s_api (local-exec):[0m [0mAttempt 7/60: Waiting for API readiness...
+[0m[1mnull_resource.wait_for_k8s_api: Still creating... [02m10s elapsed][0m[0m
+[0m[1mnull_resource.wait_for_k8s_api (local-exec):[0m [0mAttempt 8/60: Waiting for API readiness...
+[0m[1mnull_resource.wait_for_k8s_api: Still creating... [02m20s elapsed][0m[0m
+[0m[1mnull_resource.wait_for_k8s_api (local-exec):[0m [0mAttempt 9/60: Waiting for API readiness...
+[0m[1mnull_resource.wait_for_k8s_api: Still creating... [02m30s elapsed][0m[0m
+[0m[1mnull_resource.wait_for_k8s_api (local-exec):[0m [0mAttempt 10/60: Waiting for API readiness...
+[0m[1mnull_resource.wait_for_k8s_api: Still creating... [02m40s elapsed][0m[0m
+[0m[1mnull_resource.wait_for_k8s_api (local-exec):[0m [0mAttempt 11/60: Waiting for API readiness...
+[0m[1mnull_resource.wait_for_k8s_api: Still creating... [02m50s elapsed][0m[0m
+[0m[1mnull_resource.wait_for_k8s_api (local-exec):[0m [0mAttempt 12/60: Waiting for API readiness...
+[0m[1mnull_resource.wait_for_k8s_api: Still creating... [03m00s elapsed][0m[0m
+[0m[1mnull_resource.wait_for_k8s_api (local-exec):[0m [0mAttempt 13/60: Waiting for API readiness...
+[0m[1mnull_resource.wait_for_k8s_api: Still creating... [03m10s elapsed][0m[0m
+[0m[1mnull_resource.wait_for_k8s_api (local-exec):[0m [0mAttempt 14/60: Waiting for API readiness...
+[0m[1mnull_resource.wait_for_k8s_api: Still creating... [03m20s elapsed][0m[0m
+[0m[1mnull_resource.wait_for_k8s_api (local-exec):[0m [0mAttempt 15/60: Waiting for API readiness...
+[0m[1mnull_resource.wait_for_k8s_api: Still creating... [03m30s elapsed][0m[0m
+[0m[1mnull_resource.wait_for_k8s_api (local-exec):[0m [0mAttempt 16/60: Waiting for API readiness...
+[0m[1mnull_resource.wait_for_k8s_api: Still creating... [03m40s elapsed][0m[0m
+[0m[1mnull_resource.wait_for_k8s_api (local-exec):[0m [0mAttempt 17/60: Waiting for API readiness...
+[0m[1mnull_resource.wait_for_k8s_api: Still creating... [03m50s elapsed][0m[0m
+[0m[1mnull_resource.wait_for_k8s_api (local-exec):[0m [0mAttempt 18/60: Waiting for API readiness...
+[0m[1mnull_resource.wait_for_k8s_api: Still creating... [04m00s elapsed][0m[0m
+[0m[1mnull_resource.wait_for_k8s_api (local-exec):[0m [0mAttempt 19/60: Waiting for API readiness...
+[0m[1mnull_resource.wait_for_k8s_api: Still creating... [04m10s elapsed][0m[0m
+[0m[1mnull_resource.wait_for_k8s_api (local-exec):[0m [0mAttempt 20/60: Waiting for API readiness...
+[0m[1mnull_resource.wait_for_k8s_api: Still creating... [04m20s elapsed][0m[0m
+[0m[1mnull_resource.wait_for_k8s_api (local-exec):[0m [0mAttempt 21/60: Waiting for API readiness...
+[0m[1mnull_resource.wait_for_k8s_api: Still creating... [04m30s elapsed][0m[0m
+[0m[1mnull_resource.wait_for_k8s_api (local-exec):[0m [0mAttempt 22/60: Waiting for API readiness...
+[0m[1mnull_resource.wait_for_k8s_api: Still creating... [04m40s elapsed][0m[0m
+[0m[1mnull_resource.wait_for_k8s_api (local-exec):[0m [0mKubernetes API is fully ready for workloads!
+[0m[1mnull_resource.wait_for_k8s_api: Creation complete after 4m42s [id=8223747542812528920][0m
+[0m[1mnull_resource.add_cilium_repo: Creating...[0m[0m
+[0m[1mnull_resource.add_cilium_repo: Provisioning with 'local-exec'...[0m[0m
+[0m[1mnull_resource.add_cilium_repo (local-exec):[0m [0mExecuting: ["/bin/sh" "-c" "helm repo add cilium https://helm.cilium.io/ && helm repo update"]
+[0m[1mnull_resource.add_cilium_repo (local-exec):[0m [0m"cilium" already exists with the same configuration, skipping
+[0m[1mnull_resource.add_cilium_repo (local-exec):[0m [0mHang tight while we grab the latest from your chart repositories...
+[0m[1mnull_resource.add_cilium_repo (local-exec):[0m [0m...Successfully got an update from the "harbor" chart repository
+[0m[1mnull_resource.add_cilium_repo (local-exec):[0m [0m...Successfully got an update from the "sealed-secrets" chart repository
+[0m[1mnull_resource.add_cilium_repo (local-exec):[0m [0m...Successfully got an update from the "openebs" chart repository
+[0m[1mnull_resource.add_cilium_repo (local-exec):[0m [0m...Successfully got an update from the "authentik" chart repository
+[0m[1mnull_resource.add_cilium_repo (local-exec):[0m [0m...Successfully got an update from the "akoperator" chart repository
+[0m[1mnull_resource.add_cilium_repo (local-exec):[0m [0m...Successfully got an update from the "hashicorp" chart repository
+[0m[1mnull_resource.add_cilium_repo (local-exec):[0m [0m...Successfully got an update from the "tofu-controller" chart repository
+[0m[1mnull_resource.add_cilium_repo (local-exec):[0m [0m...Successfully got an update from the "goauthentik" chart repository
+[0m[1mnull_resource.add_cilium_repo (local-exec):[0m [0m...Successfully got an update from the "jetstack" chart repository
+[0m[1mnull_resource.add_cilium_repo (local-exec):[0m [0m...Successfully got an update from the "openebs-zfs" chart repository
+[0m[1mnull_resource.add_cilium_repo (local-exec):[0m [0m...Successfully got an update from the "cilium" chart repository
+[0m[1mnull_resource.add_cilium_repo (local-exec):[0m [0m...Successfully got an update from the "gitea-charts" chart repository
+[0m[1mnull_resource.add_cilium_repo (local-exec):[0m [0m...Successfully got an update from the "external-secrets" chart repository
+[0m[1mnull_resource.add_cilium_repo (local-exec):[0m [0m...Successfully got an update from the "grafana" chart repository
+[0m[1mnull_resource.add_cilium_repo (local-exec):[0m [0m...Successfully got an update from the "traefik" chart repository
+[0m[1mnull_resource.add_cilium_repo (local-exec):[0m [0m...Successfully got an update from the "bitnami" chart repository
+[0m[1mnull_resource.add_cilium_repo (local-exec):[0m [0mUpdate Complete. ⎈Happy Helming!⎈
+[0m[1mnull_resource.add_cilium_repo: Creation complete after 2s [id=1597774690222016390][0m
+[0m[1mhelm_release.cilium_bootstrap: Creating...[0m[0m
+[0m[1mhelm_release.cilium_bootstrap: Still creating... [00m10s elapsed][0m[0m
+[0m[1mhelm_release.cilium_bootstrap: Still creating... [00m20s elapsed][0m[0m
+[0m[1mhelm_release.cilium_bootstrap: Still creating... [00m30s elapsed][0m[0m
+[0m[1mhelm_release.cilium_bootstrap: Still creating... [00m40s elapsed][0m[0m
+[0m[1mhelm_release.cilium_bootstrap: Still creating... [00m50s elapsed][0m[0m
+[0m[1mhelm_release.cilium_bootstrap: Still creating... [01m00s elapsed][0m[0m
+[0m[1mhelm_release.cilium_bootstrap: Still creating... [01m10s elapsed][0m[0m
+[0m[1mhelm_release.cilium_bootstrap: Still creating... [01m20s elapsed][0m[0m
+[0m[1mhelm_release.cilium_bootstrap: Still creating... [01m30s elapsed][0m[0m
+[0m[1mhelm_release.cilium_bootstrap: Still creating... [01m40s elapsed][0m[0m
+[0m[1mhelm_release.cilium_bootstrap: Still creating... [01m50s elapsed][0m[0m
+[0m[1mhelm_release.cilium_bootstrap: Still creating... [02m00s elapsed][0m[0m
+[0m[1mhelm_release.cilium_bootstrap: Still creating... [02m10s elapsed][0m[0m
+[0m[1mhelm_release.cilium_bootstrap: Still creating... [02m20s elapsed][0m[0m
+[0m[1mhelm_release.cilium_bootstrap: Still creating... [02m30s elapsed][0m[0m
+[0m[1mhelm_release.cilium_bootstrap: Creation complete after 2m39s [id=cilium][0m
+[0m[1mnull_resource.cleanup_proxmox_volumes: Creating...[0m[0m
+[0m[1mnull_resource.cleanup_proxmox_volumes: Creation complete after 0s [id=8743924731538095974][0m
+[0m[1mkubernetes_secret.sealed_secrets_key: Creating...[0m[0m
+[0m[1mkubernetes_secret.sealed_secrets_key: Creation complete after 0s [id=kube-system/sealed-secrets-key][0m
+[0m[1m[32m
+Apply complete! Resources: 50 added, 0 changed, 0 destroyed.
+[0m[0m[1m[32m
+Outputs:
+
+[0mcluster_domain = "test-cluster.agentydragon.com"
+cluster_endpoint = "https://10.0.3.1:6443"
+cluster_nodes = {
+  "controlplane_ips" = [
+    "10.0.1.1",
+    "10.0.1.2",
+    "10.0.1.3",
+  ]
+  "worker_ips" = [
+    "10.0.2.1",
+    "10.0.2.2",
+    "10.0.2.3",
+  ]
+}
+cluster_vip = "10.0.3.1"
+infrastructure_ready = {
+  "cluster_ready" = true
+  "persistent_auth" = true
+  "timestamp" = "2025-11-30T04:54:46Z"
+}
+kubeconfig = <sensitive>
+kubeconfig_data = <sensitive>
+proxmox_tokens_created = true
+talos_config = <sensitive>
+🔍 Verifying infrastructure readiness...
+⏳ Waiting for Kubernetes API...
+Kubernetes control plane is running at https://10.0.3.1:6443
+CoreDNS is running at https://10.0.3.1:6443/api/v1/namespaces/kube-system/services/kube-dns:dns/proxy
+
+To further debug and diagnose cluster problems, use 'kubectl cluster-info dump'.
+⏳ Waiting for all nodes to be ready...
+✅ Infrastructure layer ready
+
+⚡ Layer 2: Services Deployment
+==============================
+🚀 Deploying services layer...
+     📋 GITOPS → AUTHENTIK → POWERDNS → HARBOR → GITEA → MATRIX
+[0m[1mdata.terraform_remote_state.infrastructure: Reading...[0m[0m
+[0m[1mdata.terraform_remote_state.infrastructure: Read complete after 0s[0m
+
+Terraform used the selected providers to generate the following execution
+plan. Resource actions are indicated with the following symbols:
+  [32m+[0m create[0m
+
+Terraform will perform the following actions:
+
+[1m  # flux_bootstrap_git.cluster[0m will be created
+[0m  [32m+[0m[0m resource "flux_bootstrap_git" "cluster" {
+      [32m+[0m[0m cluster_domain       = "cluster.local"
+      [32m+[0m[0m components           = [
+          [32m+[0m[0m "helm-controller",
+          [32m+[0m[0m "kustomize-controller",
+          [32m+[0m[0m "notification-controller",
+          [32m+[0m[0m "source-controller",
+        ]
+      [32m+[0m[0m delete_git_manifests = true
+      [32m+[0m[0m embedded_manifests   = false
+      [32m+[0m[0m id                   = (known after apply)
+      [32m+[0m[0m interval             = "1m0s"
+      [32m+[0m[0m keep_namespace       = false
+      [32m+[0m[0m log_level            = "info"
+      [32m+[0m[0m namespace            = "flux-system"
+      [32m+[0m[0m network_policy       = true
+      [32m+[0m[0m path                 = "k8s"
+      [32m+[0m[0m registry             = "ghcr.io/fluxcd"
+      [32m+[0m[0m repository_files     = (known after apply)
+      [32m+[0m[0m secret_name          = "flux-system"
+      [32m+[0m[0m version              = "v2.7.3"
+      [32m+[0m[0m watch_all_namespaces = true
+    }
+
+[1mPlan:[0m 1 to add, 0 to change, 0 to destroy.
+[0m
+Changes to Outputs:
+  [32m+[0m[0m flux_deployed     = {
+      [32m+[0m[0m flux_namespace = "flux-system"
+      [32m+[0m[0m timestamp      = (known after apply)
+    }
+[0m[1mflux_bootstrap_git.cluster: Creating...[0m[0m
+[0m[1mflux_bootstrap_git.cluster: Still creating... [00m10s elapsed][0m[0m
+[0m[1mflux_bootstrap_git.cluster: Still creating... [00m20s elapsed][0m[0m
+[0m[1mflux_bootstrap_git.cluster: Still creating... [00m30s elapsed][0m[0m
+[0m[1mflux_bootstrap_git.cluster: Still creating... [00m40s elapsed][0m[0m
+[0m[1mflux_bootstrap_git.cluster: Still creating... [00m50s elapsed][0m[0m
+[0m[1mflux_bootstrap_git.cluster: Still creating... [01m00s elapsed][0m[0m
+[0m[1mflux_bootstrap_git.cluster: Still creating... [01m10s elapsed][0m[0m
+[0m[1mflux_bootstrap_git.cluster: Still creating... [01m20s elapsed][0m[0m
+[0m[1mflux_bootstrap_git.cluster: Creation complete after 1m22s [id=flux-system][0m
+[0m[1m[32m
+Apply complete! Resources: 1 added, 0 changed, 0 destroyed.
+[0m[0m[1m[32m
+Outputs:
+
+[0mflux_deployed = {
+  "flux_namespace" = "flux-system"
+  "timestamp" = "2025-11-30T05:04:25Z"
+}
+service_endpoints = {
+  "authentik_url" = "https://authentik.test-cluster.agentydragon.com"
+  "gitea_url" = "https://gitea.test-cluster.agentydragon.com"
+  "harbor_url" = "https://harbor.test-cluster.agentydragon.com"
+  "powerdns_url" = "http://10.0.3.1:8081"
+}
+⏳ Waiting for services to be ready...
+⏳ Waiting for Authentik deployment...
