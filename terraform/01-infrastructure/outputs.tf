@@ -5,6 +5,7 @@
 output "proxmox_tokens_created" {
   description = "Whether Proxmox tokens were created successfully"
   value       = module.pve_auth.terraform_token != null
+  sensitive   = true
 }
 
 # INFRASTRUCTURE outputs
