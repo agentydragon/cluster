@@ -3,7 +3,6 @@
 variable "cluster_domain" {
   description = "Cluster domain name"
   type        = string
-  default     = "test-cluster.agentydragon.com"
 }
 
 variable "cluster_vip" {

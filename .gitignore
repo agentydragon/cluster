@@ -19,7 +19,7 @@ talosconfig*
 terraform/pve-auth/terraform.tfvars
 
 # Build artifacts and temporary files
-terraform.log
+*.log
 tfplan
 tmp/
 

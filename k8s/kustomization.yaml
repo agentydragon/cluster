@@ -36,6 +36,7 @@ resources:
   - applications/matrix/flux-kustomization.yaml
   - applications/test-app/flux-kustomization.yaml
   - authentik-blueprint/gitea-provider/flux-kustomization.yaml
+  - authentik-blueprint/gitea-secret/flux-kustomization.yaml
   - authentik-blueprint/matrix-provider/flux-kustomization.yaml
   - authentik-blueprint/matrix-secret/flux-kustomization.yaml
   - authentik-blueprint/harbor-provider/flux-kustomization.yaml
