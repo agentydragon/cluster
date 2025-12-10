@@ -15,4 +15,4 @@ spec:
   dependsOn:
     - name: vault # Core Vault must be ready first
     - name: ingress-nginx
-    - name: cert-manager-config
+    - name: cert-manager-environment
