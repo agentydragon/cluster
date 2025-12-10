@@ -88,14 +88,17 @@ spec:
       env:
         - name: SSL_CERT_FILE
           value: /etc/ssl/certs/cluster-ca/ca-certificates.crt
-      volumes:
-        - name: cluster-ca
-          configMap:
-            name: cluster-internal-ca-bundle
-      volumeMounts:
-        - name: cluster-ca
-          mountPath: /etc/ssl/certs/cluster-ca
-          readOnly: true
+
+    # Mount CA bundle to init containers (configure-gitea needs it for OIDC discovery)
+    extraVolumes:
+      - name: cluster-ca
+        configMap:
+          name: cluster-internal-ca-bundle
+
+    extraInitVolumeMounts:
+      - name: cluster-ca
+        mountPath: /etc/ssl/certs/cluster-ca
+        readOnly: true
 
     # Service configuration
     service:
