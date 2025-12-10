@@ -216,7 +216,8 @@ resource "proxmox_virtual_environment_vm" "vm" {
   }
 
   memory {
-    dedicated = local.vm_defaults.memory_mb
+    dedicated = 0                           # Minimum guaranteed memory (0 = full ballooning)
+    floating  = local.vm_defaults.memory_mb # Maximum memory (12GB)
   }
 
   vga {

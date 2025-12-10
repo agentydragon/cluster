@@ -33,6 +33,12 @@ spec:
     global:
       imageRegistry: ""
 
+    # CRITICAL: Use Recreate strategy for RWO volumes
+    # RollingUpdate + RWO volumes = deadlock when init containers fail
+    # See docs/RWO_VOLUME_DEPLOYMENT_STRATEGY.md for details
+    strategy:
+      type: Recreate
+
     # Gitea configuration
     gitea:
       admin:
