@@ -92,7 +92,13 @@ spec:
     # Registry configuration
     registry:
       replicas: 1
-      # Use Recreate strategy for RWO volume compatibility
+      # CRITICAL: Use Recreate strategy for RWO volumes
+      # Harbor registry uses RWO persistent volume for image blob storage (5Gi).
+      # RollingUpdate + RWO volumes = deadlock when pods fail during initialization.
+      # Init:Error pods hold RWO volumes, preventing new pods from attaching.
+      # This has caused production deadlocks requiring manual intervention (3rd occurrence).
+      # See docs/RWO_VOLUME_DEPLOYMENT_STRATEGY.md for complete explanation.
+      # Brief downtime during updates is acceptable vs manual deadlock recovery.
       strategy:
         type: Recreate
       resources:
@@ -146,7 +152,13 @@ spec:
     # Job service
     jobservice:
       replicas: 1
-      # Use Recreate strategy for RWO volume compatibility
+      # CRITICAL: Use Recreate strategy for RWO volumes
+      # Harbor jobservice uses RWO persistent volume for job logs and scan reports (1Gi).
+      # RollingUpdate + RWO volumes = deadlock when pods fail during initialization.
+      # Init:Error pods hold RWO volumes, preventing new pods from attaching.
+      # This has caused production deadlocks requiring manual intervention (3rd occurrence).
+      # See docs/RWO_VOLUME_DEPLOYMENT_STRATEGY.md for complete explanation.
+      # Brief downtime during updates is acceptable vs manual deadlock recovery.
       strategy:
         type: Recreate
       resources:

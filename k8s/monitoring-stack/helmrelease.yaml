@@ -97,6 +97,16 @@ spec:
             hosts:
               - grafana.test-cluster.agentydragon.com
 
+      # CRITICAL: Use Recreate strategy for RWO volumes
+      # Grafana uses RWO persistent volume for dashboards, plugins, and session data (10Gi).
+      # RollingUpdate + RWO volumes = deadlock when pods fail during initialization.
+      # Init:Error pods hold RWO volumes, preventing new pods from attaching.
+      # This has caused production deadlocks requiring manual intervention (3rd occurrence).
+      # See docs/RWO_VOLUME_DEPLOYMENT_STRATEGY.md for complete explanation.
+      # Brief downtime during updates is acceptable vs manual deadlock recovery.
+      deploymentStrategy:
+        type: Recreate
+
       persistence:
         enabled: true
         storageClassName: proxmox-csi-retain
