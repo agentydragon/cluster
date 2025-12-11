@@ -16,6 +16,11 @@ export PRE_COMMIT_USE_UV=1
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 TERRAFORM_DIR="${SCRIPT_DIR}/terraform"
 
+# Timestamp function for all output
+log() {
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*"
+}
+
 # Parse command line arguments
 START_FROM_LAYER=""
 HELP=false
@@ -59,15 +64,15 @@ if [ "$HELP" = true ]; then
     exit 0
 fi
 
-echo "🚀 Starting layered Talos cluster bootstrap..."
-echo "📂 Terraform directory: ${TERRAFORM_DIR}"
+log "🚀 Starting layered Talos cluster bootstrap..."
+log "📂 Terraform directory: ${TERRAFORM_DIR}"
 if [ -n "$START_FROM_LAYER" ]; then
-    echo "⏩ Starting from layer: $START_FROM_LAYER"
+    log "⏩ Starting from layer: $START_FROM_LAYER"
 fi
 
 # Phase 0: Preflight Validation
 echo ""
-echo "🔍 Phase 0: Preflight Validation"
+log "🔍 Phase 0: Preflight Validation"
 echo "=================================="
 
 # Check git working tree is clean
@@ -78,18 +83,18 @@ if ! git diff-index --quiet HEAD --; then
 fi
 
 # Run pre-commit validation
-echo "🔍 Running pre-commit validation..."
+log "🔍 Running pre-commit validation..."
 if ! pre-commit run --all-files; then
-    echo "❌ FATAL: Pre-commit validation failed"
+    log "❌ FATAL: Pre-commit validation failed"
     exit 1
 fi
 
 # Validate each layer's terraform configuration
 for layer in "00-persistent-auth" "01-infrastructure" "02-services"; do
-    echo "🔍 Validating terraform layer: ${layer}..."
+    log "🔍 Validating terraform layer: ${layer}..."
     cd "${TERRAFORM_DIR}/${layer}"
     if ! terraform validate; then
-        echo "❌ FATAL: Terraform configuration is invalid in layer ${layer}"
+        log "❌ FATAL: Terraform configuration is invalid in layer ${layer}"
         exit 1
     fi
 done
@@ -97,54 +102,54 @@ done
 # Phase 0.5: Persistent Auth Layer (if needed)
 if [ "$START_FROM_LAYER" != "infrastructure" ] && [ "$START_FROM_LAYER" != "services" ] && [ "$START_FROM_LAYER" != "configuration" ]; then
     echo ""
-    echo "⚡ Layer 0: Persistent Auth Setup"
+    log "⚡ Layer 0: Persistent Auth Setup"
     echo "================================"
 
     cd "${TERRAFORM_DIR}/00-persistent-auth"
 
     # Check if persistent auth already exists
     if [ -f "terraform.tfstate" ] && terraform show -json | jq -e '.values.root_module.resources | length > 0' >/dev/null 2>&1; then
-        echo "ℹ️  Persistent auth layer already exists - skipping deployment"
+        log "ℹ️  Persistent auth layer already exists - skipping deployment"
         echo "    Use 'cd terraform/00-persistent-auth && terraform destroy' to reset auth"
     else
-        echo "🚀 Deploying persistent auth layer..."
+        log "🚀 Deploying persistent auth layer..."
         echo "     📋 CSI-TOKENS → SEALED-SECRETS-KEYPAIR → GIT-COMMIT"
 
         if ! terraform apply -auto-approve; then
-            echo "❌ FATAL: Persistent auth deployment failed"
+            log "❌ FATAL: Persistent auth deployment failed"
             exit 1
         fi
 
-        echo "✅ Persistent auth layer ready"
+        log "✅ Persistent auth layer ready"
     fi
 fi
 
 # Phase 1: Infrastructure Layer
 if [ "$START_FROM_LAYER" != "services" ]; then
     echo ""
-    echo "⚡ Layer 1: Infrastructure Deployment"
+    log "⚡ Layer 1: Infrastructure Deployment"
     echo "===================================="
 
     cd "${TERRAFORM_DIR}/01-infrastructure"
-    echo "🚀 Deploying infrastructure layer..."
+    log "🚀 Deploying infrastructure layer..."
     echo "     📋 PVE-AUTH → VMs → TALOS → CILIUM → SEALED-SECRETS"
 
     if ! terraform apply -auto-approve; then
-        echo "❌ FATAL: Infrastructure deployment failed"
+        log "❌ FATAL: Infrastructure deployment failed"
         exit 1
     fi
 
     # Verify infrastructure readiness
-    echo "🔍 Verifying infrastructure readiness..."
+    log "🔍 Verifying infrastructure readiness..."
     KUBECONFIG_PATH="${TERRAFORM_DIR}/01-infrastructure/kubeconfig"
     export KUBECONFIG="$KUBECONFIG_PATH"
 
     # Wait for cluster API
-    echo "⏳ Waiting for Kubernetes API..."
+    log "⏳ Waiting for Kubernetes API..."
     timeout 300 bash -c 'until kubectl cluster-info; do sleep 5; done'
 
     # Wait for all nodes ready
-    echo "⏳ Waiting for all nodes to be ready..."
+    log "⏳ Waiting for all nodes to be ready..."
     timeout 600 bash -c 'until [ $(kubectl get nodes --no-headers | grep Ready | wc -l) -eq 6 ]; do sleep 10; done'
 
     echo "✅ Infrastructure layer ready"
@@ -152,7 +157,7 @@ fi
 
 # Phase 2: Services Layer
 echo ""
-echo "⚡ Layer 2: Services Deployment"
+log "⚡ Layer 2: Services Deployment"
 echo "=============================="
 
 # Ensure kubeconfig is available for services layer
@@ -162,36 +167,36 @@ if [ -z "$KUBECONFIG" ]; then
 fi
 
 cd "${TERRAFORM_DIR}/02-services"
-echo "🚀 Deploying services layer..."
+log "🚀 Deploying services layer..."
 echo "     📋 GITOPS → AUTHENTIK → POWERDNS → HARBOR → GITEA → MATRIX"
 
 if ! terraform apply -auto-approve; then
-    echo "❌ FATAL: Services deployment failed"
+    log "❌ FATAL: Services deployment failed"
     exit 1
 fi
 
 # Wait for critical services to be ready
-echo "⏳ Waiting for services to be ready..."
+log "⏳ Waiting for services to be ready..."
 
 # Wait for Authentik
-echo "⏳ Waiting for Authentik deployment..."
+log "⏳ Waiting for Authentik deployment..."
 timeout 300 bash -c 'until kubectl get deployment authentik -n authentik-system 2>/dev/null; do sleep 10; done'
 kubectl wait --for=condition=available deployment/authentik -n authentik-system --timeout=600s
 
 # Wait for PowerDNS
-echo "⏳ Waiting for PowerDNS deployment..."
+log "⏳ Waiting for PowerDNS deployment..."
 timeout 300 bash -c 'until kubectl get deployment powerdns -n powerdns-system 2>/dev/null; do sleep 10; done'
 kubectl wait --for=condition=available deployment/powerdns -n powerdns-system --timeout=600s
 
 # Wait for PowerDNS API to be responsive
-echo "⏳ Waiting for PowerDNS API to be ready..."
+log "⏳ Waiting for PowerDNS API to be ready..."
 CLUSTER_VIP="10.0.3.1"  # TODO: Get from terraform output
 timeout 300 bash -c "until curl -sf http://${CLUSTER_VIP}:8081/api/v1/servers; do sleep 5; done"
 
-echo "✅ Services layer ready"
+log "✅ Services layer ready"
 
 echo ""
-echo "🎉 Cluster bootstrap completed!"
+log "🎉 Cluster bootstrap completed!"
 echo "📊 Bootstrap phases:"
 echo "   ✅ Phase 0: Persistent auth (CSI tokens, sealed secrets keypair)"
 echo "   ✅ Phase 1: Infrastructure (VMs, Talos, Cilium)"
