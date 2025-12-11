@@ -340,32 +340,6 @@ curl -X PUT "https://harbor.example.com/api/v2.0/configurations" \
 
 ## Implementation Update (2025-12-10)
 
-**Bug Fix**: The Terraform configuration was initially using a data source to read the Harbor OIDC credentials from Vault, which caused a circular dependency issue. This was fixed by directly referencing the `vault_kv_secret_v2.harbor_oidc` resource instead.
-
-**File**: `terraform/authentik-blueprint/harbor/harbor-config.tf` (lines 37-38)
-
-**Before** (incorrect):
-
-```hcl
-data "vault_kv_secret_v2" "harbor_oidc" {
-  mount = "kv"
-  name  = "sso/harbor"
-}
-```
-
-**After** (correct):
-
-```hcl
-oidc_client_id = jsondecode(vault_kv_secret_v2.harbor_oidc.data_json)["client_id"]
-oidc_client_secret = jsondecode(vault_kv_secret_v2.harbor_oidc.data_json)["client_secret"]
-oidc_client_id = jsondecode(vault_kv_secret_v2.harbor_oidc.data_json)["client_id"]
-oidc_client_secret = jsondecode(vault_kv_secret_v2.harbor_oidc.data_json)["client_secret"]
-```
-
-This change ensures the Terraform resource is created in the correct order and references the resource directly instead of attempting to read from Vault via a data source.
-
-## Implementation Update (2025-12-10)
-
 **Bug Fix**: Terraform configuration was initially using a data source to read Harbor OIDC
 credentials from Vault, causing a circular dependency. Fixed by referencing the resource directly.
 
