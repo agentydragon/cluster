@@ -1,0 +1,30 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: harmonia
+  namespace: nix-cache
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/proxy-body-size: "0" # Unlimited for NAR uploads
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: "600"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "600"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "600"
+    external-dns.alpha.kubernetes.io/hostname: cache.test-cluster.agentydragon.com
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - cache.test-cluster.agentydragon.com
+      secretName: nix-cache-tls
+  rules:
+    - host: cache.test-cluster.agentydragon.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: harmonia
+                port:
+                  number: 5000
