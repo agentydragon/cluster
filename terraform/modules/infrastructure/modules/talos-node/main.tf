@@ -216,7 +216,7 @@ resource "proxmox_virtual_environment_vm" "vm" {
   }
 
   memory {
-    dedicated = 0                           # Minimum guaranteed memory (0 = full ballooning)
+    dedicated = 64                          # Minimum guaranteed memory (provider requires >= 64)
     floating  = local.vm_defaults.memory_mb # Maximum memory (12GB)
   }
 
