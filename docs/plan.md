@@ -54,7 +54,6 @@
 
 ### Medium Priority - Platform Services
 
-- [ ] **Matrix/Synapse** - Chat platform with Authentik SSO
 - [ ] **Jellyfin** - Media streaming server (Netflix alternative)
   - Hardware transcoding support
   - Mobile apps, web interface
@@ -131,15 +130,6 @@
   - Phases: CLI prototype → visual capabilities → multi-agent → production hardening
   - Detail: See `docs/agents.md`
 
-- [ ] **Harbor Pull-Through Cache** - Transparent cluster-wide registry proxy with automatic image rewriting
-  - **Status**: PRIMARY DIRECTIVE compatible via Talos registry mirrors with fallback
-  - **Architecture**: Talos containerd mirrors → Harbor proxy projects → upstream registries
-  - **Bootstrap compatibility**: Fallback endpoints handle Harbor not existing yet (graceful degradation)
-  - **Deployment order**: Harbor first (database auth) → proxy projects → SSO later (optional)
-  - **Implementation**: Declarative via Harbor Terraform provider in terraform/03-configuration
-  - **Benefits**: Zero chart modifications, bandwidth savings, rate limit mitigation, air-gap preparation
-  - **Detail**: See `docs/harbor_pullthrough_cache.md` for complete analysis
-
 ### Future Enhancements (Freezer)
 
 - [ ] Universal HTTPS Auto-Transformer (Kustomization transformer for 1-line HTTPS)
@@ -200,13 +190,17 @@
 
 - **Vault** - Secret management with Raft HA
 - **External Secrets Operator** - Vault→K8s secrets bridge
-- **Authentik** - Identity provider (partially operational, investigating 503 errors)
-- **Gitea** - Git service at git.test-cluster.agentydragon.com
-- **Harbor** - Container registry at registry.test-cluster.agentydragon.com
+- **Authentik** - Identity provider with OIDC/SSO
+- **Gitea** - Git service at git.test-cluster.agentydragon.com (SSO configured)
+- **Harbor** - Container registry at registry.test-cluster.agentydragon.com (SSO configured)
+  - **Pull-through cache**: Docker Hub, GHCR, Quay, registry.k8s.io proxy projects
+  - **Talos registry mirrors**: Automatic fallback to upstream registries
+- **Matrix/Synapse** - Chat platform with Authentik SSO at matrix.test-cluster.agentydragon.com
 - **Firecrawl** - AI web scraping service (all components healthy)
 - **metrics-server** - Kubernetes Metrics API (kubectl top working)
 - **Prometheus Stack** - Complete metrics collection (6-node monitoring)
 - **Loki + Promtail** - Log aggregation (19 namespaces, 7-day retention)
+- **Stakater Reloader** - Automatic pod restarts on secret/configmap changes
 
 ---
 
@@ -322,19 +316,19 @@ NOTIFY is **not configured** because it doesn't work in Kubernetes environments:
 
 ## 📊 Metrics & Health
 
-**Cluster Status** (2025-11-19 00:21 UTC):
+**Cluster Status** (2025-12-10):
 
-- Nodes: 5/5 Ready (3 controllers, 2 workers)
-- Operational Services: Vault, Gitea, Harbor, Firecrawl, Prometheus, Loki
-- Degraded Services: Authentik (503 errors)
-- Missing Services: Matrix Synapse (404)
+- Status: Destroyed for rebuild testing (was: 5 nodes, 3 controllers, 2 workers)
+- Next: Bootstrap verification with all today's fixes
 
 **SSO Integration Status**:
 
-- ✅ vault-oidc-auth terraform working
-- ✅ sso-secrets terraform working
-- ❌ authentik-blueprint-gitea failing (403/503)
-- ❌ authentik-blueprint-matrix failing (403/503)
+- ✅ Vault OIDC authentication configured
+- ✅ Gitea SSO configured (OAuth dependency fixed)
+- ✅ Harbor SSO configured (Terraform resource reference fixed)
+- ✅ Matrix/Synapse SSO configured (OIDC via ExternalSecret)
+- ✅ Grafana SSO configured (Authentik OIDC)
+- ⏳ Pending: Browser testing after bootstrap
 
 **Recent Updates** (2025-12-10):
 
