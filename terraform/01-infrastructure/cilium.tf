@@ -70,6 +70,8 @@ resource "helm_release" "cilium_bootstrap" {
 }
 
 # Wait for Kubernetes API to be accessible before installing Cilium
+# IMPORTANT: Access via first control plane node IP (not VIP) to avoid circular dependency
+# VIP requires Cilium L2 announcements, so we can't wait on VIP before deploying Cilium
 resource "null_resource" "wait_for_k8s_api" {
   depends_on = [
     module.infrastructure,
@@ -79,24 +81,10 @@ resource "null_resource" "wait_for_k8s_api" {
   provisioner "local-exec" {
     environment = {
       KUBECONFIG = local_file.kubeconfig.filename
+      # Access first controlplane directly instead of VIP (which requires Cilium)
+      K8S_SERVER = "https://${module.infrastructure.controlplane_ips[0]}:6443"
     }
-    command = <<-EOF
-      echo "Waiting for Kubernetes API to be ready..."
-      i=1
-      while [ $i -le 60 ]; do
-        if kubectl get nodes --request-timeout=10s >/dev/null 2>&1 && \
-           kubectl get serviceaccount default -n default --request-timeout=10s >/dev/null 2>&1 && \
-           kubectl auth can-i create pods --request-timeout=10s >/dev/null 2>&1; then
-          echo "Kubernetes API is fully ready for workloads!"
-          exit 0
-        fi
-        echo "Attempt $i/60: Waiting for API readiness..."
-        sleep 10
-        i=$((i + 1))
-      done
-      echo "Kubernetes API failed to become ready after 10 minutes"
-      exit 1
-    EOF
+    command = "${path.module}/wait-for-k8s-api.sh"
   }
 }
 
