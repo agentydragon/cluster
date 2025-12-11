@@ -11,14 +11,16 @@ locals {
   # Define node types and their configuration in a single data structure
   node_types = {
     controlplane = {
-      count    = var.controller_count
-      vm_start = var.vm_id_ranges.controller_start
-      cidr     = var.cluster_networks.controller_cidr
+      count               = var.controller_count
+      vm_start            = var.vm_id_ranges.controller_start
+      cidr                = var.cluster_networks.controller_cidr
+      memory_dedicated_mb = 3072 # 3GB minimum (lighter workload)
     }
     worker = {
-      count    = var.worker_count
-      vm_start = var.vm_id_ranges.worker_start
-      cidr     = var.cluster_networks.worker_cidr
+      count               = var.worker_count
+      vm_start            = var.vm_id_ranges.worker_start
+      cidr                = var.cluster_networks.worker_cidr
+      memory_dedicated_mb = 6144 # 6GB minimum (prevent OOM with application workloads)
     }
   }
 
@@ -26,9 +28,10 @@ locals {
   nodes = merge([
     for node_type, config in local.node_types : {
       for i in range(config.count) : "${node_type}${i}" => {
-        type       = node_type
-        vm_id      = config.vm_start + i
-        ip_address = cidrhost(config.cidr, i + 1)
+        type                = node_type
+        vm_id               = config.vm_start + i
+        ip_address          = cidrhost(config.cidr, i + 1)
+        memory_dedicated_mb = config.memory_dedicated_mb
       }
     }
   ]...)
@@ -92,10 +95,11 @@ module "nodes" {
   source   = "./modules/talos-node"
 
   # Node-specific configuration
-  node_name  = each.key
-  node_type  = each.value.type
-  vm_id      = each.value.vm_id
-  ip_address = each.value.ip_address
+  node_name           = each.key
+  node_type           = each.value.type
+  vm_id               = each.value.vm_id
+  ip_address          = each.value.ip_address
+  memory_dedicated_mb = each.value.memory_dedicated_mb
 
   # Pass both shared config and talos base config
   shared_config     = local.shared_node_config

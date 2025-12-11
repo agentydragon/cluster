@@ -216,8 +216,8 @@ resource "proxmox_virtual_environment_vm" "vm" {
   }
 
   memory {
-    dedicated = 2048                        # 2GB minimum guaranteed (enough for Talos to boot)
-    floating  = local.vm_defaults.memory_mb # 12GB maximum (host can reclaim unused memory above 2GB)
+    dedicated = var.memory_dedicated_mb     # Minimum guaranteed memory (varies by node type)
+    floating  = local.vm_defaults.memory_mb # 12GB maximum (host can reclaim unused memory above minimum)
   }
 
   vga {

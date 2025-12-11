@@ -23,6 +23,11 @@ variable "ip_address" {
   type        = string
 }
 
+variable "memory_dedicated_mb" {
+  description = "Dedicated (minimum guaranteed) memory in MB"
+  type        = number
+}
+
 # Shared configuration for proxmox/tailscale/etc
 variable "shared_config" {
   description = "Shared configuration for all nodes (non-talos)"
