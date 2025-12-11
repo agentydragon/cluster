@@ -81,7 +81,7 @@
   - Phase 0 (stabilization) complete with 8760h refresh intervals
   - Future phases: Deploy Reloader, fix init-time patterns, migrate to Vault KV
   - Reference: `docs/archive/SECRET_SYNCHRONIZATION_ANALYSIS.md`
-- [ ] Complete SNI migration (move remaining VPS services to stream-level SNI)
+- [x] ~~Complete SNI migration (move remaining VPS services to stream-level SNI)~~ (DONE - 2025-11-18)
 - [ ] VPS proxy resilience testing (MetalLB VIP pod failure handling)
 - [ ] Proxmox CSI orphaned volume cleanup (post-destroy automation)
 - [ ] **Persistent Cache PVCs** - Preserve cache data across cluster destroy/recreate cycles
