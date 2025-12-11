@@ -48,6 +48,7 @@ Deployed services accessible via `*.test-cluster.agentydragon.com`:
 - **Vault (Secrets)**: <https://vault.test-cluster.agentydragon.com>
 - **Matrix (Chat)**: <https://chat.test-cluster.agentydragon.com>
 - **Grafana (Monitoring)**: <https://grafana.test-cluster.agentydragon.com> (if exposed)
+- **Nix Cache**: <https://cache.test-cluster.agentydragon.com> (Harmonia binary cache)
 - **Test App**: <https://test.test-cluster.agentydragon.com>
 
 All traffic routes: Internet (443) → VPS nginx (SNI passthrough) → Tailscale →
