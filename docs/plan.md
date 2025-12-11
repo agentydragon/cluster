@@ -79,7 +79,8 @@
 
 - [ ] **Secret Rotation Infrastructure** - Stakater Reloader for automatic pod restarts on secret changes
   - Phase 0 (stabilization) complete with 8760h refresh intervals
-  - Future phases: Deploy Reloader, fix init-time patterns, migrate to Vault KV
+  - Phase 1 (Reloader deployment) complete - deployed to kube-system, watches all namespaces
+  - Future phases: Fix init-time patterns, migrate to Vault KV, enable rotation
   - Reference: `docs/archive/SECRET_SYNCHRONIZATION_ANALYSIS.md`
 - [x] ~~Complete SNI migration (move remaining VPS services to stream-level SNI)~~ (DONE - 2025-11-18)
 - [ ] VPS proxy resilience testing (MetalLB VIP pod failure handling)
