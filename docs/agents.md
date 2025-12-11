@@ -875,7 +875,7 @@ helm install databot ./charts/kagent-agent \
 - Jaeger or Tempo for trace storage
 - Grafana for visualization
 **Integration:** Ties into cluster observability stack (Prometheus, Loki, Grafana)
-**Reference:** docs/PLAN.md observability section
+**Reference:** docs/plan.md observability section
 
 ### Agent Sandbox Integration
 
@@ -903,7 +903,7 @@ helm install databot ./charts/kagent-agent \
 **When:** Need web-based monitoring/debugging of agent desktops
 **Why:** View agent desktop in browser without VNC client
 **What:** Deploy Guacamole + Authentik RAC
-**Reference:** docs/PLAN.md Guacamole section
+**Reference:** docs/plan.md Guacamole section
 
 ## Known Limitations & Trade-offs
 
@@ -974,7 +974,7 @@ helm install databot ./charts/kagent-agent \
 - **Agent Sandbox:** <https://github.com/kubernetes-sigs/agent-sandbox>
 - **computer-control-mcp:** <https://github.com/AB498/computer-control-mcp>
 
-### Related PLAN.md Sections
+### Related plan.md Sections
 
 - Guacamole + Authentik RAC (browser-based desktop access)
 - Agent Sandbox future enhancement

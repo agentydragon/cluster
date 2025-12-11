@@ -122,7 +122,7 @@
 - [ ] **Persistent AI Agents Platform** - Long-running agents with compute resources
   - Architecture: Kagent + MCP servers + per-agent containers
   - Phases: CLI prototype → visual capabilities → multi-agent → production hardening
-  - Detail: See `docs/AGENTS.md`
+  - Detail: See `docs/agents.md`
 
 - [ ] **Harbor Pull-Through Cache** - Transparent cluster-wide registry proxy with automatic image rewriting
   - **Status**: PRIMARY DIRECTIVE compatible via Talos registry mirrors with fallback
@@ -131,7 +131,7 @@
   - **Deployment order**: Harbor first (database auth) → proxy projects → SSO later (optional)
   - **Implementation**: Declarative via Harbor Terraform provider in terraform/03-configuration
   - **Benefits**: Zero chart modifications, bandwidth savings, rate limit mitigation, air-gap preparation
-  - **Detail**: See `docs/HARBOR_PULLTHROUGH_CACHE_GLOBAL_REWRITE.md` for complete analysis
+  - **Detail**: See `docs/harbor_pullthrough_cache.md` for complete analysis
 
 ### Future Enhancements (Freezer)
 
@@ -267,7 +267,7 @@ NOTIFY is **not configured** because it doesn't work in Kubernetes environments:
 - **Current approach**: AXFR refresh via SOA refresh interval (3 hours) - reliable but not instant
 - **Alternatives**: See "DNS Propagation Alternatives" in Research & Evaluation section for faster options
 
-**See**: `docs/AXFR_DEBUGGING.md` for complete debugging history and solution details
+**See**: `docs/axfr_debugging.md` for complete debugging history and solution details
 
 ### Storage Evolution
 
@@ -303,13 +303,13 @@ NOTIFY is **not configured** because it doesn't work in Kubernetes environments:
 
 ## 🔗 Related Documentation
 
-- **Bootstrap Procedures**: `docs/BOOTSTRAP.md`
-- **Troubleshooting**: `docs/TROUBLESHOOTING.md`
-- **Operations**: `docs/OPERATIONS.md`
+- **Bootstrap Procedures**: `docs/bootstrap.md`
+- **Troubleshooting**: `docs/troubleshooting.md`
+- **Operations**: `docs/operations.md`
 - **Secret Synchronization**: `docs/archive/SECRET_SYNCHRONIZATION_ANALYSIS.md`
-- **Critical Dependencies**: `docs/CRITICAL_DEPENDENCIES.md`
-- **Harbor Pull-Through Cache Planning**: `docs/HARBOR_PULLTHROUGH_CACHE_GLOBAL_REWRITE.md`
-- **AI Agents Design**: `docs/AGENTS.md` (planned)
+- **Critical Dependencies**: `docs/critical_dependencies.md`
+- **Harbor Pull-Through Cache Planning**: `docs/harbor_pullthrough_cache.md`
+- **AI Agents Design**: `docs/agents.md` (planned)
 
 ---
 

@@ -12,7 +12,7 @@ individual workload configurations?
 admission webhooks (application-level mutation).
 
 **Recommended Approach**: **Talos Containerd Registry Mirrors** (already documented in
-`HARBOR_REGISTRY_STRATEGY.md` Phase 4) provides the cleanest, most transparent solution with zero
+`harbor_pullthrough_cache.md` Phase 4) provides the cleanest, most transparent solution with zero
 application-level changes required.
 
 ---
@@ -95,7 +95,7 @@ machine:
 
 **Implementation Complexity**: Low - ~20 lines of HCL in existing Talos configuration
 
-**Already Documented**: See `docs/HARBOR_REGISTRY_STRATEGY.md` Phase 4 (lines 497-551)
+**Already Documented**: See `docs/harbor_pullthrough_cache.md` Phase 4 (lines 497-551)
 
 **Verdict**: ✅ **RECOMMENDED** - This is the "sane cluster" approach. Industry-standard pattern used by
 production Kubernetes deployments.
@@ -799,7 +799,7 @@ necessary.
 
 **Prerequisites**: None (can happen before or after proxy cache setup)
 
-**Tasks**: Already documented in `docs/HARBOR_SSO_AUTOMATION.md`
+**Tasks**: Already documented in `docs/harbor_sso_automation.md`
 
 **Deliverable**: Harbor UI login via Authentik OIDC
 
@@ -954,8 +954,8 @@ clusters handle private registries at scale.
 ## References
 
 - **Existing Documentation**:
-  - `docs/HARBOR_REGISTRY_STRATEGY.md` - Comprehensive Harbor pull-through cache strategy
-  - `docs/HARBOR_SSO_AUTOMATION.md` - Harbor OIDC configuration with Terraform provider
+  - `docs/harbor_pullthrough_cache.md` - Comprehensive Harbor pull-through cache strategy
+  - `docs/harbor_sso_automation.md` - Harbor OIDC configuration with Terraform provider
 
 - **Talos Documentation**:
   - [Registry Mirrors Configuration](https://www.talos.dev/latest/reference/configuration/#machineregistries)

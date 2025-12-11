@@ -170,10 +170,10 @@ Each time required manual intervention (deleting old pods or scaling down old Re
 
 - Kubernetes Issue: [#61156](https://github.com/kubernetes/kubernetes/issues/61156) - RollingUpdate deadlock with RWO volumes
 - Kubernetes Documentation: [Deployment Strategies](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#strategy)
-- This cluster's experience: `docs/TROUBLESHOOTING.md` - Zombie Kubelet section shows related volume attachment issues
+- This cluster's experience: `docs/troubleshooting.md` - Zombie Kubelet section shows related volume attachment issues
 
 ## See Also
 
-- `docs/TROUBLESHOOTING.md` - Known Issues section
-- `docs/OPERATIONS.md` - Deployment best practices
+- `docs/troubleshooting.md` - Known Issues section
+- `docs/operations.md` - Deployment best practices
 - `k8s/applications/gitea/helmrelease.yaml` - Reference implementation with Recreate strategy

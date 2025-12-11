@@ -168,7 +168,7 @@ Achieve a committed repository state such that:
 1. `./bootstrap.sh` (the ONLY supported bootstrap method)
 2. **Everything works**
 
-Where "everything" means everything currently in PLAN.md scope as specified by user.
+Where "everything" means everything currently in plan.md scope as specified by user.
 
 ### Scope Evolution Strategy
 
@@ -179,9 +179,9 @@ Where "everything" means everything currently in PLAN.md scope as specified by u
 - **v2**: Add service Y, iterate until reliable and turnkey, commit when working
 - **v∞**: Eventually migrate services from other infrastructure
 
-@docs/PLAN.md
+@docs/plan.md
 
-**Principle**: Whatever subset of PLAN.md is "currently in scope" must be turnkey deployable before expanding scope.
+**Principle**: Whatever subset of plan.md is "currently in scope" must be turnkey deployable before expanding scope.
 
 ### Definition of "Done"
 
@@ -214,7 +214,7 @@ Applications with SSO in scope must have:
 
 1. **NO imperative patches** - All fixes must be encoded in configuration and committed properly
 2. **Main development loop**: `destroy -> recreate -> check if valid`
-   - See `docs/CRITICAL_DEPENDENCIES.md` for dependency chain and bootstrap order
+   - See `docs/critical_dependencies.md` for dependency chain and bootstrap order
 3. **Debugging vs. Implementation**:
    - **Debugging**: You CAN tinker with invalid/failed state (kubectl patches, manual commands) to understand what
      broke and learn how to fix declarative config
@@ -421,7 +421,7 @@ Use cloned repos as implementation ground truth.
 
 ## Project Documentation Strategy
 
-### docs/BOOTSTRAP.md
+### docs/bootstrap.md
 
 **Purpose**: ONLY straight-line sequence to recreate a functioning cluster from unpopulated Proxmox.
 
@@ -429,12 +429,12 @@ Use cloned repos as implementation ground truth.
 
 - Step-by-step instructions for cold-starting the Talos cluster from nothing
 - Complete deployment procedures (terraform, CNI, applications, external connectivity)
-- Basic verification steps only (see docs/TROUBLESHOOTING.md for health checks)
+- Basic verification steps only (see docs/troubleshooting.md for health checks)
 - **NO troubleshooting** (would be too verbose - half a megabyte)
 
-**Maintenance**: Continuously update to reflect current state. Changes require BOOTSTRAP.md updates.
+**Maintenance**: Continuously update to reflect current state. Changes require bootstrap.md updates.
 
-### docs/OPERATIONS.md
+### docs/operations.md
 
 **Purpose**: Day-to-day cluster management procedures including scaling, maintenance, and troubleshooting.
 
@@ -447,7 +447,7 @@ Use cloned repos as implementation ground truth.
 
 **Maintenance**: Updated when operational procedures change or new troubleshooting scenarios are discovered.
 
-### docs/TROUBLESHOOTING.md
+### docs/troubleshooting.md
 
 **Purpose**: Fast-path diagnostic checklist for common cluster issues.
 
@@ -461,7 +461,7 @@ Use cloned repos as implementation ground truth.
 
 **Maintenance**: Updated as new issues are discovered and resolved.
 
-### docs/PLAN.md
+### docs/plan.md
 
 **Purpose**: Describes high-level goals we want to implement, lists what we finished, and what remains to be done as items.
 
@@ -479,9 +479,9 @@ Use cloned repos as implementation ground truth.
 ## Key Principles
 
 1. **DECLARATIVE FIRST** - All configuration must work via destroy->recreate cycle without manual intervention
-2. **docs/BOOTSTRAP.md is always actionable** - anyone should be able to follow it and get a working cluster
-3. **docs/PLAN.md is strategic** - focuses on what we're building and why
-4. **Keep both in sync** - when implementation is complete, move details from docs/PLAN.md to docs/BOOTSTRAP.md
+2. **docs/bootstrap.md is always actionable** - anyone should be able to follow it and get a working cluster
+3. **docs/plan.md is strategic** - focuses on what we're building and why
+4. **Keep both in sync** - when implementation is complete, move details from docs/plan.md to docs/bootstrap.md
 5. **Document current state accurately** - especially important for infrastructure that changes over time
 6. **Debug broken state to understand, but fix via committed config** - Never leave manual patches as the solution
 
@@ -510,23 +510,23 @@ Never use the `timeout` command prefix - use the tool's built-in timeout paramet
 
 ## Checklist
 
-- **Before making changes**: Read docs/BOOTSTRAP.md to understand current working state
-- **After completing work**: Update docs/BOOTSTRAP.md with new procedures if they change the bootstrap sequence
-- **When planning**: Use docs/PLAN.md to understand goals and add new tasks
-- **When finishing features**: Mark items complete in docs/PLAN.md and ensure docs/BOOTSTRAP.md reflects the new capabilities
-- **When diagnosing issues**: Use docs/TROUBLESHOOTING.md fast-path commands first before deep debugging
+- **Before making changes**: Read docs/bootstrap.md to understand current working state
+- **After completing work**: Update docs/bootstrap.md with new procedures if they change the bootstrap sequence
+- **When planning**: Use docs/plan.md to understand goals and add new tasks
+- **When finishing features**: Mark items complete in docs/plan.md and ensure docs/bootstrap.md reflects the new capabilities
+- **When diagnosing issues**: Use docs/troubleshooting.md fast-path commands first before deep debugging
 
-This ensures the documentation serves both as operational procedures (docs/BOOTSTRAP.md) and project management (docs/PLAN.md).
+This ensures the documentation serves both as operational procedures (docs/bootstrap.md) and project management (docs/plan.md).
 
 ## Common Issues and Resolutions
 
-@docs/TROUBLESHOOTING.md
+@docs/troubleshooting.md
 
 @docs/archive/SECRET_SYNCHRONIZATION_ANALYSIS.md
 
 ## Troubleshooting Priority
 
-**Always use docs/TROUBLESHOOTING.md first** when cluster components aren't working:
+**Always use docs/troubleshooting.md first** when cluster components aren't working:
 
 1. **Fast-path health checks** - Quick status commands for all core components
 2. **Known tricky components** - Proxmox CSI storage issues, SealedSecret decryption problems

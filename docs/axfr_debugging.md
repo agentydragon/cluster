@@ -740,8 +740,8 @@ to seconds.
 
 ## Related Documentation
 
-- Cluster PLAN.md: DNS Architecture section
-- Cluster TROUBLESHOOTING.md: PowerDNS section
+- Cluster plan.md: DNS Architecture section
+- Cluster troubleshooting.md: PowerDNS section
 - PowerDNS documentation: <https://doc.powerdns.com/authoritative/>
 - Cilium DNS proxy:
   <https://docs.cilium.io/en/stable/security/policy/language/#dns-based>

@@ -304,7 +304,7 @@ Both approaches work for the embedded outpost:
    - Verify redirect back to Kagent
    - Check user headers passed to backend
 4. **Commit terraform changes** (provider assignment automation removed)
-5. **Document solution** in PLAN.md or TROUBLESHOOTING.md
+5. **Document solution** in plan.md or TROUBLESHOOTING.md
 
 ## Reference Information
 
