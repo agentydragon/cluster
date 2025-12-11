@@ -1,36 +1,36 @@
 # Cluster Roadmap
 
-**Last Updated**: 2025-11-19
+**Last Updated**: 2025-12-10
 
-## 🎯 Current Focus: Consistent Authentik SSO
+## 🎯 Current Status
 
-### Critical Path
+**Recent Accomplishments** (2025-12-10):
 
-1. **Diagnose Authentik 503 Errors** - Service unreliable at auth.test-cluster.agentydragon.com
-   - Check pod health and logs
-   - Verify PostgreSQL connectivity and credentials
-   - Review resource constraints (CPU/memory)
-   - Check ingress configuration and cert-manager
+- ✅ Fixed Gitea 10-hour crash loop (OAuth config dependency issue)
+- ✅ Implemented Let's Encrypt environment switching (staging/production)
+- ✅ Added RWO volume deployment strategy protections (Harbor, Grafana, Gitea)
+- ✅ Fixed Harbor SSO Terraform (data source → resource reference bug)
+- ✅ Documented RWO volume deadlock pattern (3rd occurrence prevention)
+- ✅ Consolidated and reorganized documentation (lowercase, DRY)
 
-2. **Stabilize Authentik Deployment** - Ensure reliable uptime before SSO integration
-   - Fix root cause of 503 errors
-   - Verify all health probes working correctly
-   - Test authentication flow end-to-end
+**Current Focus**: Cluster health verification and SSO stabilization
 
-3. **Deploy SSO Integrations** - Once Authentik is stable
-   - Deploy Gitea OIDC blueprint
-   - Deploy Harbor OIDC blueprint
-   - Configure Vault OIDC authentication
-   - Deploy Matrix/Synapse with SSO
+### Next Steps
 
-4. **User Management** - Automated user provisioning
-   - Create <agentydragon@gmail.com> user via Authentik API/blueprints
+1. **Bootstrap Test** - Verify turnkey deployment works end-to-end
+   - Run `terraform destroy && ./bootstrap.sh`
+   - Verify all services come up healthy
+   - Test Gitea SSO login flow
 
-5. **Validate SSO Login Flows** - Once automation/agent UI access is ready
-   - [ ] Test Harbor OIDC login via browser (agent or manual)
+2. **SSO Integration Completion**
+   - Harbor SSO already configured (pending test)
+   - Gitea SSO already configured (pending test)
+   - Vault OIDC configured (pending test)
+
+3. **Validate SSO Login Flows** - Browser testing required
+   - [ ] Test Harbor OIDC login via browser
    - [ ] Test Gitea OIDC login via browser
    - [ ] Test Vault OIDC login via browser
-   - [ ] Test Matrix/Synapse OIDC login via browser
    - [ ] Verify auto-onboarding creates users correctly
    - [ ] Verify group-based authorization (admin groups)
 
@@ -267,7 +267,7 @@ NOTIFY is **not configured** because it doesn't work in Kubernetes environments:
 - **Current approach**: AXFR refresh via SOA refresh interval (3 hours) - reliable but not instant
 - **Alternatives**: See "DNS Propagation Alternatives" in Research & Evaluation section for faster options
 
-**See**: `docs/axfr_debugging.md` for complete debugging history and solution details
+**See**: `docs/archive/axfr_debugging.md` for complete debugging history and solution details
 
 ### Storage Evolution
 
@@ -328,3 +328,12 @@ NOTIFY is **not configured** because it doesn't work in Kubernetes environments:
 - ✅ sso-secrets terraform working
 - ❌ authentik-blueprint-gitea failing (403/503)
 - ❌ authentik-blueprint-matrix failing (403/503)
+
+**Recent Updates** (2025-12-10):
+
+- Cluster destroyed for rebuild testing
+- Fixed Gitea OAuth configuration (10-hour crash loop resolved)
+- Implemented Let's Encrypt environment switching capability
+- Added RWO volume deployment strategy documentation and protections
+- Fixed Harbor SSO Terraform provider configuration
+- All documentation reorganized to lowercase naming convention
