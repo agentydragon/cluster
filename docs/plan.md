@@ -84,6 +84,12 @@
 - [ ] Complete SNI migration (move remaining VPS services to stream-level SNI)
 - [ ] VPS proxy resilience testing (MetalLB VIP pod failure handling)
 - [ ] Proxmox CSI orphaned volume cleanup (post-destroy automation)
+- [ ] **Persistent Cache PVCs** - Preserve cache data across cluster destroy/recreate cycles
+  - Target: Harbor pull-through cache, Bazel remote cache, similar services
+  - Current: PVCs deleted on cluster destroy, lose all cached images/artifacts
+  - Goal: Move cache PVCs to persistent layer (like 00-persistent-auth)
+  - Benefit: Faster bootstrap iterations, reduced upstream registry bandwidth
+  - Implementation: Separate Terraform layer or external PVC provisioning
 - [ ] **Gitea Terraform Provider** - Automate repository and mirror management
   - Provider: `go-gitea/gitea` (registry.terraform.io/providers/go-gitea/gitea/latest)
   - Resources: `gitea_repository`, `gitea_org`, `gitea_oauth2_app`
