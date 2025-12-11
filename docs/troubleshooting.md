@@ -514,3 +514,87 @@ kubectl delete order -n <namespace> --all
 kubectl delete certificaterequest -n <namespace> --all
 # Certificate resource will recreate them automatically
 ```
+
+### Nix Cache Issues
+
+#### Pod Not Starting
+
+```bash
+kubectl get pods -n nix-cache
+kubectl describe pod -n nix-cache -l app=harmonia
+kubectl logs -n nix-cache deployment/harmonia
+```
+
+**Common issues:**
+
+- **PVC not bound**: Check Proxmox CSI status: `kubectl get pods -n csi-proxmox`
+- **SealedSecret not unsealed**: Check controller: `kubectl get secret nix-cache-signing-key -n nix-cache`
+- **Image pull failure**: Verify image name in deployment.yaml
+
+#### Storage Issues
+
+```bash
+kubectl get pvc -n nix-cache
+kubectl exec -n nix-cache deployment/harmonia -- df -h /nix/store
+```
+
+**Full storage**: If PVC is full, either:
+
+1. Expand PVC: `kubectl edit pvc nix-store -n nix-cache` (increase size)
+2. Implement garbage collection (see plan.md Future Enhancements)
+
+#### Signing Key Issues
+
+```bash
+# Check secret exists
+kubectl get secret nix-cache-signing-key -n nix-cache
+
+# Verify key in libsecret
+secret-tool lookup service nix-cache key signing_public
+
+# Get public key for NixOS config
+secret-tool lookup service nix-cache key signing_public | head -1
+# Output: cache.test-cluster.agentydragon.com-1:BASE64KEY
+```
+
+**If signing key missing**: Re-run terraform in `terraform/00-persistent-auth`
+
+#### Upload Failures from NixOS Host
+
+```bash
+# On NixOS host, test upload
+nix copy --to https://cache.test-cluster.agentydragon.com /nix/store/xxx-hello-xxx --debug
+
+# Check Harmonia logs
+kubectl logs -n nix-cache deployment/harmonia --tail=100
+```
+
+**Common causes:**
+
+1. **Storage full**: Check PVC usage above
+2. **Signing key mismatch**: Verify Harmonia loaded correct key
+3. **Network issues**: Check ingress and certificate
+
+#### HTTPS Access Not Working
+
+```bash
+# Check ingress
+kubectl get ingress -n nix-cache
+kubectl describe ingress harmonia -n nix-cache
+
+# Check certificate
+kubectl get certificate -n nix-cache
+kubectl describe certificate nix-cache-tls -n nix-cache
+
+# Test from inside cluster
+kubectl run -it --rm debug --image=curlimages/curl:latest --restart=Never -- \
+  curl http://harmonia.nix-cache.svc.cluster.local:5000/nix-cache-info
+```
+
+**Expected response**:
+
+```text
+StoreDir: /nix/store
+WantMassQuery: 1
+Priority: 30
+```

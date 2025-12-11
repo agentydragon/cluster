@@ -201,6 +201,11 @@
 - **Prometheus Stack** - Complete metrics collection (6-node monitoring)
 - **Loki + Promtail** - Log aggregation (19 namespaces, 7-day retention)
 - **Stakater Reloader** - Automatic pod restarts on secret/configmap changes
+- **Nix Cache** - Binary cache at cache.test-cluster.agentydragon.com (Harmonia)
+  - Serves pre-built Nix derivations to NixOS hosts
+  - Public read, authenticated uploads via Nix signing keys
+  - 100Gi Proxmox CSI storage for /nix/store
+  - Automatic HTTPS via cert-manager, DNS via external-dns
 
 ---
 
