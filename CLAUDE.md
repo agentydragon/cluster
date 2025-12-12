@@ -18,6 +18,36 @@
 
 **EXCEPTION:** Only edit/commit/push to other repositories when user explicitly instructs you to do so.
 
+## ⚠️ CRITICAL: BOOTSTRAP TERMINOLOGY
+
+**When the user says "bootstrap the cluster", "tear down the cluster", "recreate the cluster", or similar phrases:**
+
+### DEFAULT SCOPE: Layer 01 (Infrastructure) and above
+
+- `terraform destroy` in `terraform/01-infrastructure/` (VMs)
+- `./bootstrap.sh` (recreates VMs, installs Talos, deploys services)
+- Layers affected: 01-infrastructure, 02-services, 03-configuration
+
+### EXCLUDED BY DEFAULT: Layer 00 (Persistent Auth)
+
+- `terraform/00-persistent-auth/` is NOT destroyed unless explicitly stated
+- Includes: Sealed secrets keypair, CSI tokens, Nix signing keys, JWT tokens
+- These persist in system keyring (libsecret) across cluster lifecycles
+- Only destroy when user explicitly says "including persistent auth" or "from scratch"
+
+### WHY: The persistent auth layer is designed to survive VM destroy/recreate cycles to avoid
+
+- Sealed secrets re-encryption (entire repo would need commits)
+- Proxmox token regeneration causing desynchronization
+- Nix cache signing key regeneration breaking cache trust
+
+**EXAMPLES:**
+
+- ✅ "bootstrap the cluster" → Start from layer 01 (VMs)
+- ✅ "tear down and recreate" → Destroy VMs, keep layer 00
+- ✅ "full teardown including persistent auth" → Destroy everything including layer 00
+- ✅ "bootstrap from scratch" → Destroy everything, regenerate all secrets
+
 ## TASK DELEGATION AND PARALLELIZATION
 
 **Use the Task tool proactively to delegate complex subtasks to specialized agents.**
