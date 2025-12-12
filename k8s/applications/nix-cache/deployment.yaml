@@ -25,7 +25,7 @@ spec:
 
       initContainers:
         - name: init-nix-store
-          image: nixos/nix:latest
+          image: busybox:latest
           command: ["/bin/sh", "-c"]
           args:
             - |
