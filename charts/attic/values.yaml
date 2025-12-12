@@ -1,0 +1,87 @@
+image:
+  repository: ghcr.io/zhaofengli/attic
+  tag: latest
+  pullPolicy: Always
+
+replicaCount: 1
+
+strategy:
+  type: Recreate # CRITICAL: RWO volume deadlock prevention
+
+service:
+  type: ClusterIP
+  port: 8080
+
+ingress:
+  enabled: true
+  className: nginx
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/proxy-body-size: "500m" # Large NAR uploads
+  hosts:
+    - host: cache.test-cluster.agentydragon.com
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: attic-tls
+      hosts:
+        - cache.test-cluster.agentydragon.com
+
+persistence:
+  data:
+    enabled: true
+    storageClass: proxmox-csi-retain
+    size: 10Gi
+    accessMode: ReadWriteOnce
+  cache:
+    enabled: true
+    storageClass: proxmox-csi-retain
+    size: 100Gi
+    accessMode: ReadWriteOnce
+
+config:
+  # JWT token for authentication - must be base64-encoded 64-byte random value
+  # Generate with: openssl rand 64 | base64 -w0
+  # This should be overridden via external secret or sealed secret
+  jwtSecretBase64: "" # Override this!
+
+  # Server configuration
+  listen: "[::]:8080"
+
+  # Storage configuration
+  storage:
+    type: local
+    path: /cache
+
+  # Database configuration
+  database:
+    url: "sqlite:///data/attic.db"
+
+  # Compression
+  compression:
+    type: zstd
+
+  # Chunking configuration
+  chunking:
+    nar-size-threshold: 65536
+    min-size: 16384
+    avg-size: 65536
+    max-size: 262144
+
+  # Garbage collection
+  garbage-collection:
+    interval: "12 hours"
+
+resources:
+  requests:
+    memory: 256Mi
+    cpu: 100m
+  limits:
+    memory: 1Gi
+    cpu: 1000m
+
+# Pod annotations
+podAnnotations:
+  reloader.stakater.com/auto: "true"

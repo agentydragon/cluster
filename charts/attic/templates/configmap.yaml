@@ -1,0 +1,43 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "attic.fullname" . }}-config
+  labels:
+    {{- include "attic.labels" . | nindent 4 }}
+data:
+  server.toml: |
+    # Attic Server Configuration
+    listen = {{ .Values.config.listen | quote }}
+
+    [api-endpoint]
+    # The canonical API endpoint for the server
+    # This is used by the client to determine the URL to use for API requests
+
+    [storage]
+    type = {{ .Values.config.storage.type | quote }}
+    {{- if eq .Values.config.storage.type "local" }}
+    path = {{ .Values.config.storage.path | quote }}
+    {{- end }}
+
+    [database]
+    url = {{ .Values.config.database.url | quote }}
+
+    [compression]
+    type = {{ .Values.config.compression.type | quote }}
+
+    [chunking]
+    nar-size-threshold = {{ .Values.config.chunking.nar-size-threshold }}
+    min-size = {{ .Values.config.chunking.min-size }}
+    avg-size = {{ .Values.config.chunking.avg-size }}
+    max-size = {{ .Values.config.chunking.max-size }}
+
+    [garbage-collection]
+    interval = {{ .Values.config.garbage-collection.interval | quote }}
+
+    # JWT token (from secret)
+    [jwt]
+    {{- if .Values.config.jwtSecretBase64 }}
+    token-hs256-secret-base64 = {{ .Values.config.jwtSecretBase64 | quote }}
+    {{- else }}
+    # JWT secret will be injected via secret mount
+    {{- end }}
