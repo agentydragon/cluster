@@ -62,7 +62,7 @@ config:
 
   # Database configuration
   database:
-    url: "sqlite:///data/attic.db"
+    url: "sqlite:///data/attic.db" # Default, override with PostgreSQL when enabled
 
   # Compression
   compression:
@@ -90,3 +90,23 @@ resources:
 # Pod annotations
 podAnnotations:
   reloader.stakater.com/auto: "true"
+
+# PostgreSQL subchart configuration
+postgresql:
+  enabled: true
+  auth:
+    database: attic
+    username: attic
+    password: "changeme" # IMPORTANT: Override this in production via ExternalSecret or sealed secret
+  primary:
+    persistence:
+      enabled: true
+      storageClass: proxmox-csi-retain
+      size: 8Gi
+    resources:
+      requests:
+        memory: 256Mi
+        cpu: 100m
+      limits:
+        memory: 512Mi
+        cpu: 500m

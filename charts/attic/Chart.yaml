@@ -13,3 +13,8 @@ sources:
   - https://github.com/zhaofengli/attic
 maintainers:
   - name: cluster-admin
+dependencies:
+  - name: postgresql
+    version: 15.5.38
+    repository: https://charts.bitnami.com/bitnami
+    condition: postgresql.enabled
