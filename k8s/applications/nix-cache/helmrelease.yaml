@@ -82,8 +82,9 @@ spec:
         type: local
         path: /cache
 
-      database:
-        url: "sqlite:///data/attic.db"
+      # Database configuration (PostgreSQL enabled below, SQLite disabled)
+      # database:
+      #   url: "sqlite:///data/attic.db"
 
       compression:
         type: zstd
@@ -109,3 +110,11 @@ spec:
     # Pod annotations - enable Reloader for secret changes
     podAnnotations:
       reloader.stakater.com/auto: "true"
+
+    # PostgreSQL database (replaces SQLite for production)
+    postgresql:
+      enabled: true
+      auth:
+        database: attic
+        username: attic
+        password: "changeme" # TODO: Replace with ExternalSecret/SealedSecret for production
