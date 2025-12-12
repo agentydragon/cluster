@@ -118,5 +118,3 @@ spec:
         database: attic
         username: attic
         password: "changeme" # TODO: Replace with ExternalSecret/SealedSecret for production
-      image:
-        tag: "17.6.0-debian-12-r4" # Override chart default to use specific PostgreSQL 17 tag
