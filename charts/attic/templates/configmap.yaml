@@ -26,13 +26,13 @@ data:
     type = {{ .Values.config.compression.type | quote }}
 
     [chunking]
-    nar-size-threshold = {{ .Values.config.chunking.nar-size-threshold }}
-    min-size = {{ .Values.config.chunking.min-size }}
-    avg-size = {{ .Values.config.chunking.avg-size }}
-    max-size = {{ .Values.config.chunking.max-size }}
+    nar-size-threshold = {{ index .Values.config.chunking "nar-size-threshold" }}
+    min-size = {{ index .Values.config.chunking "min-size" }}
+    avg-size = {{ index .Values.config.chunking "avg-size" }}
+    max-size = {{ index .Values.config.chunking "max-size" }}
 
     [garbage-collection]
-    interval = {{ .Values.config.garbage-collection.interval | quote }}
+    interval = {{ index .Values.config "garbage-collection" "interval" | quote }}
 
     # JWT token (from secret)
     [jwt]
