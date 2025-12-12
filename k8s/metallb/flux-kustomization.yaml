@@ -5,7 +5,7 @@ metadata:
   namespace: flux-system
 spec:
   interval: 10m
-  timeout: 5m
+  timeout: 20m # Must exceed HelmRelease timeout (15m) to avoid race condition
   sourceRef:
     kind: GitRepository
     name: flux-system
