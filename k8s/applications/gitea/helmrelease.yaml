@@ -20,6 +20,7 @@ metadata:
   namespace: gitea
 spec:
   interval: 15m
+  timeout: 15m # Extended timeout for Gitea deployment (PostgreSQL + PVC binding + init containers)
   chart:
     spec:
       chart: gitea
