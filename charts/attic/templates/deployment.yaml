@@ -27,6 +27,9 @@ spec:
         - name: attic
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
+          securityContext:
+            runAsUser: 1000
+            runAsGroup: 1000
           args:
             - "-f"
             - "/config/server.toml"
