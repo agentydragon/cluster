@@ -29,6 +29,11 @@ ingress:
       hosts:
         - cache.test-cluster.agentydragon.com
 
+# Nix signing key configuration
+signingKey:
+  secretName: "" # Set to secret name containing signing-key.sec and signing-key.pub
+  mountPath: /var/lib/secrets
+
 persistence:
   data:
     enabled: true

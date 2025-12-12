@@ -42,6 +42,11 @@ spec:
               mountPath: /data
             - name: cache
               mountPath: /cache
+            {{- if .Values.signingKey.secretName }}
+            - name: signing-key
+              mountPath: {{ .Values.signingKey.mountPath | default "/var/lib/secrets" }}
+              readOnly: true
+            {{- end }}
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
           livenessProbe:
@@ -76,3 +81,8 @@ spec:
           {{- else }}
           emptyDir: {}
           {{- end }}
+        {{- if .Values.signingKey.secretName }}
+        - name: signing-key
+          secret:
+            secretName: {{ .Values.signingKey.secretName }}
+        {{- end }}

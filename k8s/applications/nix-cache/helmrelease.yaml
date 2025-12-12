@@ -15,6 +15,12 @@ spec:
         name: attic-chart
         namespace: nix-cache
       interval: 15m
+  # Inject JWT token from SealedSecret
+  valuesFrom:
+    - kind: Secret
+      name: attic-jwt-token
+      valuesKey: jwt-token
+      targetPath: config.jwtSecretBase64
   values:
     # Attic image configuration
     image:
@@ -63,13 +69,13 @@ spec:
         size: 100Gi
         accessMode: ReadWriteOnce
 
-    # Attic configuration
-    config:
-      # TODO: JWT token secret needs to be generated in terraform/00-persistent-auth
-      # Generate with: openssl rand 64 | base64 -w0
-      # For now using a placeholder - this MUST be replaced before deployment!
-      jwtSecretBase64: "PLACEHOLDER_REPLACE_WITH_SEALED_SECRET"
+    # Nix signing key (from terraform/00-persistent-auth)
+    signingKey:
+      secretName: nix-cache-signing-key
+      mountPath: /var/lib/secrets
 
+    # Attic configuration (JWT token injected via valuesFrom)
+    config:
       listen: "[::]:8080"
 
       storage:
