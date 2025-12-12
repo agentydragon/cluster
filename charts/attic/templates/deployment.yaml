@@ -30,6 +30,13 @@ spec:
           securityContext:
             runAsUser: 1000
             runAsGroup: 1000
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            seccompProfile:
+              type: RuntimeDefault
           args:
             - "-f"
             - "/config/server.toml"
@@ -47,6 +54,8 @@ spec:
               mountPath: /data
             - name: cache
               mountPath: /cache
+            - name: tmp
+              mountPath: /tmp
             {{- if .Values.signingKey.secretName }}
             - name: signing-key
               mountPath: {{ .Values.signingKey.mountPath | default "/var/lib/secrets" }}
@@ -86,6 +95,8 @@ spec:
           {{- else }}
           emptyDir: {}
           {{- end }}
+        - name: tmp
+          emptyDir: {}
         {{- if .Values.signingKey.secretName }}
         - name: signing-key
           secret:
