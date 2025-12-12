@@ -29,9 +29,5 @@ spec:
     - name: harbor_url
       value: "https://registry.test-cluster.agentydragon.com"
 
-  # Wait for Harbor to be ready
-  dependsOn:
-    - name: harbor
-      namespace: flux-system
-
-  # No dependency on Authentik - proxy cache is independent of SSO
+  # No Terraform dependencies - Harbor is deployed via Helm
+  # Flux Kustomization dependency ensures Harbor is ready before this runs
