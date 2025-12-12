@@ -31,7 +31,7 @@ data:
     interval = {{ index .Values.config "garbage-collection" "interval" | quote }}
 
     # JWT token (from secret)
-    [jwt]
+    [jwt.signing]
     {{- if .Values.config.jwtSecretBase64 }}
     token-hs256-secret-base64 = {{ .Values.config.jwtSecretBase64 | quote }}
     {{- else }}
