@@ -118,3 +118,5 @@ spec:
         database: attic
         username: attic
         password: "changeme" # TODO: Replace with ExternalSecret/SealedSecret for production
+      image:
+        tag: "17" # Override chart default to use latest PostgreSQL 17
