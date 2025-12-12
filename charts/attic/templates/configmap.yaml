@@ -9,10 +9,6 @@ data:
     # Attic Server Configuration
     listen = {{ .Values.config.listen | quote }}
 
-    [api-endpoint]
-    # The canonical API endpoint for the server
-    # This is used by the client to determine the URL to use for API requests
-
     [storage]
     type = {{ .Values.config.storage.type | quote }}
     {{- if eq .Values.config.storage.type "local" }}
