@@ -28,7 +28,7 @@ spec:
         type: LoadBalancer
         annotations:
           metallb.universe.tf/address-pool: dns-pool
-          metallb.universe.tf/loadBalancerIPs: 10.0.3.3
+          metallb.universe.tf/loadBalancerIPs: 10.2.3.3
 
     # PowerDNS configuration
     powerdns:

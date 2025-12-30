@@ -51,7 +51,7 @@ spec:
       # Service configuration - LoadBalancer with MetalLB
       service:
         type: LoadBalancer
-        loadBalancerIP: 10.0.3.2 # Dedicated ingress VIP
+        loadBalancerIP: 10.2.3.2 # Dedicated ingress VIP
         annotations:
           metallb.universe.tf/address-pool: ingress-pool
         ports:

@@ -125,7 +125,7 @@ This **single command** executes a **3-phase layered deployment**:
 kubectl get nodes -o wide  # Nodes should be Ready with Cilium CNI
 flux get all               # Check GitOps status - should show healthy reconciliations
 kubectl get pods -A        # All system pods should be running
-# Note: kubectl automatically uses VIP (10.0.3.1) for HA - no manual --server needed
+# Note: kubectl automatically uses VIP (10.2.3.1) for HA - no manual --server needed
 ```
 
 ### Step 2: Verification
@@ -206,8 +206,8 @@ Create NS delegation in Route 53 for `test-cluster.agentydragon.com` to VPS Powe
 
 Update `~/code/ducktape` repository configurations:
 
-- **PowerDNS**: Add delegation in `ansible/host_vars/vps/powerdns.yml` to cluster PowerDNS VIP (10.0.3.3)
-- **NGINX**: Update `ansible/nginx-sites/test-cluster.agentydragon.com.j2` for SNI passthrough to cluster ingress VIP (10.0.3.2:443)
+- **PowerDNS**: Add delegation in `ansible/host_vars/vps/powerdns.yml` to cluster PowerDNS VIP (10.2.3.3)
+- **NGINX**: Update `ansible/nginx-sites/test-cluster.agentydragon.com.j2` for SNI passthrough to cluster ingress VIP (10.2.3.2:443)
 
 #### Step 4.3: Deploy VPS Configuration
 
@@ -223,7 +223,7 @@ Monitor Flux deployment of platform services:
 ```bash
 flux get ks infrastructure-platform  # Wait for platform services
 kubectl get pods -n dns-system       # Verify PowerDNS pod running
-kubectl get svc powerdns-external    # Should show LoadBalancer IP 10.0.3.3
+kubectl get svc powerdns-external    # Should show LoadBalancer IP 10.2.3.3
 ```
 
 #### Step 4.5: Test DNS Delegation Chain
@@ -232,7 +232,7 @@ kubectl get svc powerdns-external    # Should show LoadBalancer IP 10.0.3.3
 # Test VPS → cluster DNS delegation
 dig @ns1.agentydragon.com test-cluster.agentydragon.com NS
 # Test cluster PowerDNS directly
-dig @10.0.3.3 test.test-cluster.agentydragon.com
+dig @10.2.3.3 test.test-cluster.agentydragon.com
 # Test SNI passthrough via VPS to cluster ingress (standard HTTPS port 443)
 curl -I https://auth.test-cluster.agentydragon.com/
 ```
@@ -265,8 +265,8 @@ Layer 3: Configuration (terraform/03-configuration/)
 
 The cluster solves the VIP chicken-and-egg problem (can't bootstrap with VIP that doesn't exist yet) through terraform:
 
-1. Bootstrap uses direct controller IP (`10.0.1.1:6443`)
-2. Generated kubeconfig uses VIP (`10.0.3.1:6443`) for operations
+1. Bootstrap uses direct controller IP (`10.2.1.1:6443`)
+2. Generated kubeconfig uses VIP (`10.2.3.1:6443`) for operations
 
 Users only see the final VIP-based kubeconfig - the bootstrap complexity is internal to terraform.
 

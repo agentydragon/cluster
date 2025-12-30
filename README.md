@@ -24,15 +24,15 @@ Execute tools like these with the direnv loaded, or use `direnv exec .`.
 
 ## Infrastructure
 
-- Network: 10.0.0.0/16, gateway 10.0.0.1
+- Network: 10.2.0.0/16, gateway 10.2.0.1
 - 5 Talos nodes:
-  - 3 controllers (controlplane0-2 = 10.0.1.1-3)
-  - 2 workers (worker0-1 = 10.0.2.1-2)
+  - 3 controllers (controlplane0-2 = 10.2.1.1-3)
+  - 2 workers (worker0-1 = 10.2.2.1-2)
 - High availability VIP pools:
-  - 10.0.3.1: Cluster Kube API endpoint - kube-vip LB across controller Kube API servers
-  - 10.0.3.2 (`ingress-pool`): MetalLB across worker node replicas of NGINX Ingress
-  - 10.0.3.3 (`dns-pool`): PowerDNS
-  - 10.0.3.4-20 (`services-pool`): for future use (Harbor, Gitea, etc.)
+  - 10.2.3.1: Cluster Kube API endpoint - kube-vip LB across controller Kube API servers
+  - 10.2.3.2 (`ingress-pool`): MetalLB across worker node replicas of NGINX Ingress
+  - 10.2.3.3 (`dns-pool`): PowerDNS
+  - 10.2.3.4-20 (`services-pool`): for future use (Harbor, Gitea, etc.)
 - Domain: `*.test-cluster.agentydragon.com`
   - PowerDNS in k8s has authority on this domain and handles Let's Encrypt DNS-01 challenges
   - cert-manager provisions Let's Encrypt certs
@@ -52,7 +52,7 @@ Deployed services accessible via `*.test-cluster.agentydragon.com`:
 - **Test App**: <https://test.test-cluster.agentydragon.com>
 
 All traffic routes: Internet (443) → VPS nginx (SNI passthrough) → Tailscale →
-MetalLB VIP (10.0.3.2:443) → NGINX Ingress → Services
+MetalLB VIP (10.2.3.2:443) → NGINX Ingress → Services
 
 ### User Management
 
@@ -150,15 +150,15 @@ cluster/
 
 ### Network Architecture
 
-Internet (443) → VPS nginx proxy → Tailscale VPN → MetalLB VIP (10.0.3.2:443) → NGINX Ingress → Apps
+Internet (443) → VPS nginx proxy → Tailscale VPN → MetalLB VIP (10.2.3.2:443) → NGINX Ingress → Apps
 
 - VPS: `~/code/ducktape/ansible/nginx-sites/test-cluster.agentydragon.com.j2`
 - DNS:
-  - Cluster PowerDNS (10.0.3.3) is primary authoritative server
+  - Cluster PowerDNS (10.2.3.3) is primary authoritative server
   - VPS PowerDNS is secondary, replicates zone via AXFR over Tailscale
   - TCP MTU probing enabled for PMTUD blackhole mitigation (see `docs/AXFR_DEBUGGING.md`)
   - Cluster PowerDNS handles Let's Encrypt DNS-01 challenges to obtain SSL certs
-- LoadBalancer: NGINX Ingress uses MetalLB VIP 10.0.3.2 instead of NodePort
+- LoadBalancer: NGINX Ingress uses MetalLB VIP 10.2.3.2 instead of NodePort
 - Cilium: `kubeProxyReplacement: true` with privileged port protection enabled
 
 - Terraform → Image Factory API → Custom QCOW2 with META key 10 → VMs with static IPs (no DHCP)
@@ -166,7 +166,7 @@ Internet (443) → VPS nginx proxy → Tailscale VPN → MetalLB VIP (10.0.3.2:4
 - Deployment path: `k8s/` directory → Flux Kustomizations → HelmReleases → Running pods
 - Secret management: local `kubeseal` → sealed-secrets controller → K8s Secret → Application pods
 
-Kube VIP (10.0.3.1) is established after cluster formation, so bootstrap instead runs against first controller (10.0.1.1).
+Kube VIP (10.2.3.1) is established after cluster formation, so bootstrap instead runs against first controller (10.2.1.1).
 
 ## Let's Encrypt Rate Limits
 

@@ -79,17 +79,17 @@ talosctl -n <node-ip> events | grep kubelet
 
 ```bash
 # Check for dual IPs on workers
-talosctl -n 10.0.2.1 get addresses | grep "eth0.*10\."
+talosctl -n 10.2.2.1 get addresses | grep "eth0.*10\."
 
 # Expected (good): single IP
-# eth0/10.0.2.1/16
+# eth0/10.2.2.1/16
 
 # Problem (bad): two IPs
-# eth0/10.0.2.1/16
+# eth0/10.2.2.1/16
 # eth0/10.0.98.85/16   ← DHCP-assigned, should not exist
 
 # Check for NodeIPController confusion in dmesg
-talosctl -n 10.0.2.1 dmesg | grep "node IP skipped"
+talosctl -n 10.2.2.1 dmesg | grep "node IP skipped"
 ```
 
 **Root Cause**:
@@ -516,7 +516,7 @@ kubectl delete sealedsecret proxmox-csi-plugin -n csi-proxmox
 
 **Architecture**:
 
-- Primary: Cluster PowerDNS (10.0.3.3) - authoritative source
+- Primary: Cluster PowerDNS (10.2.3.3) - authoritative source
 - Secondary: VPS PowerDNS (ns1.agentydragon.com) - public-facing
 - Replication: AXFR over Tailscale VPN
 

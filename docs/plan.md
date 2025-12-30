@@ -169,20 +169,20 @@
 
 ### Networking (COMPLETE)
 
-- **MetalLB** L2 advertisement (ingress: 10.0.3.2, dns: 10.0.3.3, services: 10.0.3.4-20)
+- **MetalLB** L2 advertisement (ingress: 10.2.3.2, dns: 10.2.3.3, services: 10.2.3.4-20)
 - **NGINX Ingress** with MetalLB LoadBalancer
 - **VPS Proxy** via Tailscale with SNI passthrough on port 443
 
 ### DNS & Certificates (COMPLETE)
 
-- **PowerDNS** authoritative server (10.0.3.3)
+- **PowerDNS** authoritative server (10.2.3.3)
   - MariaDB backend with Proxmox CSI storage
   - ESO integration for API key management
   - AXFR zone replication to VPS (working with TCP MTU probing)
   - TCP MTU probing enabled for Tailscale PMTUD blackhole mitigation
 - **external-dns** automatic ingress DNS record creation
 - **cert-manager** with PowerDNS webhook for DNS-01 challenges
-- **Tailscale route advertisement** (VPS→Cluster 10.0.3.0/27)
+- **Tailscale route advertisement** (VPS→Cluster 10.2.3.0/27)
 - **Let's Encrypt certificates** via DNS-01 solver (wildcard support)
 - **Automatic DNS propagation** working end-to-end (3-hour refresh cycle)
 
@@ -246,14 +246,14 @@
 
 **Architecture**:
 
-- Primary: Cluster PowerDNS (10.0.3.3) - authoritative source
+- Primary: Cluster PowerDNS (10.2.3.3) - authoritative source
 - Secondary: VPS PowerDNS - public-facing with AXFR replication
 - Connectivity: Tailscale VPN with route advertisement
 - **TCP MTU probing**: Enabled to handle Tailscale MTU (1280) vs pod MTU (1500) mismatch
 
 **Requirements**:
 
-- Cluster controlplane nodes advertise `10.0.3.0/27` subnet route via Tailscale
+- Cluster controlplane nodes advertise `10.2.3.0/27` subnet route via Tailscale
 - VPS Tailscale must be configured with `--accept-routes` to receive advertised routes
 - Talos kubelet configured to allow `net.ipv4.tcp_mtu_probing` unsafe sysctl
 - PowerDNS pod runs in privileged namespace with TCP MTU probing enabled
@@ -267,7 +267,7 @@ NOTIFY is **not configured** because it doesn't work in Kubernetes environments:
 
 - **Why NOTIFY fails**: PowerDNS pod can run on any cluster node, resulting in unpredictable source IPs
   (100.64.1.x node Tailscale IPs) for NOTIFY messages
-- **VPS rejection**: Secondary zones check NOTIFY source against configured primary IP (10.0.3.3),
+- **VPS rejection**: Secondary zones check NOTIFY source against configured primary IP (10.2.3.3),
   reject messages from other IPs as "not a primary"
 - **No fix possible**: Cannot configure all possible node IPs as primaries without breaking DNS delegation
 - **Current approach**: AXFR refresh via SOA refresh interval (3 hours) - reliable but not instant

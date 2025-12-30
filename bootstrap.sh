@@ -190,7 +190,7 @@ kubectl wait --for=condition=available deployment/powerdns -n powerdns-system --
 
 # Wait for PowerDNS API to be responsive
 log "⏳ Waiting for PowerDNS API to be ready..."
-CLUSTER_VIP="10.0.3.1"  # TODO: Get from terraform output
+CLUSTER_VIP="10.2.3.1"  # TODO: Get from terraform output
 timeout 300 bash -c "until curl -sf http://${CLUSTER_VIP}:8081/api/v1/servers; do sleep 5; done"
 
 log "✅ Services layer ready"

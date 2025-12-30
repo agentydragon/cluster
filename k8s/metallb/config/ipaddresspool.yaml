@@ -7,7 +7,7 @@ metadata:
   namespace: metallb-system
 spec:
   addresses:
-    - 10.0.3.2-10.0.3.2 # Single dedicated IP for ingress
+    - 10.2.3.2-10.2.3.2 # Single dedicated IP for ingress
   autoAssign: false # Manual assignment only
 ---
 # PowerDNS pool - dedicated for DNS service
@@ -18,7 +18,7 @@ metadata:
   namespace: metallb-system
 spec:
   addresses:
-    - 10.0.3.3-10.0.3.3 # Single dedicated IP for PowerDNS
+    - 10.2.3.3-10.2.3.3 # Single dedicated IP for PowerDNS
   autoAssign: false # Manual assignment only
 ---
 # General services pool - for other LoadBalancer services
@@ -29,7 +29,7 @@ metadata:
   namespace: metallb-system
 spec:
   addresses:
-    - 10.0.3.4-10.0.3.20 # Pool for Harbor, Gitea, etc.
+    - 10.2.3.4-10.2.3.20 # Pool for Harbor, Gitea, etc.
   autoAssign: true # Automatic assignment
 ---
 # L2 Advertisement - announces IPs via ARP on local network

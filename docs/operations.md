@@ -60,8 +60,8 @@ terraform apply
 ```bash
 # Gracefully restart a node (example: controlplane0)
 talosctl \
-  --endpoints 10.0.1.1 \
-  --nodes 10.0.1.1 \
+  --endpoints 10.2.1.1 \
+  --nodes 10.2.1.1 \
   reboot
 
 # Or force restart via Proxmox
@@ -102,7 +102,7 @@ qm terminal 1500  # controlplane0
 **Solution**: Verify cluster_endpoint points to first controller IP, not VIP:
 
 ```hcl
-cluster_endpoint = "https://10.0.1.1:6443"  # NOT 10.0.3.1:6443
+cluster_endpoint = "https://10.2.1.1:6443"  # NOT 10.2.3.1:6443
 ```
 
 ### Static IP Not Working
@@ -168,8 +168,8 @@ cluster_endpoint = "https://10.0.1.1:6443"  # NOT 10.0.3.1:6443
 
 ```bash
 # Restart kubelet on affected nodes
-talosctl -n 10.0.2.1 service kubelet restart  # worker0
-talosctl -n 10.0.2.2 service kubelet restart  # worker1
+talosctl -n 10.2.2.1 service kubelet restart  # worker0
+talosctl -n 10.2.2.2 service kubelet restart  # worker1
 
 # Verify nodes return to Ready status
 kubectl get nodes
@@ -253,7 +253,7 @@ authentication failures. Consider filing upstream issue if this becomes frequent
 
 **Architecture**: Secondary Zone via AXFR
 
-- **Primary**: Cluster PowerDNS (10.0.3.3) - authoritative source of truth
+- **Primary**: Cluster PowerDNS (10.2.3.3) - authoritative source of truth
 - **Secondary**: VPS PowerDNS (ns1.agentydragon.com) - public-facing nameserver
 - **Replication**: Automatic AXFR zone transfers over Tailscale VPN
 - **Public Delegation**: Route 53 → ns1.agentydragon.com → serves from local zone copy
@@ -271,13 +271,13 @@ authentication failures. Consider filing upstream issue if this becomes frequent
    - **Check**: `ssh root@agentydragon.com "docker exec powerdns pdnsutil list-zone test-cluster.agentydragon.com"`
    - **Solution**: Verify Tailscale route advertisement and VPS secondary configuration
    - **Fix**:
-     - Check routes: `ssh root@agentydragon.com "tailscale status"` (should show 10.0.3.0/27)
+     - Check routes: `ssh root@agentydragon.com "tailscale status"` (should show 10.2.3.0/27)
      - Verify VPS config: `secondary=yes` in PowerDNS config
      - Manual transfer: `ssh root@agentydragon.com "docker exec powerdns pdns_control retrieve test-cluster.agentydragon.com"`
 
 3. **NS Records Point to Wrong Nameserver**:
    - **Symptom**: cert-manager fails with "no such host" errors for NS records
-   - **Check**: `dig @10.0.3.3 test-cluster.agentydragon.com NS` (should return `ns1.agentydragon.com`)
+   - **Check**: `dig @10.2.3.3 test-cluster.agentydragon.com NS` (should return `ns1.agentydragon.com`)
    - **Solution**: Fix NS records in zone
    - **Fix**:
      `kubectl exec -n dns-system deployment/powerdns -- pdnsutil replace-rrset
@@ -315,20 +315,20 @@ authentication failures. Consider filing upstream issue if this becomes frequent
 
 | Node | VM ID | IP Address | Role |
 | ---- | ----- | ---------- | ---- |
-| controlplane0 | 1500 | 10.0.1.1 | Controller |
-| controlplane1 | 1501 | 10.0.1.2 | Controller |
-| controlplane2 | 1502 | 10.0.1.3 | Controller |
-| worker0 | 2000 | 10.0.2.1 | Worker |
-| worker1 | 2001 | 10.0.2.2 | Worker |
+| controlplane0 | 1500 | 10.2.1.1 | Controller |
+| controlplane1 | 1501 | 10.2.1.2 | Controller |
+| controlplane2 | 1502 | 10.2.1.3 | Controller |
+| worker0 | 2000 | 10.2.2.1 | Worker |
+| worker1 | 2001 | 10.2.2.2 | Worker |
 
 ### VIP Assignments
 
 | Service | IP Address | Pool | Purpose |
 | ------- | ---------- | ---- | ------- |
-| **Cluster API** | 10.0.3.1 | - | Kubernetes API HA VIP |
-| **Ingress** | 10.0.3.2 | ingress-pool | NGINX Ingress LoadBalancer |
-| **PowerDNS** | 10.0.3.3 | dns-pool | DNS server LoadBalancer |
-| **Services** | 10.0.3.4-20 | services-pool | Harbor, Gitea, etc. |
+| **Cluster API** | 10.2.3.1 | - | Kubernetes API HA VIP |
+| **Ingress** | 10.2.3.2 | ingress-pool | NGINX Ingress LoadBalancer |
+| **PowerDNS** | 10.2.3.3 | dns-pool | DNS server LoadBalancer |
+| **Services** | 10.2.3.4-20 | services-pool | Harbor, Gitea, etc. |
 
 ## Security Configuration
 

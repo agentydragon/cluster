@@ -15,7 +15,7 @@ variable "cluster_name" {
 variable "cluster_vip" {
   description = "Virtual IP for HA cluster access"
   type        = string
-  default     = "10.0.3.1"
+  default     = "10.2.3.1"
 }
 
 variable "cluster_networks" {
@@ -26,9 +26,9 @@ variable "cluster_networks" {
     worker_cidr     = string
   })
   default = {
-    gateway         = "10.0.0.1"
-    controller_cidr = "10.0.1.0/24"
-    worker_cidr     = "10.0.2.0/24"
+    gateway         = "10.2.0.1"
+    controller_cidr = "10.2.1.0/24"
+    worker_cidr     = "10.2.2.0/24"
   }
 }
 

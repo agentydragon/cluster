@@ -115,7 +115,7 @@ locals {
         }
         # Explicitly set node IP to prevent conflicts with Tailscale IPs
         nodeIP = {
-          validSubnets = ["10.0.0.0/16"] # Cluster network range
+          validSubnets = ["10.2.0.0/16"] # Cluster network range (VLAN 4)
         }
       }
       # Harbor pull-through cache with fallback to upstream registries
@@ -225,7 +225,7 @@ resource "proxmox_virtual_environment_vm" "vm" {
   }
 
   network_device {
-    bridge = "vmbr0"
+    bridge = "vmbr4"
   }
 
   efi_disk {
