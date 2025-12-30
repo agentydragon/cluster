@@ -57,14 +57,78 @@ talosctl -n <node-ip> events | grep kubelet
 
 **Prevention**:
 
-- Unknown - containerd crash cause needs further investigation
-- Monitor containerd logs for warning signs
-- Consider containerd log retention increase for crash analysis
+- **Fixed in commit 2bf6ae9**: Root cause was dual-IP assignment on workers (see below)
+- Ensure workers have explicit `dhcp: false` in machine config
+- Fix tf-runner crashloop to prevent container churn that triggers the issue
 
 **Historical Occurrence**:
 
 - 2025-11-17: worker0 - containerd crashed with exit status 2, left kubelet PID 89823 orphaned
-- Logs rotated before crash investigation possible
+- 2025-12-28: worker1 - same pattern, root cause identified as dual-IP + container churn
+
+### Worker Dual-IP Assignment (DHCP + Static IP Conflict)
+
+**Symptoms**:
+
+- Worker nodes have two IPs on eth0 (check with `talosctl get addresses`)
+- Constant "node IP skipped" messages in dmesg
+- Kubelet restarts correlated with container creation/deletion
+- Eventually leads to Zombie Kubelet state (see above)
+
+**Diagnosis**:
+
+```bash
+# Check for dual IPs on workers
+talosctl -n 10.0.2.1 get addresses | grep "eth0.*10\."
+
+# Expected (good): single IP
+# eth0/10.0.2.1/16
+
+# Problem (bad): two IPs
+# eth0/10.0.2.1/16
+# eth0/10.0.98.85/16   ← DHCP-assigned, should not exist
+
+# Check for NodeIPController confusion in dmesg
+talosctl -n 10.0.2.1 dmesg | grep "node IP skipped"
+```
+
+**Root Cause**:
+
+Workers were missing explicit network interface configuration:
+
+- **Controllers**: Have `machine.network.interfaces` (for VIP) → DHCP implicitly disabled
+- **Workers**: Had `network: {}` (empty) → DHCP enabled by default
+- Network DHCP server assigns second IP to workers
+- Talos NodeIPController sees both IPs, can't decide which is kubelet IP
+- Every veth creation (container start) triggers re-evaluation
+- Under sustained container churn, this destabilizes kubelet and crashes containerd
+
+**Resolution**:
+
+Fixed in terraform by adding explicit interface config for workers:
+
+```yaml
+machine:
+  network:
+    interfaces:
+      - interface: eth0
+        dhcp: false
+```
+
+For existing clusters, either:
+
+1. Re-run `terraform apply` (requires cluster recreate)
+2. Manually patch via talosctl:
+
+   ```bash
+   talosctl -n <worker-ip> patch machineconfig --patch \
+     '[{"op": "add", "path": "/machine/network/interfaces", "value": [{"interface": "eth0", "dhcp": false}]}]'
+   ```
+
+**Prevention**:
+
+- Commit 2bf6ae9 adds `dhcp: false` to worker machine config
+- New clusters created after this fix won't have the issue
 
 ### tofu-controller TLS Secret Cache Desync (Startup GC Bug)
 
