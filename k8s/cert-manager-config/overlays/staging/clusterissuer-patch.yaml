@@ -1,4 +1,5 @@
 ---
+# Staging overlay: Use Let's Encrypt staging server to avoid rate limits
 apiVersion: cert-manager.io/v1
 kind: ClusterIssuer
 metadata:
@@ -10,6 +11,8 @@ spec:
     privateKeySecretRef:
       name: letsencrypt-prod-key
     solvers:
+      # DNS-01 solver for all test-cluster subdomains
+      # HTTP-01 doesn't work because VPS only routes HTTPS via SNI passthrough
       - dns01:
           webhook:
             groupName: acme.syself.com
@@ -20,8 +23,5 @@ spec:
                 name: powerdns-api-key
                 key: powerdns_api_key
         selector:
-          dnsNames:
-            - "*.test-cluster.agentydragon.com"
-      - http01:
-          ingress:
-            class: nginx
+          dnsZones:
+            - "test-cluster.agentydragon.com"
