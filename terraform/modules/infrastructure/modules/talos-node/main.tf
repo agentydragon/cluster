@@ -337,6 +337,19 @@ data "talos_machine_configuration" "config" {
       ]
     })
     ] : [
+    # Workers get explicit interface config to disable DHCP
+    # (Controllers get this implicitly via VIP config, workers need it explicitly)
+    # Without this, workers get a second IP from DHCP which confuses Talos NodeIPController
+    yamlencode({
+      machine = {
+        network = {
+          interfaces = [{
+            interface = "eth0"
+            dhcp      = false
+          }]
+        }
+      }
+    }),
     # Workers get basic Tailscale configuration
     yamlencode({
       apiVersion = "v1alpha1"
