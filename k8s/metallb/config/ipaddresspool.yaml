@@ -43,7 +43,8 @@ spec:
     - ingress-pool
     - dns-pool
     - services-pool
-  # Announce on all interfaces (default)
-  interfaces: []
+  # Announce on physical interface only (not container interfaces)
+  interfaces:
+    - eth0
   # Announce from all nodes
   nodeSelectors: []
