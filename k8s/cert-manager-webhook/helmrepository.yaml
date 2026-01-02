@@ -1,9 +1,0 @@
----
-apiVersion: source.toolkit.fluxcd.io/v1
-kind: HelmRepository
-metadata:
-  name: cert-manager-webhook-powerdns
-  namespace: cert-manager
-spec:
-  interval: 24h
-  url: https://zachomedia.github.io/cert-manager-webhook-pdns

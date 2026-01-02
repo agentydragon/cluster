@@ -120,6 +120,49 @@ cluster_endpoint = "https://10.2.1.1:6443"  # NOT 10.2.3.1:6443
 **Symptoms**: Cannot reach VMs on expected IPs
 **Solution**: Verify network configuration in terraform.tfvars matches infrastructure
 
+### Switching Let's Encrypt Environment (Staging ↔ Production)
+
+The cluster uses kustomize overlays to switch between Let's Encrypt staging and production environments.
+
+**Current configuration**: Check `k8s/cert-manager-environment/flux-kustomization.yaml`
+
+```yaml
+spec:
+  path: "./k8s/cert-manager-environment/overlays/staging"     # staging (fake certs, high rate limits)
+  # OR
+  path: "./k8s/cert-manager-environment/overlays/production"  # production (real certs, strict rate limits)
+```
+
+**To switch environments**:
+
+1. Edit the path in `k8s/cert-manager-environment/flux-kustomization.yaml`
+1. Commit and push the change
+1. Wait for Flux to reconcile, or force it:
+
+```bash
+flux reconcile source git flux-system
+flux reconcile kustomization cert-manager-environment
+```
+
+1. Delete existing certificates to trigger re-issuance with new issuer:
+
+```bash
+kubectl delete certificates --all -A
+# Certificates will be automatically recreated by cert-manager
+```
+
+**Environment differences**:
+
+| Environment | ACME Server | Rate Limits | Certificate Trust |
+|-------------|-------------|-------------|-------------------|
+| **Staging** | acme-staging-v02.api.letsencrypt.org | 30,000 certs/week | Untrusted (test only) |
+| **Production** | acme-v02.api.letsencrypt.org | 50 certs/week | Browser-trusted |
+
+**When to use each**:
+
+- **Staging**: Development, testing certificate issuance, debugging DNS-01 challenges
+- **Production**: When ready for real browser-trusted certificates
+
 ### Let's Encrypt DNS Challenge Fails
 
 **Symptoms**: `REFUSED` responses during certificate creation
