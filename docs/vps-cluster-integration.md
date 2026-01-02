@@ -31,9 +31,9 @@ Internet → VPS (Talos worker, cluster member)
               ├── Ingress Controller (receives public traffic)
               ├── PowerDNS (primary for *.agentydragon.com)
               ├── Website pods
-              └── Tailscale mesh → Home Cluster (Proxmox)
-                                       ├── 3 controllers
-                                       └── 2+ workers
+              └── KubeSpan mesh (WireGuard) → Home Cluster (Proxmox)
+                                                   ├── 3 controllers
+                                                   └── 2+ workers
 ```
 
 **VPS becomes**:
@@ -42,7 +42,7 @@ Internet → VPS (Talos worker, cluster member)
 - Runs ingress-nginx with public IP
 - Runs PowerDNS as primary authoritative server
 - Hosts website and public-facing services
-- Connected to home nodes via Tailscale mesh
+- Connected to home nodes via **KubeSpan** (Talos native WireGuard mesh)
 
 ## Benefits
 
@@ -62,7 +62,7 @@ Internet → VPS (Talos worker, cluster member)
   - Option B: Migrate existing VPS to Talos (requires downtime)
 - [ ] **Network Planning**:
   - VPS public IP for ingress
-  - Tailscale mesh connectivity to home nodes
+  - KubeSpan mesh connectivity to home nodes (port 51820/udp)
   - Pod CIDR allocation for VPS node
 - [ ] **Terraform State Backup**: Set up rclone to Google Drive before major changes
   - [ ] Configure rclone with Google Drive
@@ -73,16 +73,21 @@ Internet → VPS (Talos worker, cluster member)
 
 - [ ] **Provision VPS with Talos**
   - Talos image for cloud/VPS (not Proxmox QEMU)
-  - Machine config with Tailscale extension
+  - Machine config with KubeSpan enabled (no extension required - native to Talos)
   - Worker role (not controller - keep controllers at home for latency)
+- [ ] **Enable KubeSpan on Existing Nodes**
+  - Add KubeSpan configuration to all existing nodes
+  - Requires cluster discovery to be enabled (already default)
+  - Open port 51820/udp on VPS firewall
 - [ ] **Join Existing Cluster**
   - Generate machine config from existing cluster secrets
-  - Configure Tailscale for mesh connectivity
+  - KubeSpan auto-discovers peers via cluster discovery service
   - Verify node joins and becomes Ready
 - [ ] **Validate Connectivity**
-  - Pods on VPS can reach pods at home
+  - Pods on VPS can reach pods at home via KubeSpan tunnel
   - CoreDNS resolution works across nodes
   - Cilium networking healthy
+  - Verify `kubespan0` interface exists on all nodes
 
 ### Phase 2: Migrate Ingress
 
@@ -146,19 +151,50 @@ Internet → VPS (Talos worker, cluster member)
 
 ## Technical Considerations
 
-### Networking
+### Networking: KubeSpan (Talos Native WireGuard)
 
-**Tailscale Mesh**:
+**Why KubeSpan over Tailscale**:
 
-- Controllers and workers connect via Tailscale
-- Pod-to-pod traffic crosses Tailscale tunnel
-- Cilium must handle cross-node routing
+- **Native to Talos**: No extension required, built into Talos Linux
+- **Zero external dependencies**: No Tailscale/Headscale coordination server
+- **Automatic mesh**: Full WireGuard mesh between all nodes with automatic key exchange
+- **Integrated discovery**: Uses Talos cluster discovery for peer coordination
+- **Simpler config**: Just `machine.network.kubespan.enabled: true`
+
+**KubeSpan Configuration**:
+
+```yaml
+machine:
+  network:
+    kubespan:
+      enabled: true
+      # Optional: allow traffic to bypass KubeSpan if peer is down
+      allowDownPeerBypass: false
+cluster:
+  discovery:
+    enabled: true  # Required for KubeSpan
+```
+
+**How it works**:
+
+1. Each node gets a WireGuard interface (`kubespan0`)
+2. Nodes discover each other via cluster discovery service
+3. WireGuard keys are automatically exchanged
+4. Full mesh established - all nodes can reach all nodes
+5. Only port 51820/udp needs to be open
+
+**Cilium Compatibility**:
+
+- KubeSpan handles node-to-node encryption
+- Cilium handles pod networking (IPAM, policy, services)
+- For advanced Cilium features (eBPF masquerading), use Cilium's native WireGuard instead
 
 **Public IP Handling**:
 
 - VPS has public IP directly
 - ingress-nginx binds to public IP (hostNetwork: true or externalTrafficPolicy)
 - MetalLB not needed on VPS (cloud has native LB or direct IP)
+- KubeSpan will use VPS public IP as endpoint for other nodes
 
 ### Storage
 
@@ -227,11 +263,13 @@ affinity:
 - VPS worker loses control plane connectivity
 - Mitigation: Consider one controller on VPS? (latency concerns)
 
-**Tailscale Outage**:
+**KubeSpan / WireGuard Outage**:
 
 - Cross-site pod communication fails
 - VPS can still serve cached data
 - Home cluster functions independently
+- Unlike Tailscale: No external coordination server to fail (peer-to-peer only)
+- Mitigation: `allowDownPeerBypass: true` allows continued operation if peers unreachable
 
 ## Open Questions
 
@@ -265,4 +303,5 @@ From todo list:
 - Current cluster: `docs/plan.md`
 - Bootstrap procedure: `docs/bootstrap.md`
 - Talos documentation: <https://www.talos.dev/>
+- KubeSpan documentation: <https://www.talos.dev/v1.9/talos-guides/network/kubespan/>
 - Cilium multi-cluster: <https://docs.cilium.io/en/stable/network/clustermesh/>
