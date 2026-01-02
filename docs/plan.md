@@ -316,6 +316,7 @@ NOTIFY is **not configured** because it doesn't work in Kubernetes environments:
 - **Critical Dependencies**: `docs/critical_dependencies.md`
 - **Harbor Pull-Through Cache Planning**: `docs/harbor_pullthrough_cache.md`
 - **AI Agents Design**: `docs/agents.md` (planned)
+- **VPS Cluster Integration**: `docs/vps-cluster-integration.md`
 
 ---
 
