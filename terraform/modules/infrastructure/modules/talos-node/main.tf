@@ -216,8 +216,11 @@ resource "proxmox_virtual_environment_vm" "vm" {
   }
 
   memory {
-    dedicated = var.memory_dedicated_mb     # Minimum guaranteed memory (varies by node type)
-    floating  = local.vm_defaults.memory_mb # 12GB maximum (host can reclaim unused memory above minimum)
+    # Proxmox memory mapping:
+    # - dedicated → Proxmox 'memory' (maximum RAM the VM can use)
+    # - floating  → Proxmox 'balloon' (target/minimum guaranteed RAM)
+    dedicated = local.vm_defaults.memory_mb # 12GB maximum (VM can grow to this)
+    floating  = var.memory_dedicated_mb     # Minimum guaranteed (3GB controllers, 6GB workers)
   }
 
   vga {

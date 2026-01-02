@@ -9,18 +9,20 @@ locals {
   }
 
   # Define node types and their configuration in a single data structure
+  # Memory: All nodes can use up to 12GB (vm_defaults.memory_mb), but have different
+  # guaranteed minimums via balloon target (memory_dedicated_mb)
   node_types = {
     controlplane = {
       count               = var.controller_count
       vm_start            = var.vm_id_ranges.controller_start
       cidr                = var.cluster_networks.controller_cidr
-      memory_dedicated_mb = 3072 # 3GB minimum (lighter workload)
+      memory_dedicated_mb = 3072 # 3GB balloon target (guaranteed minimum)
     }
     worker = {
       count               = var.worker_count
       vm_start            = var.vm_id_ranges.worker_start
       cidr                = var.cluster_networks.worker_cidr
-      memory_dedicated_mb = 6144 # 6GB minimum (prevent OOM with application workloads)
+      memory_dedicated_mb = 6144 # 6GB balloon target (guaranteed minimum)
     }
   }
 
